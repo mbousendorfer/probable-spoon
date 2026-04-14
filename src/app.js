@@ -7,7 +7,7 @@ import {
   sortSessions,
   store,
   validatePostDraft,
-} from "./store.js?v=5";
+} from "./store.js?v=11";
 
 const workspaceContent = document.getElementById("workspaceContent");
 const sessionSwitcher = document.getElementById("sessionSwitcher");
@@ -27,6 +27,14 @@ const sessionNameInput = document.getElementById("sessionNameInput");
 const closeSessionModal = document.getElementById("closeSessionModal");
 const cancelSessionModal = document.getElementById("cancelSessionModal");
 const saveSessionModal = document.getElementById("saveSessionModal");
+const openFeedbackBtn = document.getElementById("openFeedbackBtn");
+const feedbackBackdrop = document.getElementById("feedbackBackdrop");
+const feedbackModal = document.getElementById("feedbackModal");
+const closeFeedbackBtn = document.getElementById("closeFeedbackBtn");
+const cancelFeedbackBtn = document.getElementById("cancelFeedbackBtn");
+const submitFeedbackBtn = document.getElementById("submitFeedbackBtn");
+const feedbackFeatureArea = document.getElementById("feedbackFeatureArea");
+const feedbackText = document.getElementById("feedbackText");
 const openBugReportBtn = document.getElementById("openBugReportBtn");
 const bugReportBackdrop = document.getElementById("bugReportBackdrop");
 const bugReportModal = document.getElementById("bugReportModal");
@@ -1273,11 +1281,13 @@ function renderDraftCard(post, ui, isBestDraft) {
   const statusLabel = hasIssues ? "Needs fixes" : post.workflowState === "scheduled" ? "Scheduled" : "Ready";
   const meta = formatPostMeta(post);
   const issuesBanner = issues.length
-    ? '<div class="post-review-card__message post-review-card__message--error"><span class="post-review-card__message-icon">' +
+    ? '<div class="ap-infobox error has-title">' +
       icons.error +
-      '</span><div class="post-review-card__message-body"><div class="post-review-card__message-title">Needs fixes before scheduling</div><div class="post-review-card__message-text">' +
-      issues.map((issue) => '<div>' + escapeHtml(issue) + "</div>").join("") +
-      "</div></div></div>"
+      '<div class="ap-infobox-content"><div class="ap-infobox-texts">' +
+      '<span class="ap-infobox-title">Needs fixes before scheduling</span>' +
+      '<span class="ap-infobox-message">' +
+      issues.map((issue) => escapeHtml(issue)).join(" · ") +
+      "</span></div></div></div>"
     : "";
 
   return (
@@ -1394,13 +1404,14 @@ function renderPostsErrorSummary(session) {
   if (!count || !firstInvalidId) return "";
 
   return (
-    '<div class="posts-error-summary">' +
-    '<span class="posts-error-summary__icon">' + icons.info + '</span>' +
-    '<div class="posts-error-summary__body">' +
-    '<div class="posts-error-summary__title">' +
+    '<div class="ap-infobox error has-title posts-error-summary">' +
+    "<i aria-hidden=\"true\">" + icons.error + "</i>" +
+    '<div class="ap-infobox-content">' +
+    '<div class="ap-infobox-texts">' +
+    '<span class="ap-infobox-title">' +
     count + " post" + (count > 1 ? "s" : "") + " need fixes" +
-    '</div>' +
-    '<div class="posts-error-summary__text">Fix validation issues before scheduling.</div>' +
+    '</span>' +
+    '<span class="ap-infobox-message">Fix validation issues before scheduling.</span>' +
     '</div>' +
     actionButton({
       style: "stroked",
@@ -1408,7 +1419,7 @@ function renderPostsErrorSummary(session) {
       label: "Jump to errors",
       attrs: 'data-jump-to-errors="' + firstInvalidId + '"',
     }) +
-    "</div>"
+    "</div></div>"
   );
 }
 
@@ -1420,15 +1431,19 @@ function renderPostsSelectionBar(session, ui) {
   if (!hasSelection) return "";
 
   return (
-    '<div class="selection-bar selection-bar--posts visible"><div class="selection-bar__copy"><h4>' +
+    '<div class="ap-infobox ' +
+    (summary.hasInvalidSelection ? "warning" : "info") +
+    ' has-title posts-selection-infobox">' +
+    "<i aria-hidden=\"true\">" + (summary.hasInvalidSelection ? icons.error : icons.info) + "</i>" +
+    '<div class="ap-infobox-content"><div class="ap-infobox-texts"><span class="ap-infobox-title">' +
     count +
     ' post' +
     (count > 1 ? "s" : "") +
-    ' selected</h4><p>' +
+    ' selected</span><span class="ap-infobox-message">' +
     (summary.hasInvalidSelection
       ? summary.invalidPosts.length + ' selected post' + (summary.invalidPosts.length > 1 ? "s" : "") + " still need fixes"
       : "Schedule or delete in bulk") +
-    '</p></div><div class="button-row">' +
+    '</span></div><div class="button-row">' +
     actionButton({
       style: "primary",
       color: "orange",
@@ -1448,7 +1463,7 @@ function renderPostsSelectionBar(session, ui) {
       label: "Clear selection",
       attrs: 'data-clear-post-selection="true"',
     }) +
-    "</div></div>"
+    "</div></div></div>"
   );
 }
 
@@ -1677,6 +1692,23 @@ function renderBugReportModal(state) {
   if (!open) resetBugReportForm();
 }
 
+function resetFeedbackForm() {
+  feedbackModal.classList.remove("success");
+  feedbackText.value = "";
+  feedbackText.classList.remove("invalid");
+  feedbackFeatureArea.value = "content-studio";
+  submitFeedbackBtn.disabled = false;
+  submitFeedbackBtn.textContent = "Send feedback";
+}
+
+function renderFeedbackModal(state) {
+  const open = state.feedbackModal.open;
+  feedbackBackdrop.classList.toggle("open", open);
+  feedbackModal.classList.toggle("open", open);
+  feedbackModal.setAttribute("aria-hidden", open ? "false" : "true");
+  if (!open) resetFeedbackForm();
+}
+
 function focusWithoutScroll(element) {
   if (!element) return;
   try {
@@ -1813,6 +1845,7 @@ function renderApp() {
   renderDrawer(state, session);
   renderSessionModal(state);
   renderBugReportModal(state);
+  renderFeedbackModal(state);
 }
 
 workflowTabs.addEventListener("click", (event) => {
@@ -2200,6 +2233,37 @@ sessionNameInput.addEventListener("keydown", (event) => {
 closeSessionModal.addEventListener("click", () => store.getState().closeSessionModal());
 cancelSessionModal.addEventListener("click", () => store.getState().closeSessionModal());
 sessionModalBackdrop.addEventListener("click", () => store.getState().closeSessionModal());
+
+// Feedback Modal
+openFeedbackBtn.addEventListener("click", () => {
+  store.getState().openFeedbackModal();
+  window.setTimeout(() => feedbackText.focus(), 50);
+});
+closeFeedbackBtn.addEventListener("click", () => store.getState().closeFeedbackModal());
+cancelFeedbackBtn.addEventListener("click", () => store.getState().closeFeedbackModal());
+feedbackBackdrop.addEventListener("click", () => store.getState().closeFeedbackModal());
+
+submitFeedbackBtn.addEventListener("click", async () => {
+  const text = feedbackText.value.trim();
+  if (!text) {
+    feedbackText.classList.add("invalid");
+    feedbackText.focus();
+    return;
+  }
+  feedbackText.classList.remove("invalid");
+  submitFeedbackBtn.disabled = true;
+  submitFeedbackBtn.textContent = "Sending…";
+
+  // Mock submit — replace with real Intercom/Canny/Shortcut call
+  await new Promise((resolve) => setTimeout(resolve, 1200));
+
+  feedbackModal.classList.add("success");
+  setTimeout(() => store.getState().closeFeedbackModal(), 2500);
+});
+
+feedbackText.addEventListener("input", () => {
+  if (feedbackText.value.trim()) feedbackText.classList.remove("invalid");
+});
 
 // Bug Report Modal
 openBugReportBtn.addEventListener("click", async () => {
