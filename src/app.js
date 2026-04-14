@@ -7,7 +7,7 @@ import {
   sortSessions,
   store,
   validatePostDraft,
-} from "./store.js";
+} from "./store.js?v=5";
 
 const workspaceContent = document.getElementById("workspaceContent");
 const sessionSwitcher = document.getElementById("sessionSwitcher");
@@ -27,6 +27,25 @@ const sessionNameInput = document.getElementById("sessionNameInput");
 const closeSessionModal = document.getElementById("closeSessionModal");
 const cancelSessionModal = document.getElementById("cancelSessionModal");
 const saveSessionModal = document.getElementById("saveSessionModal");
+const openBugReportBtn = document.getElementById("openBugReportBtn");
+const bugReportBackdrop = document.getElementById("bugReportBackdrop");
+const bugReportModal = document.getElementById("bugReportModal");
+const closeBugReportBtn = document.getElementById("closeBugReportBtn");
+const cancelBugReportBtn = document.getElementById("cancelBugReportBtn");
+const submitBugReportBtn = document.getElementById("submitBugReportBtn");
+const bugCategories = document.getElementById("bugCategories");
+const bugActionInput = document.getElementById("bugActionInput");
+const bugProblemInput = document.getElementById("bugProblemInput");
+const bugAutoBadge = document.getElementById("bugAutoBadge");
+const bugCapturingBadge = document.getElementById("bugCapturingBadge");
+const bugScreenshotPreview = document.getElementById("bugScreenshotPreview");
+const bugDropzoneFallback = document.getElementById("bugDropzoneFallback");
+const bugDropzone = document.getElementById("bugDropzone");
+const bugFileInput = document.getElementById("bugFileInput");
+const bugPreviewImg = document.getElementById("bugPreviewImg");
+const bugFileName = document.getElementById("bugFileName");
+const bugRemoveFileBtn = document.getElementById("bugRemoveFileBtn");
+const bugContextBar = document.getElementById("bugContextBar");
 const drawer = document.getElementById("ideaDrawer");
 const drawerBackdrop = document.getElementById("drawerBackdrop");
 const drawerPriority = document.getElementById("drawerPriority");
@@ -45,6 +64,8 @@ const drawerMoveToBrief = document.getElementById("drawerMoveToBrief");
 const closeDrawer = document.getElementById("closeDrawer");
 
 let lastModalSignature = "";
+
+document.body.append(sessionModalBackdrop, sessionModal, bugReportBackdrop, bugReportModal);
 
 const icons = {
   // sprite-based icons — paths live in #ap-icons-sprite in index.html
@@ -80,11 +101,6 @@ const icons = {
   // keep inline — gradient fill cannot be driven by CSS color token
   sparklesMermaid:
     '<span class="agp-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><linearGradient id="sparklesMermaidGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#578fff"/><stop offset="100%" stop-color="#df52ff"/></linearGradient></defs><path fill="url(#sparklesMermaidGradient)" d="M11.984 7.2H12a.806.806 0 0 0 .8-.76c.072-1.36.68-1.64 1.584-1.64h.016c.44 0 .8-.352.8-.792a.796.796 0 0 0-.784-.808c-1.168-.024-1.616-.472-1.616-1.6 0-.44-.36-.8-.8-.8s-.8.36-.8.8c0 1.136-.456 1.584-1.608 1.6a.81.81 0 0 0-.792.808c0 .44.36.792.8.792 1.16 0 1.592.44 1.6 1.608a.803.803 0 0 0 .784.792"/><path fill="url(#sparklesMermaidGradient)" fill-rule="evenodd" d="M6.384 15.2H6.4a.806.806 0 0 0 .8-.76c.144-2.792 1.368-4.04 3.968-4.04h.032c.416.032.8-.352.8-.792a.8.8 0 0 0-.784-.808c-2.784-.064-4.024-1.296-4.016-4 0-.44-.36-.8-.8-.8s-.8.36-.8.8c-.008 2.728-1.24 3.96-4.008 4a.81.81 0 0 0-.792.808c0 .44.36.792.8.792h.008c2.736 0 3.96 1.24 3.992 4.008a.803.803 0 0 0 .784.792m.056-4.064a4.2 4.2 0 0 0-1.512-1.552l.008-.008A4.25 4.25 0 0 0 6.4 8.12c.376.616.88 1.112 1.52 1.48a4.4 4.4 0 0 0-1.48 1.536" clip-rule="evenodd"/></svg></span>',
-  // keep inline — TODO: no DS equivalent for platform logos
-  linkedinBrand:
-    '<span class="social-brand-icon social-brand-icon--linkedin" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M6.98 8.48a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4M5.5 18.5h2.96V9.65H5.5zm4.82-8.85h2.84v1.2h.04c.39-.75 1.36-1.55 2.8-1.55 2.99 0 3.54 1.97 3.54 4.53v4.67H16.6v-4.14c0-.99-.02-2.26-1.37-2.26-1.37 0-1.58 1.08-1.58 2.19v4.21h-2.96z"/></svg></span>',
-  twitterBrand:
-    '<span class="social-brand-icon social-brand-icon--twitter" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M18.9 2H22l-6.77 7.74L23.2 22h-6.25l-4.9-6.43L6.42 22H3.3l7.24-8.28L.8 2h6.4l4.43 5.85zm-1.1 18h1.73L6.27 3.9H4.42z"/></svg></span>',
 };
 
 function escapeHtml(value = "") {
@@ -108,7 +124,7 @@ function hydrateStaticIcons() {
   });
 }
 
-function actionButton({ style, color, label, attrs = "", loading = false, disabled = false }) {
+function actionButton({ style, color, label, attrs = "", loading = false, disabled = false, icon = "" }) {
   const classes = ["ap-button", style, color, loading ? "is-loading" : ""].filter(Boolean).join(" ");
   return (
     '<button type="button" class="' +
@@ -117,6 +133,7 @@ function actionButton({ style, color, label, attrs = "", loading = false, disabl
     attrs +
     (disabled ? " disabled" : "") +
     ">" +
+    icon +
     escapeHtml(label) +
     "</button>"
   );
@@ -471,7 +488,6 @@ function LinkedInPostPreview(post) {
     '<div class="linkedin-preview__header">' +
     '<div class="linkedin-preview__avatar-wrap">' +
     '<img class="social-preview__avatar" src="' + escapeHtml(post.author?.avatarUrl || "") + '" alt="' + escapeHtml(post.author?.name || "Author") + ' avatar" />' +
-    '<span class="linkedin-preview__platform-badge">' + icons.linkedinBrand + '</span>' +
     '</div>' +
     '<div class="linkedin-preview__author">' +
     '<div class="linkedin-preview__author-row">' +
@@ -481,7 +497,6 @@ function LinkedInPostPreview(post) {
     '<div class="linkedin-preview__title">' + escapeHtml(post.author?.title || "Preparing author profile") + '</div>' +
     '<div class="linkedin-preview__timestamp">' + escapeHtml(post.metadata?.timestamp || "now") + ' • Public</div>' +
     '</div>' +
-    '<button class="linkedin-preview__follow" type="button">Follow</button>' +
     '</div>' +
     '<div class="linkedin-preview__body">' +
     renderPostTextWithHashtags(post.content?.text || "", post.content?.hashtags || [], 420) +
@@ -663,7 +678,7 @@ function renderSessionBar(state, session) {
     actionButton({
       style: "stroked",
       color: "grey",
-      label: "+ New",
+      label: "New session",
       attrs: 'data-open-create-session="true"',
     }) +
     '</div><div class="session-switcher__meta">' +
@@ -1623,10 +1638,144 @@ function renderDrawer(state, session) {
   drawerGeneratePost.disabled = pendingAction === "generate";
 }
 
+let bugSelectedCategory = null;
+let bugScreenshotDataUrl = null;
+
+const bugCategoryLabels = {
+  visual: "Visual glitch",
+  behavior: "Wrong behavior",
+  broken: "Feature not working",
+  performance: "Performance",
+  other: "Other",
+};
+
+function resetBugReportForm() {
+  bugReportModal.classList.remove("success");
+  bugSelectedCategory = null;
+  bugCategories.querySelectorAll(".bug-category-chip").forEach((c) => c.classList.remove("selected"));
+  bugActionInput.value = "";
+  bugProblemInput.value = "";
+  bugProblemInput.classList.remove("invalid");
+  bugScreenshotDataUrl = null;
+  bugPreviewImg.src = "";
+  bugFileName.textContent = "";
+  bugScreenshotPreview.style.display = "none";
+  bugDropzoneFallback.style.display = "";
+  bugAutoBadge.style.display = "none";
+  bugCapturingBadge.style.display = "none";
+  bugFileInput.value = "";
+  bugContextBar.innerHTML = "";
+  submitBugReportBtn.disabled = false;
+  submitBugReportBtn.textContent = "Submit Bug Report";
+}
+
+function renderBugReportModal(state) {
+  const open = state.bugReportModal.open;
+  bugReportBackdrop.classList.toggle("open", open);
+  bugReportModal.classList.toggle("open", open);
+  bugReportModal.setAttribute("aria-hidden", open ? "false" : "true");
+  if (!open) resetBugReportForm();
+}
+
+function focusWithoutScroll(element) {
+  if (!element) return;
+  try {
+    element.focus({ preventScroll: true });
+  } catch {
+    element.focus();
+  }
+}
+
+function setBugScreenshot(dataUrl) {
+  bugScreenshotDataUrl = dataUrl;
+  bugPreviewImg.src = dataUrl;
+  bugFileName.textContent = "Page screenshot";
+  bugScreenshotPreview.style.display = "";
+  bugDropzoneFallback.style.display = "none";
+  bugCapturingBadge.style.display = "none";
+  bugAutoBadge.style.display = "";
+}
+
+function clearBugScreenshot() {
+  bugScreenshotDataUrl = null;
+  bugPreviewImg.src = "";
+  bugFileName.textContent = "";
+  bugScreenshotPreview.style.display = "none";
+  bugDropzoneFallback.style.display = "";
+  bugAutoBadge.style.display = "none";
+  bugCapturingBadge.style.display = "none";
+  bugFileInput.value = "";
+}
+
+async function loadHtml2Canvas() {
+  if (window.html2canvas) return window.html2canvas;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+    s.onload = () => resolve(window.html2canvas);
+    s.onerror = () => reject(new Error("html2canvas unavailable"));
+    document.head.appendChild(s);
+  });
+}
+
+async function capturePageScreenshot() {
+  try {
+    const h2c = await loadHtml2Canvas();
+    const canvas = await h2c(document.documentElement, {
+      scale: 0.55,
+      useCORS: true,
+      logging: false,
+      ignoreElements: (el) =>
+        el.id === "bugReportModal" || el.id === "bugReportBackdrop",
+    });
+    return canvas.toDataURL("image/jpeg", 0.8);
+  } catch {
+    return null;
+  }
+}
+
+function populateBugContext() {
+  const state = store.getState();
+  const tabLabels = { library: "Library", brief: "Brief", voice: "Voice", brand: "Brand Theme", posts: "Posts" };
+  const session = getActiveSession(state);
+  const tab = tabLabels[state.currentTab] || state.currentTab;
+  const sessionName = session?.name || "—";
+  const time = new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  bugContextBar.innerHTML =
+    '<span class="bug-context__label">Context</span>' +
+    '<span class="bug-context__pill">' + escapeHtml(tab) + "</span>" +
+    '<span class="bug-context__pill">' + escapeHtml(sessionName) + "</span>" +
+    '<span class="bug-context__pill">' + escapeHtml(time) + "</span>";
+}
+
+function buildShortcutDescription(category, action, problem) {
+  const state = store.getState();
+  const session = getActiveSession(state);
+  const tabLabels = { library: "Library", brief: "Brief", voice: "Voice", brand: "Brand Theme", posts: "Posts" };
+  let desc = "";
+  if (category) desc += "**Category:** " + (bugCategoryLabels[category] || category) + "\n\n";
+  if (action) desc += "**What I was trying to do:** " + action + "\n\n";
+  desc += "**What went wrong:** " + problem + "\n\n";
+  desc += "---\n**Context**\n";
+  desc += "- Tab: " + (tabLabels[state.currentTab] || state.currentTab) + "\n";
+  desc += "- Session: " + (session?.name || "—") + "\n";
+  desc += "- Time: " + new Date().toISOString();
+  return desc;
+}
+
+function mockShortcutSubmit() {
+  // TODO: replace with real Shortcut API calls:
+  //   1. POST /api/v3/files  — upload screenshot blob, get { id }
+  //   2. POST /api/v3/stories { name, description, story_type: "bug", file_ids: [id] }
+  return new Promise((resolve) => setTimeout(resolve, 1400));
+}
+
 function renderSessionModal(state) {
   const open = state.sessionModal.open;
   sessionModalBackdrop.classList.toggle("open", open);
   sessionModal.classList.toggle("open", open);
+  sessionModalBackdrop.style.display = open ? "block" : "none";
+  sessionModal.style.display = open ? "flex" : "none";
   sessionModal.setAttribute("aria-hidden", open ? "false" : "true");
 
   if (!open) {
@@ -1647,7 +1796,7 @@ function renderSessionModal(state) {
 
   if (signature !== lastModalSignature) {
     sessionNameInput.value = session ? session.name : "";
-    window.setTimeout(() => sessionNameInput.focus(), 0);
+    window.setTimeout(() => focusWithoutScroll(sessionNameInput), 0);
     lastModalSignature = signature;
   }
 }
@@ -1663,6 +1812,7 @@ function renderApp() {
   renderWorkspace(state, session, ui);
   renderDrawer(state, session);
   renderSessionModal(state);
+  renderBugReportModal(state);
 }
 
 workflowTabs.addEventListener("click", (event) => {
@@ -2050,6 +2200,93 @@ sessionNameInput.addEventListener("keydown", (event) => {
 closeSessionModal.addEventListener("click", () => store.getState().closeSessionModal());
 cancelSessionModal.addEventListener("click", () => store.getState().closeSessionModal());
 sessionModalBackdrop.addEventListener("click", () => store.getState().closeSessionModal());
+
+// Bug Report Modal
+openBugReportBtn.addEventListener("click", async () => {
+  store.getState().openBugReportModal();
+  populateBugContext();
+  window.setTimeout(() => focusWithoutScroll(bugProblemInput), 50);
+
+  // Auto-capture page screenshot
+  bugCapturingBadge.style.display = "";
+  const dataUrl = await capturePageScreenshot();
+  if (dataUrl) {
+    setBugScreenshot(dataUrl);
+  } else {
+    bugCapturingBadge.style.display = "none";
+  }
+});
+
+closeBugReportBtn.addEventListener("click", () => store.getState().closeBugReportModal());
+cancelBugReportBtn.addEventListener("click", () => store.getState().closeBugReportModal());
+bugReportBackdrop.addEventListener("click", () => store.getState().closeBugReportModal());
+
+bugCategories.addEventListener("click", (e) => {
+  const chip = e.target.closest(".bug-category-chip");
+  if (!chip) return;
+  bugCategories.querySelectorAll(".bug-category-chip").forEach((c) => c.classList.remove("selected"));
+  if (chip.dataset.value !== bugSelectedCategory) {
+    chip.classList.add("selected");
+    bugSelectedCategory = chip.dataset.value;
+  } else {
+    bugSelectedCategory = null;
+  }
+});
+
+bugDropzone.addEventListener("click", () => bugFileInput.click());
+bugDropzone.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bugFileInput.click(); }
+});
+bugDropzone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  bugDropzone.classList.add("drag-over");
+});
+bugDropzone.addEventListener("dragleave", () => bugDropzone.classList.remove("drag-over"));
+bugDropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  bugDropzone.classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    reader.onload = (ev) => setBugScreenshot(ev.target.result);
+    reader.readAsDataURL(file);
+  }
+});
+
+bugFileInput.addEventListener("change", () => {
+  const file = bugFileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => setBugScreenshot(e.target.result);
+  reader.readAsDataURL(file);
+});
+
+bugRemoveFileBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  clearBugScreenshot();
+});
+
+submitBugReportBtn.addEventListener("click", async () => {
+  const problem = bugProblemInput.value.trim();
+  if (!problem) {
+    bugProblemInput.classList.add("invalid");
+    focusWithoutScroll(bugProblemInput);
+    return;
+  }
+  bugProblemInput.classList.remove("invalid");
+  submitBugReportBtn.disabled = true;
+  submitBugReportBtn.textContent = "Submitting…";
+
+  const action = bugActionInput.value.trim();
+  const description = buildShortcutDescription(bugSelectedCategory, action, problem);
+  const ticketName = (bugSelectedCategory ? bugCategoryLabels[bugSelectedCategory] + " — " : "") + problem;
+  // eslint-disable-next-line no-unused-vars
+  const _payload = { name: ticketName, description, story_type: "bug", screenshot: bugScreenshotDataUrl };
+
+  await mockShortcutSubmit();
+  bugReportModal.classList.add("success");
+  setTimeout(() => store.getState().closeBugReportModal(), 2500);
+});
 closeDrawer.addEventListener("click", () => store.getState().closeIdea());
 drawerBackdrop.addEventListener("click", () => store.getState().closeIdea());
 drawerGeneratePost.addEventListener("click", () => {

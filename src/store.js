@@ -639,6 +639,7 @@ function normalizeState(candidate) {
       currentTab: "library",
       activeIdeaId: null,
       sessionModal: { open: false, mode: "create", editingSessionId: null },
+      bugReportModal: { open: false },
       sessionSearch: "",
       sessionSwitcherOpen: false,
       uiBySession: fallbackUi,
@@ -683,6 +684,7 @@ function normalizeState(candidate) {
     currentTab: candidate.currentTab || "library",
     activeIdeaId: candidate.activeIdeaId || null,
     sessionModal: { open: false, mode: "create", editingSessionId: null },
+    bugReportModal: { open: false },
     sessionSearch: candidate.sessionSearch || "",
     sessionSwitcherOpen: false,
     uiBySession,
@@ -838,6 +840,7 @@ export const store = createStore((set, get) => ({
 
   openSessionModal(mode, sessionId = null) {
     set({
+      sessionSwitcherOpen: false,
       sessionModal: {
         open: true,
         mode,
@@ -854,6 +857,14 @@ export const store = createStore((set, get) => ({
         editingSessionId: null,
       },
     });
+  },
+
+  openBugReportModal() {
+    set({ bugReportModal: { open: true } });
+  },
+
+  closeBugReportModal() {
+    set({ bugReportModal: { open: false } });
   },
 
   saveSession(name) {
