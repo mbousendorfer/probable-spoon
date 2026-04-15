@@ -1553,6 +1553,38 @@ export const store = createStore((set, get) => ({
     }));
   },
 
+  selectAllPosts() {
+    const sessionId = get().activeSessionId;
+    if (!sessionId) return;
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+    const allIds = session.posts.map((p) => p.id);
+    set((state) => ({
+      uiBySession: {
+        ...state.uiBySession,
+        [sessionId]: {
+          ...state.uiBySession[sessionId],
+          selectedPostIds: allIds,
+        },
+      },
+    }));
+  },
+
+  setPostImage(postId, imageUrl) {
+    const sessionId = get().activeSessionId;
+    if (!sessionId) return;
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id !== sessionId ? s : {
+          ...s,
+          posts: s.posts.map((p) =>
+            p.id !== postId ? p : { ...p, imageUrl }
+          ),
+        }
+      ),
+    }));
+  },
+
   setPostsSearch(value) {
     const sessionId = get().activeSessionId;
     if (!sessionId) return;

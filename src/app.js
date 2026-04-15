@@ -7,7 +7,10 @@ import {
   sortSessions,
   store,
   validatePostDraft,
-} from "./store.js?v=12";
+} from "./store.js?v=15";
+
+import { openScheduleModal } from "./schedule-modal.js?v=16";
+import { openGenerateImageModal } from "./generate-image-modal.js?v=16";
 
 const workspaceContent = document.getElementById("workspaceContent");
 const sessionSwitcher = document.getElementById("sessionSwitcher");
@@ -685,6 +688,15 @@ function LinkedInPostPreview(post) {
     '<div class="linkedin-preview__body">' +
     renderPostTextWithHashtags(post.content?.text || "", post.content?.hashtags || [], 420) +
     (post.content?.cta ? '<div class="linkedin-preview__cta">' + formatText(post.content.cta) + "</div>" : "") +
+    '</div>' +
+    // Image attachment zone — shows generated image or "Generate an image" CTA
+    '<div class="linkedin-preview__image-zone">' +
+    (post.imageUrl
+      ? '<img class="linkedin-preview__attachment" src="' + escapeHtml(post.imageUrl) + '" alt="Generated image" />'
+      : '<button type="button" class="linkedin-preview__image-cta" data-open-generate-image="' + post.id + '">' +
+        '<span class="agp-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><use href="#icon-sparkles"/></svg></span>' +
+        'Generate an image' +
+        '</button>') +
     '</div>' +
     '<div class="linkedin-preview__stats">' +
     '<span class="linkedin-preview__reactions"><span class="linkedin-preview__reaction-emojis">👍 💡</span>' + (engagement.likes ?? 0) + '</span>' +
@@ -1486,6 +1498,12 @@ function renderDraftCard(post, ui, isBestDraft) {
       stroked: true,
     }) +
     iconButton({
+      label: "Generate image",
+      icon: icons.sparkles,
+      attrs: 'data-generate-image-btn="' + post.id + '"',
+      stroked: true,
+    }) +
+    iconButton({
       label: canSchedule ? "Schedule post" : "Post needs fixes before scheduling",
       icon: icons.calendar,
       attrs: 'data-schedule-post="' + post.id + '"',
@@ -1598,44 +1616,38 @@ function renderPostsErrorSummary(session) {
 function renderPostsSelectionBar(session, ui) {
   const summary = selectedPostsSummary(session, ui);
   const count = summary.selectedPosts.length;
-  const hasSelection = summary.hasSelection;
-  const disableWorkflow = !hasSelection || summary.hasInvalidSelection;
-  if (!hasSelection) return "";
+  if (!summary.hasSelection) return "";
+
+  const allSelected = count === session.posts.length;
+  const indeterminate = count > 0 && !allSelected;
+  const disableSchedule = summary.hasInvalidSelection;
 
   return (
-    '<div class="ap-infobox ' +
-    (summary.hasInvalidSelection ? "warning" : "info") +
-    ' has-title posts-selection-infobox">' +
-    "<i aria-hidden=\"true\">" + (summary.hasInvalidSelection ? icons.error : icons.info) + "</i>" +
-    '<div class="ap-infobox-content"><div class="ap-infobox-texts"><span class="ap-infobox-title">' +
-    count +
-    ' post' +
-    (count > 1 ? "s" : "") +
-    ' selected</span><span class="ap-infobox-message">' +
-    (summary.hasInvalidSelection
-      ? summary.invalidPosts.length + ' selected post' + (summary.invalidPosts.length > 1 ? "s" : "") + " still need fixes"
-      : "Schedule or delete in bulk") +
-    '</span></div><div class="button-row">' +
+    '<div class="posts-toolbar">' +
+    // Left — select-all checkbox + count
+    '<label class="posts-toolbar__select-all">' +
+    '<input type="checkbox" class="posts-toolbar__checkbox" data-select-all-posts' +
+    (allSelected ? ' checked' : '') +
+    (indeterminate ? ' data-indeterminate' : '') +
+    ' aria-label="Select all posts" />' +
+    '</label>' +
+    '<span class="posts-toolbar__count">' + count + ' post' + (count > 1 ? 's' : '') + ' selected</span>' +
+    '<div class="posts-toolbar__spacer"></div>' +
+    // Right — actions
     actionButton({
       style: "primary",
       color: "orange",
       label: "Schedule",
       attrs: 'data-schedule-selected-posts="true"',
-      disabled: disableWorkflow,
+      disabled: disableSchedule,
     }) +
-    actionButton({
-      style: "ghost",
-      color: "red",
-      label: "Delete",
-      attrs: 'data-delete-selected-posts="true"',
-    }) +
-    actionButton({
-      style: "ghost",
-      color: "grey",
-      label: "Clear selection",
-      attrs: 'data-clear-post-selection="true"',
-    }) +
-    "</div></div></div>"
+    '<button type="button" class="ap-icon-button red" data-delete-selected-posts="true" aria-label="Delete selected posts" title="Delete selected">' +
+    '<span class="agp-icon"><svg viewBox="0 0 16 16"><use href="#icon-trash"/></svg></span>' +
+    '</button>' +
+    '<button type="button" class="ap-icon-button" data-clear-post-selection="true" aria-label="Clear selection" title="Clear selection">' +
+    '<span class="agp-icon"><svg viewBox="0 0 16 16"><use href="#icon-close"/></svg></span>' +
+    '</button>' +
+    '</div>'
   );
 }
 
@@ -1758,6 +1770,10 @@ function renderWorkspace(state, session, ui) {
       : state.currentTab === "brief"
         ? renderStrategyBriefView(session, ui)
         : renderStepPlaceholder(state.currentTab, session, ui);
+
+  // Apply indeterminate state on select-all checkbox (can't be set via HTML attribute)
+  const selectAllCb = workspaceContent.querySelector("[data-select-all-posts][data-indeterminate]");
+  if (selectAllCb) selectAllCb.indeterminate = true;
 }
 
 function renderDrawer(state, session) {
@@ -2212,6 +2228,18 @@ workspaceContent.addEventListener("change", (event) => {
 });
 
 workspaceContent.addEventListener("click", (event) => {
+  // Generate image — placeholder zone or toolbar button
+  const genImgZone = event.target.closest("[data-open-generate-image]");
+  const genImgBtn  = event.target.closest("[data-generate-image-btn]");
+  const genPostId  = (genImgZone || genImgBtn)?.dataset.openGenerateImage
+                  || (genImgBtn?.dataset.generateImageBtn);
+  if (genPostId) {
+    openGenerateImageModal(genPostId, (imageUrl) => {
+      store.getState().setPostImage(genPostId, imageUrl);
+    });
+    return;
+  }
+
   if (event.target.closest("[data-clear-post-filters]")) {
     store.getState().resetPostsWorkspaceFilters();
     return;
@@ -2242,6 +2270,18 @@ workspaceContent.addEventListener("click", (event) => {
 
   if (event.target.closest("[data-clear-post-selection]")) {
     store.getState().clearSelectedPosts();
+    return;
+  }
+
+  const selectAllBtn = event.target.closest("[data-select-all-posts]");
+  if (selectAllBtn) {
+    const { selectedPostIds } = store.getState().uiBySession[store.getState().activeSessionId] || {};
+    const session = getActiveSession(store.getState());
+    if (session && selectedPostIds && selectedPostIds.length === session.posts.length) {
+      store.getState().clearSelectedPosts();
+    } else {
+      store.getState().selectAllPosts();
+    }
     return;
   }
 
@@ -2355,7 +2395,14 @@ workspaceContent.addEventListener("click", (event) => {
   }
 
   if (event.target.closest("[data-schedule-selected-posts]")) {
-    store.getState().scheduleSelectedPosts();
+    const _state = store.getState();
+    const _session = getActiveSession(_state);
+    const _ui = _session ? getSessionUi(_session.id, _state) : null;
+    const _ids = (_ui?.selectedPostIds) || [];
+    const _posts = _session ? _session.posts.filter((p) => _ids.includes(p.id)) : [];
+    if (_posts.length) {
+      openScheduleModal(_posts, () => _state.scheduleSelectedPosts());
+    }
     return;
   }
 
@@ -2392,7 +2439,13 @@ workspaceContent.addEventListener("click", (event) => {
 
   const schedulePost = event.target.closest("[data-schedule-post]");
   if (schedulePost) {
-    store.getState().schedulePost(schedulePost.dataset.schedulePost);
+    const _postId = schedulePost.dataset.schedulePost;
+    const _state = store.getState();
+    const _session = getActiveSession(_state);
+    const _post = _session?.posts.find((p) => p.id === _postId);
+    if (_post) {
+      openScheduleModal([_post], () => _state.schedulePost(_postId));
+    }
     return;
   }
 
