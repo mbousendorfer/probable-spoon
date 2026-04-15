@@ -305,7 +305,33 @@ function refineBriefValue(sectionTitle, label, value) {
   const normalizedLabel = (label || "").toLowerCase();
   const normalizedValue = source.toLowerCase();
 
-  if (!source) return source;
+  if (!source) {
+    if (/goal/.test(normalizedSection) && /primary/.test(normalizedLabel)) {
+      return "Turn strategy inputs into clear, publishable social directions that raise output quality across the session.";
+    }
+
+    if (/goal/.test(normalizedSection)) {
+      return "Keep the brief specific enough to guide content decisions without slowing the team down.";
+    }
+
+    if (/audience/.test(normalizedSection)) {
+      return "Focus on B2B social and content operators who need practical ways to turn source material into high-signal posts.";
+    }
+
+    if (/tone|voice/.test(normalizedLabel) || /brand voice/.test(normalizedSection)) {
+      return "Direct, practical, and quietly confident with a bias toward useful specifics.";
+    }
+
+    if (/frequency/.test(normalizedLabel)) {
+      return "3 to 5 posts per week, with room to intensify around launches or campaigns.";
+    }
+
+    if (/confidence/.test(normalizedLabel)) {
+      return "Medium";
+    }
+
+    return source;
+  }
 
   if (/broad audience|general audience|everyone/.test(normalizedValue)) {
     return "B2B SaaS marketers across LinkedIn and X who need practical, repeatable content systems.";
@@ -330,6 +356,119 @@ function refineBriefValue(sectionTitle, label, value) {
   return source + " while keeping the strategy specific enough to guide weekly editorial decisions.";
 }
 
+function refineBriefItems(sectionTitle, label, items = [], type = "list") {
+  if (items.length) {
+    if (type === "cta") {
+      return items.map((item) => ({
+        ...item,
+        label: item.label || "Learn more",
+        url: item.url || "https://example.com",
+      }));
+    }
+
+    return items.map((item) => refineBriefValue(sectionTitle, label, item));
+  }
+
+  const normalizedSection = (sectionTitle || "").toLowerCase();
+  const normalizedLabel = (label || "").toLowerCase();
+
+  if (type === "cta") {
+    if (/primary/.test(normalizedLabel)) {
+      return [
+        { label: "Book demo", url: "https://example.com/demo" },
+        { label: "Start trial", url: "https://example.com/trial" },
+      ];
+    }
+
+    return [
+      { label: "Read the guide", url: "https://example.com/guide" },
+      { label: "Explore templates", url: "https://example.com/templates" },
+    ];
+  }
+
+  if (/goal/.test(normalizedSection) && /target actions/.test(normalizedLabel)) {
+    return ["Visit website", "Book demo", "Follow for updates"];
+  }
+
+  if (/goal/.test(normalizedSection) && /secondary/.test(normalizedLabel)) {
+    return [
+      "Sharpen the narrative for upcoming posts.",
+      "Make downstream AI drafts more consistent.",
+      "Create reusable guidance for future campaigns.",
+    ];
+  }
+
+  if (/audience/.test(normalizedSection)) {
+    return [
+      "Heads of marketing at B2B SaaS teams.",
+      "Social leads scaling output with lean teams.",
+      "Content operators looking for reusable angles.",
+    ];
+  }
+
+  if (/style/.test(normalizedLabel)) {
+    return ["specific", "concise", "evidence-aware", "actionable"];
+  }
+
+  if (/do$/.test(normalizedLabel) || normalizedLabel === "do") {
+    return [
+      "Lead with one concrete point.",
+      "Support opinions with examples or evidence.",
+      "Keep lines short and skimmable.",
+    ];
+  }
+
+  if (/don't|dont/.test(normalizedLabel)) {
+    return [
+      "Use vague marketing language.",
+      "Hide the lesson behind jargon.",
+      "Pack too many ideas into one draft.",
+    ];
+  }
+
+  if (/platform/.test(normalizedLabel)) {
+    return ["LinkedIn", "X", "Instagram"];
+  }
+
+  if (/content types?/.test(normalizedLabel)) {
+    return ["educational", "product-led", "thought leadership"];
+  }
+
+  if (/topics|angles/.test(normalizedLabel)) {
+    return ["content strategy", "AI workflows", "proof-led posts", "repurposing"];
+  }
+
+  if (/pillars/.test(normalizedLabel)) {
+    return [
+      "Proof-led education -> Turn research into one useful takeaway per post.",
+      "Operator perspective -> Share sharp lessons from real workflows.",
+      "Performance patterns -> Surface signals that influence action.",
+    ];
+  }
+
+  if (/requirements/.test(normalizedLabel)) {
+    return [
+      "Avoid filler.",
+      "Use stats when supportable.",
+      "Keep the structure easy to edit.",
+    ];
+  }
+
+  if (/observed topics/.test(normalizedLabel)) {
+    return ["strategy brief", "AI reuse", "scannability"];
+  }
+
+  if (/best performing/.test(normalizedLabel)) {
+    return ["Strong first-line hooks", "One idea per post", "Specific CTA wording"];
+  }
+
+  if (/recurrent themes/.test(normalizedLabel)) {
+    return ["clarity", "reuse", "actionability"];
+  }
+
+  return [];
+}
+
 export async function mockRefineStrategyBrief({ strategyBrief, sectionId = null }) {
   await wait(900 + Math.round(Math.random() * 500));
 
@@ -342,7 +481,16 @@ export async function mockRefineStrategyBrief({ strategyBrief, sectionId = null 
         ...section,
         entries: section.entries.map((entry) => ({
           ...entry,
-          value: refineBriefValue(section.title, entry.label, entry.value),
+          value:
+            entry.locked || entry.type === "list" || entry.type === "chips" || entry.type === "cta"
+              ? entry.value
+              : refineBriefValue(section.title, entry.label, entry.value),
+          items:
+            entry.locked || !(entry.type === "list" || entry.type === "chips" || entry.type === "cta")
+              ? entry.items
+              : refineBriefItems(section.title, entry.label, entry.items, entry.type),
+          source: entry.locked ? entry.source : "ai",
+          lastUpdated: Date.now(),
         })),
       };
     }),

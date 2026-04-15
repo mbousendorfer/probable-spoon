@@ -292,103 +292,453 @@ function touchSession(session, prefix = "Updated") {
   session.updatedAtLabel = prefix + " " + formatDate(session.updatedAtTs);
 }
 
-function defaultStrategySections() {
+function structuredBriefEntry({
+  key,
+  label,
+  type = "text",
+  value = "",
+  items = [],
+  placeholder = "",
+  source = "seed",
+  locked = false,
+  editable = true,
+}) {
+  return {
+    id: createId("brief-entry"),
+    key: key || label.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    label,
+    type,
+    value,
+    items,
+    placeholder,
+    editable,
+    source,
+    locked,
+    lastUpdated: Date.now(),
+  };
+}
+
+function createStrategySection({
+  key,
+  title,
+  icon,
+  collapsed = true,
+  entries = [],
+}) {
+  return {
+    id: createId("brief-section"),
+    key,
+    title,
+    icon,
+    collapsed,
+    entries,
+  };
+}
+
+function strategySectionTemplates(mode = "default") {
+  const isEmpty = mode === "empty";
+
   return [
-    {
-      id: createId("brief-section"),
+    createStrategySection({
+      key: "goals",
       title: "Goals",
       icon: "megaphone",
+      collapsed: false,
       entries: [
-        {
-          label: "Primary outcome",
-          value: "Turn one flagship PDF into a month of proof-led LinkedIn posts for B2B growth operators.",
-        },
-        {
-          label: "Success signal",
-          value: "Consistent weekly publishing cadence with strong saves, comments, and demo-qualified conversations.",
-        },
+        structuredBriefEntry({
+          key: "primary-objective",
+          label: "Primary objective",
+          type: "textarea",
+          value: isEmpty
+            ? ""
+            : "Turn one flagship PDF into a month of proof-led LinkedIn posts for B2B growth operators.",
+          placeholder: "State the main result this content should drive.",
+        }),
+        structuredBriefEntry({
+          key: "secondary-objectives",
+          label: "Secondary objectives",
+          type: "list",
+          items: isEmpty
+            ? []
+            : [
+                "Clarify the weekly content narrative.",
+                "Give AI enough signal to generate sharper drafts.",
+                "Keep the strategy reusable across future campaigns.",
+              ],
+          placeholder: "One objective per line.",
+        }),
+        structuredBriefEntry({
+          key: "target-actions",
+          label: "Target actions",
+          type: "chips",
+          items: isEmpty ? [] : ["Visit website", "Book demo", "Follow for insights"],
+          placeholder: "Add one action per line or separated by commas.",
+        }),
       ],
-    },
-    {
-      id: createId("brief-section"),
+    }),
+    createStrategySection({
+      key: "audience",
       title: "Audience",
       icon: "multipleUsers",
+      collapsed: false,
       entries: [
-        {
-          label: "Who this is for",
-          value: "Heads of marketing, social leads, and content operators at B2B SaaS teams.",
-        },
-        {
-          label: "What they care about",
-          value: "Repeatable content systems, measurable proof, and ideas they can put into practice this quarter.",
-        },
+        structuredBriefEntry({
+          key: "target-segments",
+          label: "Target segments",
+          type: "list",
+          items: isEmpty
+            ? []
+            : [
+                "Heads of marketing at B2B SaaS teams.",
+                "Social leads building a repeatable publishing cadence.",
+                "Content operators turning research into practical posts.",
+              ],
+          placeholder: "List the audiences this brief should serve.",
+        }),
+        structuredBriefEntry({
+          key: "core-pain-points",
+          label: "Core pain points",
+          type: "list",
+          items: isEmpty
+            ? []
+            : [
+                "Too much source material, not enough publishable angles.",
+                "Inconsistent brand voice across drafts.",
+                "Weak connection between content and pipeline goals.",
+              ],
+          placeholder: "Capture the recurring frictions the audience feels.",
+        }),
+        structuredBriefEntry({
+          key: "desired-outcomes",
+          label: "Desired outcomes",
+          type: "list",
+          items: isEmpty
+            ? []
+            : [
+                "Faster content production.",
+                "More useful and credible posts.",
+                "A strategy that compounds trust over time.",
+              ],
+          placeholder: "Describe what success looks like for the audience.",
+        }),
       ],
-    },
-    {
-      id: createId("brief-section"),
+    }),
+    createStrategySection({
+      key: "content-strategy",
+      title: "Content Strategy",
+      icon: "library",
+      collapsed: true,
+      entries: [
+        structuredBriefEntry({
+          key: "content-pillars",
+          label: "Content pillars",
+          type: "list",
+          items: isEmpty
+            ? []
+            : [
+                "Proof-led education -> Turn research into one useful takeaway per post.",
+                "Operator insight -> Share practical notes that feel field-tested.",
+                "Performance signals -> Reuse benchmarks, trends, and patterns that sharpen decisions.",
+              ],
+          placeholder: "Use 'pillar -> description' when useful.",
+        }),
+        structuredBriefEntry({
+          key: "key-topics",
+          label: "Key topics / angles",
+          type: "chips",
+          items: isEmpty ? [] : ["content repurposing", "buyer signals", "weekly proof points", "AI workflow"],
+          placeholder: "Add one topic per line or separated by commas.",
+        }),
+        structuredBriefEntry({
+          key: "content-types",
+          label: "Content types",
+          type: "chips",
+          items: isEmpty ? [] : ["educational", "product-led", "thought leadership"],
+          placeholder: "Examples: educational, product-led, thought leadership.",
+        }),
+      ],
+    }),
+    createStrategySection({
+      key: "brand-voice",
       title: "Brand Voice",
       icon: "sparkles",
+      collapsed: true,
       entries: [
-        {
+        structuredBriefEntry({
+          key: "tone",
           label: "Tone",
-          value: "Operator-led, sharp, practical, and confident without sounding inflated.",
-        },
-        {
-          label: "Avoid",
-          value: "Generic motivation, vague AI hype, and jargon that hides the actual lesson.",
-        },
+          type: "text",
+          value: isEmpty ? "" : "Operator-led, sharp, practical, and confident without sounding inflated.",
+          placeholder: "Describe the core tone in one line.",
+        }),
+        structuredBriefEntry({
+          key: "style",
+          label: "Style",
+          type: "chips",
+          items: isEmpty ? [] : ["data-aware", "actionable", "concise", "specific"],
+          placeholder: "Add style markers separated by commas or new lines.",
+        }),
+        structuredBriefEntry({
+          key: "dos",
+          label: "Do",
+          type: "list",
+          items: isEmpty
+            ? []
+            : [
+                "Lead with one concrete insight.",
+                "Use examples that feel current and believable.",
+                "Keep every line easy to skim.",
+              ],
+          placeholder: "List writing moves to repeat.",
+        }),
+        structuredBriefEntry({
+          key: "donts",
+          label: "Don't",
+          type: "list",
+          items: isEmpty
+            ? []
+            : [
+                "Hide the takeaway behind jargon.",
+                "Sound generic or over-polished.",
+                "Stack multiple ideas in the same post.",
+              ],
+          placeholder: "List the things the brand should avoid.",
+        }),
       ],
-    },
-    {
-      id: createId("brief-section"),
-      title: "Content Pillars",
-      icon: "library",
+    }),
+    createStrategySection({
+      key: "cta-conversion",
+      title: "CTA & Conversion",
+      icon: "link",
+      collapsed: true,
       entries: [
-        {
-          label: "Pillar 1",
-          value: "Break large reports into one useful proof point per post.",
-        },
-        {
-          label: "Pillar 2",
-          value: "Translate research into clear operator takes, templates, and benchmark callouts.",
-        },
+        structuredBriefEntry({
+          key: "primary-ctas",
+          label: "Primary CTAs",
+          type: "cta",
+          items: isEmpty
+            ? []
+            : [
+                { label: "Book demo", url: "https://example.com/demo" },
+                { label: "Start trial", url: "https://example.com/trial" },
+              ],
+          placeholder: "Use one line per CTA: Label | URL",
+        }),
+        structuredBriefEntry({
+          key: "secondary-ctas",
+          label: "Secondary CTAs",
+          type: "cta",
+          items: isEmpty
+            ? []
+            : [
+                { label: "Read the guide", url: "https://example.com/guide" },
+                { label: "Explore templates", url: "https://example.com/templates" },
+              ],
+          placeholder: "Use one line per CTA: Label | URL",
+        }),
       ],
-    },
+    }),
+    createStrategySection({
+      key: "constraints",
+      title: "Constraints & Preferences",
+      icon: "calendar",
+      collapsed: true,
+      entries: [
+        structuredBriefEntry({
+          key: "platforms",
+          label: "Platforms",
+          type: "chips",
+          items: isEmpty ? [] : ["LinkedIn", "X", "Instagram"],
+          placeholder: "List the priority channels.",
+        }),
+        structuredBriefEntry({
+          key: "posting-frequency",
+          label: "Posting frequency",
+          type: "text",
+          value: isEmpty ? "" : "3 to 5 posts per week",
+          placeholder: "Define the expected publishing cadence.",
+        }),
+        structuredBriefEntry({
+          key: "content-length",
+          label: "Content length preferences",
+          type: "text",
+          value: isEmpty ? "" : "Short-form first. One clear idea per post. Strong first line.",
+          placeholder: "Describe the preferred content density or format.",
+        }),
+        structuredBriefEntry({
+          key: "specific-requirements",
+          label: "Specific requirements",
+          type: "list",
+          items: isEmpty
+            ? []
+            : [
+                "Avoid filler and soft intros.",
+                "Include stats when they are credible.",
+                "Keep the copy easy to edit downstream.",
+              ],
+          placeholder: "Add non-negotiables and formatting preferences.",
+        }),
+      ],
+    }),
+    createStrategySection({
+      key: "context-signals",
+      title: "Context Signals",
+      icon: "sparklesMermaid",
+      collapsed: true,
+      entries: [
+        structuredBriefEntry({
+          key: "observed-topics",
+          label: "Observed topics",
+          type: "chips",
+          value: "",
+          items: isEmpty ? [] : ["strategy brief", "AI reuse", "content systems"],
+          placeholder: "Auto-generated from repeated themes and recent activity.",
+          source: "ai",
+        }),
+        structuredBriefEntry({
+          key: "best-performing-patterns",
+          label: "Best performing patterns",
+          type: "list",
+          items: isEmpty ? [] : ["Proof-first hooks", "One insight per post", "Specific CTA language"],
+          placeholder: "Auto-generated from performance or repeated wins.",
+          source: "ai",
+        }),
+        structuredBriefEntry({
+          key: "recurrent-themes",
+          label: "Recurrent themes",
+          type: "chips",
+          items: isEmpty ? [] : ["clarity", "reusability", "execution"],
+          placeholder: "Auto-generated from recurring prompts and edits.",
+          source: "ai",
+        }),
+        structuredBriefEntry({
+          key: "ai-confidence",
+          label: "AI confidence level",
+          type: "text",
+          value: isEmpty ? "" : "Medium",
+          placeholder: "Low, Medium, or High.",
+          source: "ai",
+        }),
+      ],
+    }),
   ];
 }
 
 function createEmptyStrategyBrief() {
   return {
     id: createId("strategy-brief"),
-    sections: [],
+    sections: strategySectionTemplates("empty"),
   };
 }
 
 function createDefaultStrategyBrief() {
   return {
     id: createId("strategy-brief"),
-    sections: defaultStrategySections(),
+    sections: strategySectionTemplates("default"),
   };
 }
 
+function normalizeBriefItems(type, value) {
+  if (type === "cta") {
+    return Array.isArray(value)
+      ? value
+          .map((item) => ({
+            label: typeof item?.label === "string" ? item.label.trim() : "",
+            url: typeof item?.url === "string" ? item.url.trim() : "",
+          }))
+          .filter((item) => item.label || item.url)
+      : [];
+  }
+
+  if (type === "list" || type === "chips") {
+    return Array.isArray(value)
+      ? value.map((item) => String(item).trim()).filter(Boolean)
+      : [];
+  }
+
+  return [];
+}
+
 function normalizeBriefEntry(entry) {
+  const type = entry?.type || (Array.isArray(entry?.items) ? "list" : "textarea");
   return {
     id: createId("brief-entry"),
+    key: "",
     label: "",
+    type,
     value: "",
+    items: [],
+    placeholder: "",
+    editable: true,
+    source: "seed",
+    locked: false,
+    lastUpdated: Date.now(),
     ...entry,
+    value: typeof entry?.value === "string" ? entry.value : "",
+    items: normalizeBriefItems(type, entry?.items),
   };
 }
 
 function normalizeBriefSection(section) {
   return {
     id: createId("brief-section"),
+    key: "",
     title: "Untitled section",
     icon: "note",
+    collapsed: true,
     entries: [],
     ...section,
     entries: (section.entries || []).map(normalizeBriefEntry),
   };
+}
+
+function serializeBriefEntry(entry) {
+  const type = entry?.type || "text";
+
+  if (type === "cta") {
+    return (entry.items || [])
+      .map((item) => [item.label, item.url].filter(Boolean).join(" | "))
+      .join("\n");
+  }
+
+  if (type === "list" || type === "chips") {
+    return (entry.items || []).join("\n");
+  }
+
+  return entry.value || "";
+}
+
+function parseBriefComposerValue(type, rawValue) {
+  const source = (rawValue || "").trim();
+
+  if (type === "cta") {
+    return {
+      value: "",
+      items: source
+        ? source
+            .split(/\n+/)
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .map((line) => {
+              const [label, ...urlParts] = line.split("|").map((part) => part.trim());
+              return { label: label || "", url: urlParts.join("|").trim() };
+            })
+            .filter((item) => item.label || item.url)
+        : [],
+    };
+  }
+
+  if (type === "list" || type === "chips") {
+    const items = source
+      ? source
+          .split(/\n|,/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : [];
+    return { value: "", items };
+  }
+
+  return { value: source, items: [] };
 }
 
 function defaultVoiceSections() {
@@ -543,17 +893,38 @@ function normalizeStrategyBrief(strategyBrief, fallback = "default") {
   }
 
   const normalizedSections = strategyBrief.sections.map(normalizeBriefSection);
-  const hasEntries = normalizedSections.some((section) => section.entries.length > 0);
+  const hasEntries = normalizedSections.some((section) =>
+    section.entries.some((entry) => {
+      if (entry.type === "cta") {
+        return entry.items.some((item) => item.label || item.url);
+      }
+      if (entry.type === "list" || entry.type === "chips") {
+        return entry.items.length > 0;
+      }
+      return Boolean((entry.value || "").trim());
+    }),
+  );
   const looksLikeDefaultScaffold =
-    normalizedSections.length === 4 &&
+    normalizedSections.length >= 4 &&
     normalizedSections.every((section) =>
-      ["Goals", "Audience", "Brand Voice", "Content Pillars"].includes(section.title),
+      [
+        "Goals",
+        "Audience",
+        "Content Strategy",
+        "Brand Voice",
+        "CTA & Conversion",
+        "Constraints & Preferences",
+        "Context Signals",
+      ].includes(section.title),
     );
 
   if (!hasEntries && looksLikeDefaultScaffold) {
     return {
       id: strategyBrief.id || createId("strategy-brief"),
-      sections: defaultStrategySections().map(normalizeBriefSection),
+      sections:
+        fallback === "empty"
+          ? createEmptyStrategyBrief().sections.map(normalizeBriefSection)
+          : createDefaultStrategyBrief().sections.map(normalizeBriefSection),
     };
   }
 
@@ -570,7 +941,9 @@ function createBriefComposer(mode, values = {}) {
     entryId: null,
     title: "",
     label: "",
-    value: "",
+    type: "text",
+    rawValue: "",
+    placeholder: "",
     ...values,
   };
 }
@@ -1646,8 +2019,10 @@ export const store = createStore((set, get) => ({
       if (!insightsSection) {
         insightsSection = {
           id: createId("brief-section"),
+          key: "source-insights",
           title: "Source Insights",
           icon: "fileText",
+          collapsed: false,
           entries: [],
         };
         brief.sections.push(insightsSection);
@@ -1657,8 +2032,16 @@ export const store = createStore((set, get) => ({
       if (!exists) {
         insightsSection.entries.unshift({
           id: createId("brief-entry"),
+          key: match.idea.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
           label: match.idea.title,
+          type: "textarea",
           value: match.idea.summary,
+          items: [],
+          placeholder: "Capture the source learning that should shape future content.",
+          editable: true,
+          source: "ai",
+          locked: false,
+          lastUpdated: Date.now(),
         });
       }
 
@@ -1692,7 +2075,9 @@ export const store = createStore((set, get) => ({
               sectionId,
               entryId,
               label: entry?.label || "",
-              value: entry?.value || "",
+              type: entry?.type || "text",
+              rawValue: serializeBriefEntry(entry),
+              placeholder: entry?.placeholder || "",
             }),
           },
         },
@@ -1802,9 +2187,17 @@ export const store = createStore((set, get) => ({
         };
       }
 
-      const label = composer.label.trim();
-      const value = composer.value.trim();
-      if (!value) {
+      const label = composer.label.trim() || "Untitled field";
+      const type = composer.type || "text";
+      const parsed = parseBriefComposerValue(type, composer.rawValue);
+      const hasContent =
+        type === "cta"
+          ? parsed.items.length > 0
+          : type === "list" || type === "chips"
+            ? parsed.items.length > 0
+            : Boolean(parsed.value);
+
+      if (!hasContent) {
         return {
           uiBySession: {
             ...state.uiBySession,
@@ -1828,13 +2221,26 @@ export const store = createStore((set, get) => ({
         const entry = section.entries.find((item) => item.id === composer.entryId);
         if (entry) {
           entry.label = label;
-          entry.value = value;
+          entry.type = type;
+          entry.value = parsed.value;
+          entry.items = parsed.items;
+          entry.source = "user";
+          entry.locked = true;
+          entry.lastUpdated = Date.now();
         }
       } else {
         section.entries.push({
           id: createId("brief-entry"),
           label,
-          value,
+          key: label.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          type,
+          value: parsed.value,
+          items: parsed.items,
+          placeholder: "",
+          editable: true,
+          source: "user",
+          locked: true,
+          lastUpdated: Date.now(),
         });
       }
 
@@ -1956,6 +2362,26 @@ export const store = createStore((set, get) => ({
         },
       }));
     }
+  },
+
+  toggleBriefSection(sectionId) {
+    const sessionId = get().activeSessionId;
+    if (!sessionId) return;
+
+    set((state) => {
+      const sessions = deepClone(state.sessions);
+      const session = findSession(sessions, sessionId);
+      if (!session) return state;
+
+      const brief = normalizeStrategyBrief(session.strategyBrief, "empty");
+      const section = brief.sections.find((item) => item.id === sectionId);
+      if (!section || section.collapsible === false) return state;
+
+      section.collapsed = !section.collapsed;
+      session.strategyBrief = brief;
+
+      return { sessions };
+    });
   },
 
   toggleIdeaPin(ideaId) {
