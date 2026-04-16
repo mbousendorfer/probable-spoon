@@ -9,8 +9,11 @@ import {
   validatePostDraft,
 } from "./store.js?v=15";
 
-import { openScheduleModal } from "./schedule-modal.js?v=16";
-import { openGenerateImageModal } from "./generate-image-modal.js?v=16";
+import { openScheduleModal } from "./modals/schedule.js?v=17";
+import { openGenerateImageModal } from "./modals/generate-image.js?v=17";
+import { init as initSessionModal, render as renderSessionModal } from "./modals/session.js?v=17";
+import { init as initFeedbackModal, render as renderFeedbackModal } from "./modals/feedback.js?v=17";
+import { init as initBugReportModal, render as renderBugReportModal } from "./modals/bug-report.js?v=17";
 
 const workspaceContent = document.getElementById("workspaceContent");
 const sessionSwitcher = document.getElementById("sessionSwitcher");
@@ -23,40 +26,6 @@ const assistantModeLabel = document.getElementById("assistantModeLabel");
 const sourceTypeTabs = document.getElementById("sourceTypeTabs");
 const assistantSend = document.getElementById("assistantSend");
 const assistantAttach = document.getElementById("assistantAttach");
-const sessionModalBackdrop = document.getElementById("sessionModalBackdrop");
-const sessionModal = document.getElementById("sessionModal");
-const sessionModalTitle = document.getElementById("sessionModalTitle");
-const sessionNameInput = document.getElementById("sessionNameInput");
-const closeSessionModal = document.getElementById("closeSessionModal");
-const cancelSessionModal = document.getElementById("cancelSessionModal");
-const saveSessionModal = document.getElementById("saveSessionModal");
-const openFeedbackBtn = document.getElementById("openFeedbackBtn");
-const feedbackBackdrop = document.getElementById("feedbackBackdrop");
-const feedbackModal = document.getElementById("feedbackModal");
-const closeFeedbackBtn = document.getElementById("closeFeedbackBtn");
-const cancelFeedbackBtn = document.getElementById("cancelFeedbackBtn");
-const submitFeedbackBtn = document.getElementById("submitFeedbackBtn");
-const feedbackFeatureArea = document.getElementById("feedbackFeatureArea");
-const feedbackText = document.getElementById("feedbackText");
-const openBugReportBtn = document.getElementById("openBugReportBtn");
-const bugReportBackdrop = document.getElementById("bugReportBackdrop");
-const bugReportModal = document.getElementById("bugReportModal");
-const closeBugReportBtn = document.getElementById("closeBugReportBtn");
-const cancelBugReportBtn = document.getElementById("cancelBugReportBtn");
-const submitBugReportBtn = document.getElementById("submitBugReportBtn");
-const bugCategories = document.getElementById("bugCategories");
-const bugActionInput = document.getElementById("bugActionInput");
-const bugProblemInput = document.getElementById("bugProblemInput");
-const bugAutoBadge = document.getElementById("bugAutoBadge");
-const bugCapturingBadge = document.getElementById("bugCapturingBadge");
-const bugScreenshotPreview = document.getElementById("bugScreenshotPreview");
-const bugDropzoneFallback = document.getElementById("bugDropzoneFallback");
-const bugDropzone = document.getElementById("bugDropzone");
-const bugFileInput = document.getElementById("bugFileInput");
-const bugPreviewImg = document.getElementById("bugPreviewImg");
-const bugFileName = document.getElementById("bugFileName");
-const bugRemoveFileBtn = document.getElementById("bugRemoveFileBtn");
-const bugContextBar = document.getElementById("bugContextBar");
 const drawer = document.getElementById("ideaDrawer");
 const drawerBackdrop = document.getElementById("drawerBackdrop");
 const drawerPriority = document.getElementById("drawerPriority");
@@ -74,10 +43,7 @@ const drawerAskQuestion = document.getElementById("drawerAskQuestion");
 const drawerMoveToBrief = document.getElementById("drawerMoveToBrief");
 const closeDrawer = document.getElementById("closeDrawer");
 
-let lastModalSignature = "";
 let briefAutoSaveTimer = 0;
-
-document.body.append(sessionModalBackdrop, sessionModal, bugReportBackdrop, bugReportModal);
 
 const icons = {
   // sprite-based icons — paths live in #ap-icons-sprite in index.html
@@ -1841,185 +1807,6 @@ function renderDrawer(state, session) {
   drawerGeneratePost.disabled = pendingAction === "generate";
 }
 
-let bugSelectedCategory = null;
-let bugScreenshotDataUrl = null;
-
-const bugCategoryLabels = {
-  visual: "Visual glitch",
-  behavior: "Wrong behavior",
-  broken: "Feature not working",
-  performance: "Performance",
-  other: "Other",
-};
-
-function resetBugReportForm() {
-  bugReportModal.classList.remove("success");
-  bugSelectedCategory = null;
-  bugCategories.querySelectorAll(".bug-category-chip").forEach((c) => c.classList.remove("selected"));
-  bugActionInput.value = "";
-  bugProblemInput.value = "";
-  bugProblemInput.classList.remove("invalid");
-  bugScreenshotDataUrl = null;
-  bugPreviewImg.src = "";
-  bugFileName.textContent = "";
-  bugScreenshotPreview.style.display = "none";
-  bugDropzoneFallback.style.display = "";
-  bugAutoBadge.style.display = "none";
-  bugCapturingBadge.style.display = "none";
-  bugFileInput.value = "";
-  bugContextBar.innerHTML = "";
-  submitBugReportBtn.disabled = false;
-  submitBugReportBtn.textContent = "Submit Bug Report";
-}
-
-function renderBugReportModal(state) {
-  const open = state.bugReportModal.open;
-  bugReportBackdrop.classList.toggle("open", open);
-  bugReportModal.classList.toggle("open", open);
-  bugReportModal.setAttribute("aria-hidden", open ? "false" : "true");
-  if (!open) resetBugReportForm();
-}
-
-function resetFeedbackForm() {
-  feedbackModal.classList.remove("success");
-  feedbackText.value = "";
-  feedbackText.classList.remove("invalid");
-  feedbackFeatureArea.value = "content-studio";
-  submitFeedbackBtn.disabled = false;
-  submitFeedbackBtn.textContent = "Send feedback";
-}
-
-function renderFeedbackModal(state) {
-  const open = state.feedbackModal.open;
-  feedbackBackdrop.classList.toggle("open", open);
-  feedbackModal.classList.toggle("open", open);
-  feedbackModal.setAttribute("aria-hidden", open ? "false" : "true");
-  if (!open) resetFeedbackForm();
-}
-
-function focusWithoutScroll(element) {
-  if (!element) return;
-  try {
-    element.focus({ preventScroll: true });
-  } catch {
-    element.focus();
-  }
-}
-
-function setBugScreenshot(dataUrl) {
-  bugScreenshotDataUrl = dataUrl;
-  bugPreviewImg.src = dataUrl;
-  bugFileName.textContent = "Page screenshot";
-  bugScreenshotPreview.style.display = "";
-  bugDropzoneFallback.style.display = "none";
-  bugCapturingBadge.style.display = "none";
-  bugAutoBadge.style.display = "";
-}
-
-function clearBugScreenshot() {
-  bugScreenshotDataUrl = null;
-  bugPreviewImg.src = "";
-  bugFileName.textContent = "";
-  bugScreenshotPreview.style.display = "none";
-  bugDropzoneFallback.style.display = "";
-  bugAutoBadge.style.display = "none";
-  bugCapturingBadge.style.display = "none";
-  bugFileInput.value = "";
-}
-
-async function loadHtml2Canvas() {
-  if (window.html2canvas) return window.html2canvas;
-  return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-    s.onload = () => resolve(window.html2canvas);
-    s.onerror = () => reject(new Error("html2canvas unavailable"));
-    document.head.appendChild(s);
-  });
-}
-
-async function capturePageScreenshot() {
-  try {
-    const h2c = await loadHtml2Canvas();
-    const canvas = await h2c(document.documentElement, {
-      scale: 0.55,
-      useCORS: true,
-      logging: false,
-      ignoreElements: (el) =>
-        el.id === "bugReportModal" || el.id === "bugReportBackdrop",
-    });
-    return canvas.toDataURL("image/jpeg", 0.8);
-  } catch {
-    return null;
-  }
-}
-
-function populateBugContext() {
-  const state = store.getState();
-  const tabLabels = { library: "Library", brief: "Brief", voice: "Voice", brand: "Brand Theme", posts: "Posts" };
-  const session = getActiveSession(state);
-  const tab = tabLabels[state.currentTab] || state.currentTab;
-  const sessionName = session?.name || "—";
-  const time = new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-  bugContextBar.innerHTML =
-    '<span class="bug-context__label">Context</span>' +
-    '<span class="bug-context__pill">' + escapeHtml(tab) + "</span>" +
-    '<span class="bug-context__pill">' + escapeHtml(sessionName) + "</span>" +
-    '<span class="bug-context__pill">' + escapeHtml(time) + "</span>";
-}
-
-function buildShortcutDescription(category, action, problem) {
-  const state = store.getState();
-  const session = getActiveSession(state);
-  const tabLabels = { library: "Library", brief: "Brief", voice: "Voice", brand: "Brand Theme", posts: "Posts" };
-  let desc = "";
-  if (category) desc += "**Category:** " + (bugCategoryLabels[category] || category) + "\n\n";
-  if (action) desc += "**What I was trying to do:** " + action + "\n\n";
-  desc += "**What went wrong:** " + problem + "\n\n";
-  desc += "---\n**Context**\n";
-  desc += "- Tab: " + (tabLabels[state.currentTab] || state.currentTab) + "\n";
-  desc += "- Session: " + (session?.name || "—") + "\n";
-  desc += "- Time: " + new Date().toISOString();
-  return desc;
-}
-
-function mockShortcutSubmit() {
-  // TODO: replace with real Shortcut API calls:
-  //   1. POST /api/v3/files  — upload screenshot blob, get { id }
-  //   2. POST /api/v3/stories { name, description, story_type: "bug", file_ids: [id] }
-  return new Promise((resolve) => setTimeout(resolve, 1400));
-}
-
-function renderSessionModal(state) {
-  const open = state.sessionModal.open;
-  sessionModalBackdrop.classList.toggle("open", open);
-  sessionModal.classList.toggle("open", open);
-  sessionModalBackdrop.style.display = open ? "block" : "none";
-  sessionModal.style.display = open ? "flex" : "none";
-  sessionModal.setAttribute("aria-hidden", open ? "false" : "true");
-
-  if (!open) {
-    lastModalSignature = "";
-    return;
-  }
-
-  const signature = state.sessionModal.mode + ":" + (state.sessionModal.editingSessionId || "");
-  const session =
-    state.sessionModal.editingSessionId
-      ? state.sessions.find((item) => item.id === state.sessionModal.editingSessionId)
-      : null;
-
-  sessionModalTitle.textContent =
-    state.sessionModal.mode === "rename" ? "Rename session" : "Create a new session";
-  saveSessionModal.textContent =
-    state.sessionModal.mode === "rename" ? "Save changes" : "Save session";
-
-  if (signature !== lastModalSignature) {
-    sessionNameInput.value = session ? session.name : "";
-    window.setTimeout(() => focusWithoutScroll(sessionNameInput), 0);
-    lastModalSignature = signature;
-  }
-}
 
 function renderApp() {
   const state = store.getState();
@@ -2479,135 +2266,6 @@ workspaceContent.addEventListener("click", (event) => {
   }
 });
 
-function saveSessionFromModal() {
-  store.getState().saveSession(sessionNameInput.value);
-}
-
-saveSessionModal.addEventListener("click", saveSessionFromModal);
-sessionNameInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") saveSessionFromModal();
-});
-closeSessionModal.addEventListener("click", () => store.getState().closeSessionModal());
-cancelSessionModal.addEventListener("click", () => store.getState().closeSessionModal());
-sessionModalBackdrop.addEventListener("click", () => store.getState().closeSessionModal());
-
-// Feedback Modal
-openFeedbackBtn.addEventListener("click", () => {
-  store.getState().openFeedbackModal();
-  window.setTimeout(() => feedbackText.focus(), 50);
-});
-closeFeedbackBtn.addEventListener("click", () => store.getState().closeFeedbackModal());
-cancelFeedbackBtn.addEventListener("click", () => store.getState().closeFeedbackModal());
-feedbackBackdrop.addEventListener("click", () => store.getState().closeFeedbackModal());
-
-submitFeedbackBtn.addEventListener("click", async () => {
-  const text = feedbackText.value.trim();
-  if (!text) {
-    feedbackText.classList.add("invalid");
-    feedbackText.focus();
-    return;
-  }
-  feedbackText.classList.remove("invalid");
-  submitFeedbackBtn.disabled = true;
-  submitFeedbackBtn.textContent = "Sending…";
-
-  // Mock submit — replace with real Intercom/Canny/Shortcut call
-  await new Promise((resolve) => setTimeout(resolve, 1200));
-
-  feedbackModal.classList.add("success");
-  setTimeout(() => store.getState().closeFeedbackModal(), 2500);
-});
-
-feedbackText.addEventListener("input", () => {
-  if (feedbackText.value.trim()) feedbackText.classList.remove("invalid");
-});
-
-// Bug Report Modal
-openBugReportBtn.addEventListener("click", async () => {
-  store.getState().openBugReportModal();
-  populateBugContext();
-  window.setTimeout(() => focusWithoutScroll(bugProblemInput), 50);
-
-  // Auto-capture page screenshot
-  bugCapturingBadge.style.display = "";
-  const dataUrl = await capturePageScreenshot();
-  if (dataUrl) {
-    setBugScreenshot(dataUrl);
-  } else {
-    bugCapturingBadge.style.display = "none";
-  }
-});
-
-closeBugReportBtn.addEventListener("click", () => store.getState().closeBugReportModal());
-cancelBugReportBtn.addEventListener("click", () => store.getState().closeBugReportModal());
-bugReportBackdrop.addEventListener("click", () => store.getState().closeBugReportModal());
-
-bugCategories.addEventListener("click", (e) => {
-  const chip = e.target.closest(".bug-category-chip");
-  if (!chip) return;
-  bugCategories.querySelectorAll(".bug-category-chip").forEach((c) => c.classList.remove("selected"));
-  if (chip.dataset.value !== bugSelectedCategory) {
-    chip.classList.add("selected");
-    bugSelectedCategory = chip.dataset.value;
-  } else {
-    bugSelectedCategory = null;
-  }
-});
-
-bugDropzone.addEventListener("click", () => bugFileInput.click());
-bugDropzone.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bugFileInput.click(); }
-});
-bugDropzone.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  bugDropzone.classList.add("drag-over");
-});
-bugDropzone.addEventListener("dragleave", () => bugDropzone.classList.remove("drag-over"));
-bugDropzone.addEventListener("drop", (e) => {
-  e.preventDefault();
-  bugDropzone.classList.remove("drag-over");
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith("image/")) {
-    const reader = new FileReader();
-    reader.onload = (ev) => setBugScreenshot(ev.target.result);
-    reader.readAsDataURL(file);
-  }
-});
-
-bugFileInput.addEventListener("change", () => {
-  const file = bugFileInput.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => setBugScreenshot(e.target.result);
-  reader.readAsDataURL(file);
-});
-
-bugRemoveFileBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  clearBugScreenshot();
-});
-
-submitBugReportBtn.addEventListener("click", async () => {
-  const problem = bugProblemInput.value.trim();
-  if (!problem) {
-    bugProblemInput.classList.add("invalid");
-    focusWithoutScroll(bugProblemInput);
-    return;
-  }
-  bugProblemInput.classList.remove("invalid");
-  submitBugReportBtn.disabled = true;
-  submitBugReportBtn.textContent = "Submitting…";
-
-  const action = bugActionInput.value.trim();
-  const description = buildShortcutDescription(bugSelectedCategory, action, problem);
-  const ticketName = (bugSelectedCategory ? bugCategoryLabels[bugSelectedCategory] + " — " : "") + problem;
-  // eslint-disable-next-line no-unused-vars
-  const _payload = { name: ticketName, description, story_type: "bug", screenshot: bugScreenshotDataUrl };
-
-  await mockShortcutSubmit();
-  bugReportModal.classList.add("success");
-  setTimeout(() => store.getState().closeBugReportModal(), 2500);
-});
 closeDrawer.addEventListener("click", () => store.getState().closeIdea());
 drawerBackdrop.addEventListener("click", () => store.getState().closeIdea());
 drawerGeneratePost.addEventListener("click", () => {
@@ -2623,6 +2281,11 @@ drawerAskQuestion.addEventListener("click", () => {
 drawerMoveToBrief.addEventListener("click", () => {
   store.getState().moveIdeaToBrief();
 });
+
+// Init modals (inject HTML + bind events)
+initSessionModal();
+initFeedbackModal();
+initBugReportModal();
 
 store.subscribe(renderApp);
 
