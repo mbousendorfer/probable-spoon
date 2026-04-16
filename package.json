@@ -1,0 +1,16 @@
+{
+  "name": "probable-spoon",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@agorapulse/ui-symbol": "^20.2.3",
+    "@agorapulse/ui-theme": "^20.3.5"
+  }
+}
