@@ -403,3 +403,15 @@
         flex: 0 0 auto;
         fill: currentColor;
       }
+
+
+/* === Component overrides (migrated from components/) === */
+
+
+
+      .linkedin-preview__image-cta .agp-icon {
+        width: 13px;
+        height: 13px;
+        min-width: 13px;
+        flex-shrink: 0;
+      }

@@ -402,3 +402,37 @@
         border-color: var(--ref-color-orange-20);
         background: var(--ref-color-white);
       }
+
+
+/* === Component overrides (migrated from components/) === */
+
+
+
+      .posts-error-summary .ap-button {
+        flex: 0 0 auto;
+        width: auto;
+      }
+
+
+
+      .posts-error-summary .ap-infobox-content {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--comp-infobox-gap);
+      }
+
+
+
+      .posts-error-summary .ap-infobox-texts {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+
+
+      .state-banner,
+      .idea-intro,
+      .selection-bar {
+        border-radius: var(--ref-radius-lg);
+        padding: var(--ref-spacing-xs);
+      }

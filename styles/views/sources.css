@@ -284,3 +284,29 @@
       .source-body {
         padding: var(--ref-spacing-xxs) var(--ref-spacing-xs) var(--ref-spacing-xs);
       }
+
+
+/* === Component overrides (migrated from components/) === */
+
+
+
+      .source-actions .ap-button {
+        height: 32px;
+        padding-inline: var(--ref-spacing-sm);
+      }
+
+
+
+      .source-actions .ap-icon-button {
+        width: 32px;
+        height: 32px;
+      }
+
+
+
+      .source-icon .agp-icon {
+        width: 20px;
+        height: 20px;
+        min-width: 20px;
+        min-height: 20px;
+      }

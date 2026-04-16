@@ -526,3 +526,22 @@
         font-size: 11px;
         line-height: var(--ref-font-line-height-xs);
       }
+
+
+/* === Component overrides (migrated from components/) === */
+
+
+
+      .strategy-section__header-actions .ap-icon-button {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        color: var(--ref-color-grey-60);
+      }
+
+
+
+      .strategy-section__heading .agp-icon {
+        color: var(--ref-color-grey-60);
+        margin-top: 2px;
+      }

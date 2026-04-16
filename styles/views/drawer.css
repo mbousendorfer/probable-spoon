@@ -301,3 +301,12 @@
       .drawer-section + .drawer-section {
         border-top: 1px solid var(--ref-color-grey-10);
       }
+
+
+/* === Component overrides (migrated from components/) === */
+
+
+
+      .drawer-header .ap-icon-button {
+        flex: 0 0 auto;
+      }

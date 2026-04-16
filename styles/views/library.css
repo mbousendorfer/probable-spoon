@@ -105,3 +105,62 @@
         background: var(--ref-color-grey-05);
         box-shadow: none;
       }
+
+
+/* === Component overrides (migrated from components/) === */
+
+
+
+      .empty-state .icon .agp-icon {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        min-height: 28px;
+      }
+
+
+
+      .inline-empty-state .icon {
+        width: 52px;
+        height: 52px;
+        margin: 0 auto;
+        border-radius: var(--ref-radius-lg);
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ref-color-grey-60);
+        border: 1px solid var(--ref-color-grey-10);
+      }
+
+
+
+      .inline-empty-state p {
+        margin: var(--ref-spacing-xxs) auto 0;
+        max-width: 520px;
+        color: var(--ref-color-grey-80);
+        line-height: var(--ref-font-line-height-md);
+      }
+
+
+
+      .empty-state .icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto;
+        border-radius: var(--ref-radius-xl);
+        background: var(--ref-color-grey-05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ref-color-grey-60);
+      }
+
+
+
+      .empty-state p {
+        margin: var(--ref-spacing-xxs) auto 0;
+        max-width: 620px;
+        color: var(--ref-color-grey-80);
+        line-height: var(--ref-font-line-height-md);
+      }

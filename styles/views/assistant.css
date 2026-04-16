@@ -468,3 +468,43 @@
         box-shadow: none;
         font-size: var(--ref-font-size-xs);
       }
+
+
+/* === Component overrides (migrated from components/) === */
+
+
+
+      .assistant-turn__actions .ap-button {
+        height: 32px;
+        padding: 0 var(--ref-spacing-xs);
+        font-size: var(--ref-font-size-xs);
+        line-height: var(--ref-font-line-height-xs);
+      }
+
+
+
+      .assistant-composer__actions .ap-icon-button {
+        min-height: 32px;
+        min-width: 32px;
+      }
+
+
+
+      .assistant-composer__actions .ap-button {
+        min-height: 32px;
+      }
+
+
+
+      .assistant-turn__role--assistant .agp-icon {
+        width: 16px;
+        height: 16px;
+        min-width: 16px;
+        min-height: 16px;
+      }
+
+
+
+      .assistant-turn__meta .ap-status {
+        color: var(--ref-color-grey-80);
+      }

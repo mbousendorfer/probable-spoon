@@ -333,3 +333,27 @@
       .bug-report-modal.success .bug-report-modal__success {
         display: flex;
       }
+
+
+/* === Component overrides (migrated from components/) === */
+
+
+      .bug-report-modal .ap-dialog-content {
+        flex: 1;
+        overflow-y: auto;
+      }
+
+
+      .feedback-modal .ap-dialog-content { flex: 1; overflow-y: auto; }
+
+
+
+      .feedback-modal.success .ap-dialog-content,
+      .feedback-modal.success .ap-dialog-footer { display: none; }
+
+
+
+      .bug-report-modal.success .ap-dialog-content,
+      .bug-report-modal.success .ap-dialog-footer {
+        display: none;
+      }
