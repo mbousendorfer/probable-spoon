@@ -238,6 +238,11 @@
   text-align: center;
 }
 
+.empty-state .ap-button {
+  margin-inline: auto;
+  margin-top: var(--ref-spacing-sm);
+}
+
 .demo-block {
   margin-top: 28px;
 }
