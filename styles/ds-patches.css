@@ -16,3 +16,14 @@
 .modal-backdrop.open {
   display: block;
 }
+
+/* ── .ap-status yellow variant — not in the DS (has orange/red/green/blue/grey/tagOrange) ── */
+
+.ap-status.yellow {
+  background: var(--ref-color-yellow-10);
+  color: var(--ref-color-yellow-150);
+}
+
+.ap-status.yellow::before {
+  background: var(--ref-color-yellow-150);
+}

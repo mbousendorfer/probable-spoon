@@ -47,7 +47,7 @@ export function renderSourceCard(source, ui, sessionName) {
               " " +
               idea.confidence +
               "% confidence</span>" +
-              (idea.pinned ? '<span class="pin-chip">' + icons.pin + "Pinned</span>" : "") +
+              (idea.pinned ? '<span class="ap-status yellow no-dot">' + icons.pin + "Pinned</span>" : "") +
               '</div><div class="idea-actions">' +
               actionButton({
                 style: "secondary",
