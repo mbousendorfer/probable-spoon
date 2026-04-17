@@ -25,11 +25,11 @@
 }
 
 .social-preview__network--linkedin {
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
 }
 
 .social-preview__network--twitter {
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
 }
 
 .social-preview__avatar {
@@ -46,7 +46,7 @@
 }
 
 .social-preview__text {
-  color: var(--ref-color-grey-100);
+  color: var(--sys-text-color-default);
   font-size: var(--ref-font-size-sm);
   line-height: var(--ref-font-line-height-md);
   white-space: normal;
@@ -66,7 +66,7 @@
 }
 
 .social-preview__see-more {
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-weight: 600;
 }
 
@@ -116,7 +116,7 @@
   flex: 0 0 auto;
   border: 1px solid var(--ref-color-grey-20);
   background: transparent;
-  color: var(--ref-color-grey-100);
+  color: var(--sys-text-color-default);
   font-size: var(--ref-font-size-sm);
   font-weight: 600;
   border-radius: var(--ref-radius-full);
@@ -147,7 +147,7 @@
 .linkedin-preview__connection,
 .linkedin-preview__timestamp,
 .linkedin-preview__title {
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-xs);
 }
@@ -159,7 +159,7 @@
 }
 
 .linkedin-preview__cta {
-  color: var(--ref-color-grey-100);
+  color: var(--sys-text-color-default);
   font-size: var(--ref-font-size-sm);
   font-weight: 600;
 }
@@ -207,7 +207,7 @@
   gap: 12px;
   padding: 12px 18px;
   border-top: 1px solid var(--ref-color-grey-20);
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-xs);
 }
 
@@ -223,7 +223,7 @@
 }
 
 .linkedin-preview__stats-right {
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-xs);
 }
 
@@ -237,7 +237,7 @@
   height: 44px;
   border: 0;
   background: transparent;
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-sm);
   font-weight: 600;
   cursor: default;
@@ -300,12 +300,12 @@
 .twitter-preview__handle,
 .twitter-preview__dot,
 .twitter-preview__timestamp {
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: 14px;
 }
 
 .twitter-preview__body {
-  color: var(--ref-color-grey-100);
+  color: var(--sys-text-color-default);
   font-size: var(--ref-font-size-sm);
   line-height: var(--ref-font-line-height-md);
 }
@@ -320,14 +320,14 @@
 
 .twitter-preview__cta {
   margin-top: 8px;
-  color: var(--ref-color-grey-100);
+  color: var(--sys-text-color-default);
 }
 
 .twitter-preview__actions {
   display: flex;
   gap: 4px;
   align-items: center;
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-xs);
   padding-top: 4px;
 }
@@ -338,7 +338,7 @@
   gap: 4px;
   border: 0;
   background: transparent;
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-xs);
   cursor: default;
   padding: 4px 8px;

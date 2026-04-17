@@ -28,7 +28,7 @@
 }
 
 .library-overview__description {
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-md);
   max-width: 680px;
@@ -83,13 +83,13 @@
   align-items: center;
   justify-content: center;
   color: var(--ref-color-grey-60);
-  border: 1px solid var(--ref-color-grey-10);
+  border: 1px solid var(--sys-border-color-default);
 }
 
 .inline-empty-state p {
   margin: var(--ref-spacing-xxs) auto 0;
   max-width: 520px;
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   line-height: var(--ref-font-line-height-md);
 }
 
@@ -108,6 +108,6 @@
 .empty-state p {
   margin: var(--ref-spacing-xxs) auto 0;
   max-width: 620px;
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   line-height: var(--ref-font-line-height-md);
 }

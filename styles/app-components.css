@@ -45,7 +45,7 @@
   padding: 4px 6px;
   background: var(--ref-color-grey-05);
   border-radius: var(--ref-radius-sm);
-  border: 1px solid var(--ref-color-grey-10);
+  border: 1px solid var(--sys-border-color-default);
 }
 
 .ai-notice.open .ai-notice__detail {
@@ -75,7 +75,7 @@
   border: 0;
   border-radius: var(--ref-radius-full);
   background: transparent;
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   padding: 0 var(--ref-spacing-sm);
   cursor: pointer;
   font-size: var(--ref-font-size-sm);
@@ -183,7 +183,7 @@
 .segmented button {
   border: 0;
   background: transparent;
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   border-radius: var(--ref-radius-sm);
   padding: 6px var(--ref-spacing-xs);
   cursor: pointer;
@@ -230,7 +230,7 @@
   margin-top: 4px;
   font-size: var(--ref-font-size-sm);
   line-height: var(--ref-font-line-height-md);
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
 }
 
 .empty-state {

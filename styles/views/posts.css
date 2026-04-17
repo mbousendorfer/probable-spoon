@@ -51,7 +51,7 @@
   background: transparent;
   border-radius: var(--ref-radius-lg);
   padding: var(--ref-spacing-xxs) var(--ref-spacing-xs);
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-sm);
   font-family: inherit;
   cursor: pointer;
@@ -106,7 +106,7 @@
   justify-content: space-between;
   gap: var(--ref-spacing-xs);
   padding-bottom: var(--ref-spacing-sm);
-  border-bottom: 1px solid var(--ref-color-grey-10);
+  border-bottom: 1px solid var(--sys-border-color-default);
 }
 
 .posts-review-header__copy {
@@ -121,7 +121,7 @@
 }
 
 .posts-review-header__copy p {
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-sm);
   line-height: var(--ref-font-line-height-sm);
 }
@@ -342,7 +342,7 @@
 }
 
 .selection-bar__copy p {
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-xs);
 }
@@ -375,4 +375,3 @@
   flex: 1 1 auto;
   min-width: 0;
 }
-

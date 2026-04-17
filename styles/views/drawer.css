@@ -23,7 +23,7 @@
   background: var(--ref-color-white);
   border-radius: var(--ref-radius-lg);
   box-shadow: var(--shadow-panel);
-  border: 1px solid var(--ref-color-grey-10);
+  border: 1px solid var(--sys-border-color-default);
   padding: var(--ref-spacing-xxs);
   z-index: 20;
 }
@@ -39,7 +39,7 @@
   gap: var(--ref-spacing-xxs);
   padding: 0 var(--ref-spacing-xs);
   border-radius: var(--ref-radius-md);
-  color: var(--ref-color-grey-100);
+  color: var(--sys-text-color-default);
   cursor: pointer;
   text-align: left;
   font-size: var(--ref-font-size-sm);
@@ -114,7 +114,7 @@
 
 .drawer-header p {
   margin-top: var(--ref-spacing-xxs);
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   line-height: var(--ref-font-line-height-md);
 }
 
@@ -157,7 +157,7 @@
 }
 
 .drawer-fact__value {
-  color: var(--ref-color-grey-100);
+  color: var(--sys-text-color-default);
   font-size: var(--ref-font-size-xs);
   font-weight: var(--ref-font-weight-bold);
   line-height: var(--ref-font-line-height-xs);
@@ -177,7 +177,7 @@
 
 .drawer-section + .drawer-section {
   padding-top: var(--ref-spacing-md);
-  border-top: 1px solid var(--ref-color-grey-10);
+  border-top: 1px solid var(--sys-border-color-default);
 }
 
 .drawer-section h4 {
@@ -189,12 +189,12 @@
 
 .drawer-section p,
 .drawer-section li {
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   line-height: var(--ref-font-line-height-md);
 }
 
 .drawer-section--primary p {
-  color: var(--ref-color-grey-100);
+  color: var(--sys-text-color-default);
 }
 
 .drawer-section ul {
@@ -212,7 +212,7 @@
   gap: var(--ref-spacing-xs);
   flex-wrap: wrap;
   padding-top: var(--ref-spacing-xs);
-  border-top: 1px solid var(--ref-color-grey-10);
+  border-top: 1px solid var(--sys-border-color-default);
 }
 
 .drawer-note {

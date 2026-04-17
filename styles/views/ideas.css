@@ -12,7 +12,7 @@
 
 .idea-post-group + .idea-post-group {
   padding-top: var(--ref-spacing-sm);
-  border-top: 1px solid var(--ref-color-grey-10);
+  border-top: 1px solid var(--sys-border-color-default);
 }
 
 .idea-post-group__header {
@@ -62,7 +62,7 @@
   gap: var(--ref-spacing-xxs);
   align-items: center;
   padding: 0 0 var(--ref-spacing-xs);
-  border-bottom: 1px solid var(--ref-color-grey-10);
+  border-bottom: 1px solid var(--sys-border-color-default);
 }
 
 .idea-intro h4 {
@@ -76,7 +76,7 @@
   margin-top: 4px;
   font-size: var(--ref-font-size-sm);
   line-height: var(--ref-font-line-height-sm);
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
 }
 
 .idea-list {
@@ -161,7 +161,7 @@
 .idea-summary {
   font-size: var(--ref-font-size-sm);
   line-height: var(--ref-font-line-height-md);
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   max-width: 56ch;
 }
 
@@ -172,7 +172,7 @@
   border-radius: var(--ref-radius-full);
   background: var(--ref-color-grey-05);
   border: 1px solid var(--ref-color-grey-20);
-  color: var(--ref-color-grey-80);
+  color: var(--sys-text-color-light);
   font-size: var(--ref-font-size-xs);
   font-weight: var(--ref-font-weight-bold);
   line-height: var(--ref-font-line-height-xs);
