@@ -6,14 +6,15 @@ this is a cleanup backlog.
 
 ## Summary
 
-| Kind                       | Count | Status                                                            |
-| -------------------------- | ----- | ----------------------------------------------------------------- |
-| Cross-file duplicates      | 3     | Identical bodies — no impact                                      |
-| **Cross-file conflicts**   | 24    | **Real cascade drift — view files silently override base tokens** |
-| Within-file "conflicts"    | 44    | Intentional DS-migration overrides — mergeable                    |
-| Missing CSS (JS → no rule) | 4     | **Fixed** (see commit `7c6a688`)                                  |
-| Lost during split          | 5     | **Fixed** — `.pin-chip` → `.ap-status.yellow`                     |
-| Broken media-query cascade | 1     | **Fixed** — media queries moved to `responsive.css` (loads last)  |
+| Kind                       | Count | Status                                                                              |
+| -------------------------- | ----- | ----------------------------------------------------------------------------------- |
+| Cross-file duplicates      | 3     | **Fixed** — removed from `app-components.css`                                       |
+| **Cross-file conflicts**   | 24    | **Fixed** — view-file early rules cleaned; base.css DS tokens win                   |
+| Within-file "conflicts"    | 44    | **Fixed** — merged DS-migration pairs across 9 files                                |
+| Missing CSS (JS → no rule) | 4     | **Fixed** (see commit `7c6a688`)                                                    |
+| Lost during split          | 5     | **Fixed** — `.pin-chip` → `.ap-status.yellow`                                       |
+| Broken media-query cascade | 1     | **Fixed** — media queries moved to `responsive.css` (loads last)                    |
+| DS token refinement        | —     | Partial — raw `999px`/`4px`/`24px`/`28px` swapped; `--ref-*` → `--sys-*` still open |
 
 ---
 

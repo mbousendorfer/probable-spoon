@@ -176,7 +176,7 @@
 
 .assistant-prompt {
   min-height: 32px;
-  border-radius: 999px;
+  border-radius: var(--ref-radius-full);
   padding: 0 var(--ref-spacing-xs);
   display: inline-flex;
   align-items: center;
@@ -227,7 +227,7 @@
 }
 
 .source-type-tab {
-  border-radius: 999px;
+  border-radius: var(--ref-radius-full);
   background: var(--ref-color-white);
   min-height: 28px;
   padding: 0 var(--ref-spacing-xxs);
@@ -237,7 +237,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--ref-spacing-xxxs);
   cursor: pointer;
   border: 1px solid var(--ref-color-grey-20);
 }

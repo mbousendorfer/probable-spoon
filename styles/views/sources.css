@@ -94,7 +94,7 @@
 
 .source-copy {
   display: grid;
-  gap: 4px;
+  gap: var(--ref-spacing-xxxs);
   min-width: 0;
 }
 
@@ -145,7 +145,7 @@
   content: "";
   width: 6px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--ref-radius-full);
   background: currentColor;
 }
 

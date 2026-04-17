@@ -137,7 +137,7 @@
 
 .hero h1 {
   margin-top: var(--ref-spacing-xs);
-  font-size: 28px;
+  font-size: var(--ref-font-size-xxxl);
   line-height: var(--ref-font-line-height-xl);
   font-weight: var(--ref-font-weight-extra-bold);
   color: var(--ref-color-grey-150);
