@@ -9,11 +9,11 @@ Interactive prototype for exploring and validating Agorapulse UI redesigns. No b
 ## Running the prototype
 
 ```bash
-python3 -m http.server 8000
-# Then open http://localhost:8000
+npm install   # installs the DS and syncs ds/ via postinstall
+npm start     # runs `npx serve -p 8000` — open http://localhost:8000
 ```
 
-With Claude Code, the dev server auto-launches via `.claude/launch.json` (Python http.server on port 8000).
+With Claude Code, the dev server auto-launches via `.claude/launch.json`.
 
 ## Architecture
 
