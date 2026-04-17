@@ -58,13 +58,6 @@
   line-height: var(--ref-font-line-height-sm);
 }
 
-.empty-state .icon [class^="ap-icon-"] {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
-}
-
 .platform-switch {
   display: inline-flex;
   align-items: center;
@@ -242,25 +235,6 @@
 .empty-state {
   padding: var(--ref-spacing-xl) var(--ref-spacing-md);
   text-align: center;
-}
-
-.empty-state .icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto;
-  border-radius: var(--ref-radius-xl);
-  background: var(--ref-color-grey-05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ref-color-grey-60);
-}
-
-.empty-state p {
-  margin: var(--ref-spacing-xxs) auto 0;
-  max-width: 620px;
-  color: var(--ref-color-grey-80);
-  line-height: var(--ref-font-line-height-md);
 }
 
 .platform-switch {
