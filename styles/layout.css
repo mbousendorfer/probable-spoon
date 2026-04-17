@@ -12,14 +12,14 @@
 }
 
 .app-topbar {
-  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--ref-spacing-sm);
-  padding: 0 var(--ref-spacing-md);
-  border-bottom: 1px solid var(--border-soft);
-  background: var(--surface-raised);
+  height: 56px;
+  padding: 0 var(--ref-spacing-sm);
+  border-bottom: 1px solid var(--ref-color-grey-10);
+  background: var(--ref-color-white);
 }
 
 .topbar-left,
@@ -33,13 +33,20 @@
   display: inline-flex;
   align-items: center;
   gap: var(--ref-spacing-xxs);
-  font-size: var(--ref-font-size-md);
   font-weight: var(--ref-font-weight-bold);
   color: var(--ref-color-grey-150);
+  font-size: var(--ref-font-size-sm);
 }
 
 .product-mark .mark {
   display: none;
+  width: 16px;
+  height: 16px;
+  box-shadow: none;
+}
+
+.product-mark .mark::after {
+  background: var(--ref-color-white);
 }
 
 .topbar-date {
@@ -69,7 +76,7 @@
 }
 
 .workspace-chrome {
-  background: var(--surface-raised);
+  background: var(--ref-color-white);
   border-bottom: 1px solid var(--border-soft);
 }
 
@@ -81,10 +88,10 @@
 
 .app-body {
   display: grid;
-  grid-template-columns: minmax(380px, 432px) minmax(0, 1fr);
-  height: calc(100vh - 64px);
   overflow: hidden;
   background: transparent;
+  grid-template-columns: minmax(380px, 420px) minmax(0, 1fr);
+  height: calc(100vh - 56px);
 }
 
 .workspace-main {
@@ -100,13 +107,13 @@
   flex: 1;
   width: min(100%, 1180px);
   margin: 0 auto;
-  padding: 24px 32px 40px;
   display: grid;
-  gap: var(--ref-spacing-md);
   align-content: start;
   grid-auto-rows: max-content;
   min-height: 0;
   overflow-y: auto;
+  padding: var(--ref-spacing-xs) var(--ref-spacing-lg) var(--ref-spacing-sm);
+  gap: var(--ref-spacing-xs);
 }
 
 .tab-panel {
@@ -161,42 +168,4 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-.app-topbar,
-.workspace-chrome,
-.assistant-panel,
-.assistant-panel__bottom,
-.drawer-header {
-  background: var(--ref-color-white);
-}
-
-.app-topbar {
-  height: 56px;
-  padding: 0 var(--ref-spacing-sm);
-  border-bottom: 1px solid var(--ref-color-grey-10);
-}
-
-.product-mark {
-  font-size: var(--ref-font-size-sm);
-}
-
-.product-mark .mark {
-  width: 16px;
-  height: 16px;
-  box-shadow: none;
-}
-
-.product-mark .mark::after {
-  background: var(--ref-color-white);
-}
-
-.app-body {
-  grid-template-columns: minmax(380px, 420px) minmax(0, 1fr);
-  height: calc(100vh - 56px);
-}
-
-.workspace-main__inner {
-  padding: var(--ref-spacing-xs) var(--ref-spacing-lg) var(--ref-spacing-sm);
-  gap: var(--ref-spacing-xs);
 }

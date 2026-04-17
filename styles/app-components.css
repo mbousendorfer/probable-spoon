@@ -63,11 +63,11 @@
   align-items: center;
   gap: 4px;
   padding: 4px;
-  border: 1px solid var(--border-soft);
   border-radius: 999px;
-  background: rgba(245, 247, 250, 0.92);
   width: fit-content;
   max-width: 100%;
+  border: 1px solid var(--ref-color-grey-20);
+  background: var(--ref-color-grey-05);
 }
 
 .platform-switch button {
@@ -86,7 +86,7 @@
 .platform-switch button.active {
   background: var(--ref-color-white);
   color: var(--ref-color-grey-150);
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  box-shadow: none;
 }
 
 .eyebrow {
@@ -132,11 +132,12 @@
   align-items: center;
   justify-content: flex-start;
   margin-top: 0;
-  padding: 16px 18px;
-  border: 1px solid var(--border-soft);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: var(--shadow-card);
+  padding: 0;
+  border: none;
+  border-top: 1px solid var(--ref-color-grey-20);
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 .toolbar-left,
@@ -154,13 +155,13 @@
 
 .search input {
   width: 100%;
-  height: 44px;
-  border: 1px solid var(--border-soft);
-  border-radius: 14px;
-  background: var(--ref-color-white);
-  padding: 0 var(--ref-spacing-sm) 0 40px;
   color: var(--ref-color-grey-150);
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+  height: 36px;
+  padding: 0 var(--ref-spacing-xs) 0 36px;
+  border: 1px solid var(--ref-color-grey-20);
+  border-radius: var(--ref-radius-md);
+  background: var(--ref-color-white);
+  box-shadow: none;
 }
 
 .search-icon {
@@ -235,38 +236,6 @@
 .empty-state {
   padding: var(--ref-spacing-xl) var(--ref-spacing-md);
   text-align: center;
-}
-
-.platform-switch {
-  border: 1px solid var(--ref-color-grey-20);
-  background: var(--ref-color-grey-05);
-}
-
-.platform-switch button.active {
-  background: var(--ref-color-white);
-  box-shadow: none;
-}
-
-.toolbar {
-  padding: 0;
-  border: none;
-  border-top: 1px solid var(--ref-color-grey-20);
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-}
-
-.search {
-  width: min(100%, 420px);
-}
-
-.search input {
-  height: 36px;
-  padding: 0 var(--ref-spacing-xs) 0 36px;
-  border: 1px solid var(--ref-color-grey-20);
-  border-radius: var(--ref-radius-md);
-  background: var(--ref-color-white);
-  box-shadow: none;
 }
 
 .demo-block {

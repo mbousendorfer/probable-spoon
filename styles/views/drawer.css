@@ -66,8 +66,12 @@
 .drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(33, 46, 68, 0.26);
   display: none;
+}
+
+.drawer-backdrop,
+.modal-backdrop {
+  background: rgba(33, 46, 68, 0.26);
 }
 
 .drawer-backdrop.open {
@@ -78,14 +82,14 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: min(100%, 520px);
   height: 100vh;
   background: var(--ref-color-white);
-  border-left: 1px solid var(--border-soft);
   transform: translateX(100%);
   transition: transform 0.22s ease;
   display: flex;
   flex-direction: column;
+  width: min(100%, 480px);
+  border-left: 1px solid var(--ref-color-grey-20);
 }
 
 .drawer.open {
@@ -93,9 +97,9 @@
 }
 
 .drawer-header {
-  padding: 28px;
-  border-bottom: 1px solid var(--border-soft);
   background: var(--ref-color-white);
+  padding: var(--ref-spacing-md);
+  border-bottom: 1px solid var(--ref-color-grey-20);
 }
 
 .drawer-header-top {
@@ -162,10 +166,10 @@
 }
 
 .drawer-content {
-  padding: 28px;
   overflow: auto;
   display: grid;
   gap: var(--ref-spacing-md);
+  padding: var(--ref-spacing-md);
 }
 
 .drawer-section {
@@ -224,29 +228,6 @@
   text-transform: uppercase;
   color: var(--ref-color-grey-60);
   font-weight: var(--ref-font-weight-bold);
-}
-
-.drawer-backdrop,
-.modal-backdrop {
-  background: rgba(33, 46, 68, 0.26);
-}
-
-.drawer {
-  width: min(100%, 480px);
-  border-left: 1px solid var(--ref-color-grey-20);
-}
-
-.drawer-header {
-  padding: var(--ref-spacing-md);
-  border-bottom: 1px solid var(--ref-color-grey-20);
-}
-
-.drawer-content {
-  padding: var(--ref-spacing-md);
-}
-
-.drawer-section + .drawer-section {
-  border-top: 1px solid var(--ref-color-grey-10);
 }
 
 /* === Component overrides (migrated from components/) === */

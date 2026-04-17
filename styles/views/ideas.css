@@ -81,10 +81,11 @@
 .idea-list {
   display: grid;
   gap: var(--ref-spacing-xs);
-  margin-top: 18px;
+  margin-top: var(--ref-spacing-xs);
 }
 
 .idea-item {
+  padding: var(--ref-spacing-sm);
   transition:
     border-color 0.18s ease,
     background-color 0.18s ease;
@@ -92,11 +93,14 @@
 
 .idea-item:hover {
   border-color: var(--ref-color-grey-40);
+  box-shadow: 0 1px 2px rgba(33, 46, 68, 0.04);
 }
 
-.idea-item.selected {
+.idea-item.selected,
+.selection-bar {
   background: var(--ref-color-electric-blue-10);
-  border-color: var(--ref-color-electric-blue-100);
+  border-color: var(--ref-color-electric-blue-20);
+  box-shadow: 0 1px 2px rgba(33, 46, 68, 0.04);
 }
 
 .idea-top {
@@ -132,8 +136,8 @@
 }
 
 .idea-main h4 {
-  font-size: var(--ref-font-size-lg);
-  line-height: 1.35;
+  font-size: var(--ref-font-size-md);
+  line-height: var(--ref-font-line-height-lg);
   font-weight: var(--ref-font-weight-bold);
   color: var(--ref-color-grey-150);
 }
@@ -155,9 +159,9 @@
 
 .idea-summary {
   font-size: var(--ref-font-size-sm);
-  line-height: 1.6;
-  color: var(--ref-color-grey-100);
-  max-width: 62ch;
+  line-height: var(--ref-font-line-height-md);
+  color: var(--ref-color-grey-80);
+  max-width: 56ch;
 }
 
 .idea-confidence {
@@ -182,35 +186,4 @@
   color: var(--ref-color-grey-60);
   font-size: var(--ref-font-size-xs);
   font-weight: var(--ref-font-weight-bold);
-}
-
-.idea-list {
-  margin-top: var(--ref-spacing-xs);
-}
-
-.idea-item {
-  padding: var(--ref-spacing-sm);
-}
-
-.idea-item:hover {
-  border-color: var(--ref-color-grey-40);
-  box-shadow: 0 1px 2px rgba(33, 46, 68, 0.04);
-}
-
-.idea-item.selected,
-.selection-bar {
-  background: var(--ref-color-electric-blue-10);
-  border-color: var(--ref-color-electric-blue-20);
-  box-shadow: 0 1px 2px rgba(33, 46, 68, 0.04);
-}
-
-.idea-main h4 {
-  font-size: var(--ref-font-size-md);
-  line-height: var(--ref-font-line-height-lg);
-}
-
-.idea-summary {
-  color: var(--ref-color-grey-80);
-  line-height: var(--ref-font-line-height-md);
-  max-width: 56ch;
 }

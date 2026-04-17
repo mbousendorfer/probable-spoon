@@ -256,28 +256,25 @@
 .workflow-tabs {
   display: flex;
   align-items: flex-start;
-  height: 56px;
   width: 100%;
   margin: 0;
-  padding: 8px 0 0;
   background: transparent;
   border-bottom: 0;
   overflow-x: auto;
   overflow-y: hidden;
+  height: 48px;
+  padding: 0;
+  gap: var(--ref-spacing-xs);
 }
 
 .workflow-tab {
   flex: 0 0 auto;
   border: none;
-  border-radius: var(--ref-radius-full);
   background: transparent;
-  color: var(--ref-color-grey-80);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--ref-spacing-xxs);
-  height: 40px;
-  padding: 0 var(--ref-spacing-sm);
   font-size: var(--ref-font-size-sm);
   font-weight: var(--ref-font-weight-regular);
   line-height: var(--ref-font-line-height-sm);
@@ -287,11 +284,14 @@
     background 160ms ease,
     color 160ms ease,
     box-shadow 160ms ease;
+  height: 48px;
+  padding: 0 var(--ref-spacing-xs);
+  border-radius: 0;
+  color: var(--ref-color-grey-100);
 }
 
 .workflow-tab:hover {
-  background: rgba(255, 255, 255, 0.82);
-  color: var(--ref-color-grey-100);
+  background: var(--ref-color-grey-10);
 }
 
 .workflow-tab:focus-visible {
@@ -302,18 +302,15 @@
     0 0 0 4px var(--ref-color-electric-blue-100);
 }
 
-.workflow-tab.active {
-  background: var(--ref-color-white);
-  color: var(--ref-color-electric-blue-150);
-  font-weight: var(--ref-font-weight-bold);
-  box-shadow: 0 6px 18px rgba(33, 46, 68, 0.08);
-}
-
+.workflow-tab.active,
 .workflow-tab.active:hover,
 .workflow-tab.active:focus-visible {
-  background: var(--ref-color-white);
   color: var(--ref-color-electric-blue-150);
-  box-shadow: 0 6px 18px rgba(33, 46, 68, 0.08);
+  font-weight: var(--ref-font-weight-bold);
+  background: transparent;
+  box-shadow: none;
+  border-bottom: 4px solid var(--ref-color-electric-blue-150);
+  border-radius: 0;
 }
 
 .session-overview {
@@ -389,32 +386,6 @@
   color: var(--ref-color-grey-80);
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-md);
-}
-
-.workflow-tabs {
-  height: 48px;
-  padding: 0;
-  gap: var(--ref-spacing-xs);
-}
-
-.workflow-tab {
-  height: 48px;
-  padding: 0 var(--ref-spacing-xs);
-  border-radius: 0;
-  color: var(--ref-color-grey-100);
-}
-
-.workflow-tab:hover {
-  background: var(--ref-color-grey-10);
-}
-
-.workflow-tab.active,
-.workflow-tab.active:hover,
-.workflow-tab.active:focus-visible {
-  background: transparent;
-  box-shadow: none;
-  border-bottom: 4px solid var(--ref-color-electric-blue-150);
-  border-radius: 0;
 }
 
 /* === Component overrides (migrated from components/) === */
