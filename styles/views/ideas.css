@@ -61,8 +61,7 @@
   justify-content: space-between;
   gap: var(--ref-spacing-xxs);
   align-items: center;
-  border-bottom: 1px solid var(--border-soft);
-  padding: 0 0 18px;
+  border-bottom: 1px solid var(--ref-color-grey-10);
 }
 
 .idea-intro h4 {
@@ -86,10 +85,6 @@
 }
 
 .idea-item {
-  border: 1px solid var(--border-soft);
-  border-radius: var(--ref-radius-lg);
-  background: var(--ref-color-white);
-  padding: 18px;
   transition:
     border-color 0.18s ease,
     background-color 0.18s ease;

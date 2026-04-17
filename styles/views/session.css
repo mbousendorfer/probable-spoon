@@ -338,9 +338,6 @@
 }
 
 .session-empty {
-  border: 1px solid var(--border-soft);
-  border-radius: var(--ref-radius-lg);
-  background: var(--ref-color-white);
   padding: 40px;
   display: grid;
   gap: var(--ref-spacing-md);
@@ -379,7 +376,6 @@
   left: 50vw;
   width: min(calc(100% - 32px), 480px);
   transform: translate(-50%, -50%);
-  border: 1px solid var(--ref-color-grey-10);
   display: none;
   z-index: 60;
   max-height: calc(100vh - 48px);

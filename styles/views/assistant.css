@@ -1,6 +1,5 @@
 .assistant-panel {
   border-right: 1px solid var(--border-soft);
-  background: var(--surface-raised);
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   min-width: 0;
@@ -107,8 +106,6 @@
   font-size: var(--ref-font-size-sm);
   line-height: var(--ref-font-line-height-md);
   border: 1px solid var(--border-soft);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: var(--shadow-card);
 }
 
 .assistant-turn__prompt .assistant-turn__content {
@@ -154,7 +151,6 @@
   padding: var(--ref-spacing-sm) var(--ref-spacing-xs);
   border-radius: 18px;
   border: 1px dashed rgba(93, 106, 130, 0.24);
-  background: rgba(248, 250, 252, 0.78);
 }
 
 .assistant-suggestions {
@@ -177,7 +173,6 @@
   min-height: 32px;
   border: 1px solid var(--border-soft);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.84);
   padding: 0 var(--ref-spacing-xs);
   display: inline-flex;
   align-items: center;
@@ -255,9 +250,7 @@
 .assistant-panel__bottom {
   padding: 20px 28px 28px;
   border-top: 1px solid var(--border-soft);
-  background: rgba(255, 255, 255, 0.92);
   overflow: visible;
-  box-shadow: 0 -18px 32px rgba(33, 46, 68, 0.06);
   position: relative;
 }
 
@@ -276,10 +269,8 @@
   padding: 16px;
   display: grid;
   gap: var(--ref-spacing-xxs);
-  background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--border-soft);
   border-radius: var(--ref-radius-2xl);
-  box-shadow: var(--shadow-card);
 }
 
 .assistant-composer__toolbar {
