@@ -50,6 +50,7 @@ export function sessionActionItem(label, action, sessionId, destructive = false)
 export function sessionOverflowMenu(session) {
   return overflowMenu({
     label: "Session actions",
+    triggerClass: "ap-icon-button stroked",
     items: [
       sessionActionItem("Rename", "rename", session.id),
       sessionActionItem("Duplicate", "duplicate", session.id),

@@ -218,6 +218,7 @@ export function renderBriefSection(session, ui, section) {
                 label: "Delete entry",
                 icon: icons.trash,
                 attrs: 'data-delete-entry="' + entry.id + '" data-section-id="' + section.id + '"',
+                stroked: true,
               }) +
               "</div></div>"
             );

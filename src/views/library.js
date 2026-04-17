@@ -59,6 +59,7 @@ export function renderSourceCard(source, ui, sessionName) {
               }) +
               overflowMenu({
                 label: "Idea actions",
+                triggerClass: "ap-icon-button stroked",
                 items: [
                   '<button type="button" class="action-menu-item" data-open-idea="' +
                     idea.id +
