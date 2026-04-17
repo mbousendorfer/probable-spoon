@@ -19,7 +19,6 @@
   height: 56px;
   padding: 0 var(--ref-spacing-sm);
   border-bottom: 1px solid var(--ref-color-grey-10);
-  background: var(--ref-color-white);
 }
 
 .topbar-left,
@@ -76,7 +75,6 @@
 }
 
 .workspace-chrome {
-  background: var(--ref-color-white);
   border-bottom: 1px solid var(--border-soft);
 }
 

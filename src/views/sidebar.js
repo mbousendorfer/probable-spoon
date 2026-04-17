@@ -1,16 +1,5 @@
-import { store, getActiveSession, getSessionUi, sortSessions } from "../store.js?v=15";
-import {
-  escapeHtml,
-  formatText,
-  icons,
-  actionButton,
-  iconButton,
-  overflowMenu,
-  assistantModeCopy,
-  generationPlatformCopy,
-} from "../utils.js?v=17";
-
-import { countIdeas } from "../store.js?v=15";
+import { sortSessions, countIdeas } from "../store.js?v=15";
+import { escapeHtml, formatText, icons, actionButton, overflowMenu, assistantModeCopy } from "../utils.js?v=17";
 
 const sessionSwitcher = document.getElementById("sessionSwitcher");
 const workflowTabs = document.getElementById("workflowTabs");
@@ -262,7 +251,7 @@ export function assistantPromptList(ui) {
   );
 }
 
-export function renderSidebar(state, session, ui) {
+export function renderSidebar(_state, session, ui) {
   assistantPanel.classList.toggle("is-disabled", !session);
   assistantModeLabel.textContent = assistantModeCopy(ui?.assistantMode || "pdf").label;
   assistantInput.value = ui?.assistantDraft || "";
