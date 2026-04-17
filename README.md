@@ -11,8 +11,8 @@ Prototype interactif pour explorer et valider des redesigns de l'interface Agora
 ## Lancer le projet
 
 ```bash
-npm install                  # installe le Design System (@agorapulse/ui-theme + ui-symbol)
-python3 -m http.server 8000
+npm install   # installe le Design System (@agorapulse/ui-theme + ui-symbol)
+npm start     # lance le serveur local sur http://localhost:8000
 ```
 
 Puis ouvrir [http://localhost:8000](http://localhost:8000).
