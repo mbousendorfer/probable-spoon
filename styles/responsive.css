@@ -229,15 +229,6 @@
     flex: 1;
   }
 
-  .segmented {
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .segmented button {
-    flex: 1;
-  }
-
   .source-type-tabs {
     overflow-x: auto;
     padding-bottom: 2px;

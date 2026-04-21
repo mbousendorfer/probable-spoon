@@ -207,6 +207,10 @@
   padding: var(--ref-spacing-xxs) var(--ref-spacing-xs) var(--ref-spacing-xs);
 }
 
+.source-body > .ap-infobox {
+  margin: var(--ref-spacing-xs) 0;
+}
+
 .idea-item:hover {
   transform: none;
 }
