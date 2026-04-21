@@ -627,11 +627,12 @@ export function renderPostsSelectionBar(session, ui) {
   return (
     '<div class="posts-toolbar">' +
     // Left — select-all checkbox + count
-    '<label class="posts-toolbar__select-all">' +
-    '<input type="checkbox" class="posts-toolbar__checkbox" data-select-all-posts' +
+    '<label class="ap-checkbox-container posts-toolbar__select-all' +
+    (indeterminate ? " indeterminate" : "") +
+    '" aria-label="Select all posts">' +
+    '<input type="checkbox" data-select-all-posts' +
     (allSelected ? " checked" : "") +
-    (indeterminate ? " data-indeterminate" : "") +
-    ' aria-label="Select all posts" />' +
+    " /><i></i>" +
     "</label>" +
     '<span class="posts-toolbar__count">' +
     count +
