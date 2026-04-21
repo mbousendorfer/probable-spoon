@@ -11,7 +11,7 @@ import {
   iconForType,
   generationPlatformCopy,
 } from "../utils.js?v=17";
-import { renderPlatformSelector } from "./posts.js?v=17";
+import { renderPlatformSelector } from "./posts.js?v=18";
 
 export function renderEmptyIdeas(sessionName) {
   return (
@@ -36,11 +36,11 @@ export function renderSourceCard(source, ui, sessionName) {
             return (
               '<article class="idea-item ' +
               (selected ? "selected" : "") +
-              '"><div class="idea-top"><input class="checkbox" type="checkbox" data-idea-select="' +
+              '"><div class="idea-top"><label class="ap-checkbox-container idea-select" aria-label="Select idea"><input type="checkbox" data-idea-select="' +
               idea.id +
               '" ' +
               (selected ? "checked" : "") +
-              ' /><div class="idea-main"><div class="idea-header"><div class="idea-meta-row">' +
+              ' /><i></i></label><div class="idea-main"><div class="idea-header"><div class="idea-meta-row">' +
               priorityPill(idea.priority) +
               '<span class="idea-confidence">' +
               icons.sparkles +
@@ -96,14 +96,14 @@ export function renderSourceCard(source, ui, sessionName) {
   const bodyHtml = open
     ? '<div class="source-body">' +
       (source.status === "processing"
-        ? '<div class="state-banner processing"><div class="state-copy"><h4>Extraction still running</h4><p>New ideas will stream into this source as processing completes.</p></div>' +
+        ? '<div class="ap-infobox info has-title"><i class="ap-icon-info_fill"></i><div class="ap-infobox-content"><div class="ap-infobox-texts"><span class="ap-infobox-title">Extraction still running</span><span class="ap-infobox-message">New ideas will stream into this source as processing completes.</span></div>' +
           actionButton({ style: "stroked", color: "grey", label: "Refresh status" }) +
-          "</div>"
+          "</div></div>"
         : "") +
       (source.status === "failed"
-        ? '<div class="state-banner failed"><div class="state-copy"><h4>Extraction failed for this source</h4><p>Retry the extraction or remove the source without losing the rest of the session context.</p></div>' +
+        ? '<div class="ap-infobox error has-title"><i class="ap-icon-error_fill"></i><div class="ap-infobox-content"><div class="ap-infobox-texts"><span class="ap-infobox-title">Extraction failed for this source</span><span class="ap-infobox-message">Retry the extraction or remove the source without losing the rest of the session context.</span></div>' +
           actionButton({ style: "secondary", color: "orange", label: "Reprocess source" }) +
-          "</div>"
+          "</div></div>"
         : "") +
       '<div class="idea-intro"><div><h4>Extracted ideas</h4><p>Select the strongest ideas, compare them, or draft a post without losing source context.</p></div><div class="idea-review-meta">' +
       icons.sparkles +
@@ -196,11 +196,9 @@ export function renderLibraryView(session, ui) {
     countPinnedIdeas(session) +
     " pinned</span></div></div></section>" +
     (session.sources.length
-      ? '<div class="toolbar"><div class="toolbar-left"><label class="search"><span class="search-icon">' +
-        icons.search +
-        '</span><input type="text" id="searchInput" placeholder="Search sources, ideas, or extracted themes..." value="' +
+      ? '<div class="toolbar"><div class="toolbar-left"><div class="ap-form-field search"><div class="ap-input-group"><i class="ap-icon-search"></i><input type="text" id="searchInput" placeholder="Search sources, ideas, or extracted themes..." value="' +
         escapeHtml(ui.query) +
-        '" /></label>' +
+        '" /></div></div>' +
         renderPlatformSelector(ui) +
         "</div></div>"
       : "") +

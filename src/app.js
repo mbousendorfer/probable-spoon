@@ -1,7 +1,7 @@
 import { getActiveSession, getSessionUi, store } from "./store.js?v=15";
 
 import { hydrateStaticIcons, assistantModeCopy } from "./utils.js?v=17";
-import { getPostById } from "./views/posts.js?v=17";
+import { getPostById } from "./views/posts.js?v=18";
 import { openScheduleModal } from "./modals/schedule.js?v=17";
 import { openGenerateImageModal } from "./modals/generate-image.js?v=17";
 import { init as initSessionModal, render as renderSessionModal } from "./modals/session.js?v=17";
@@ -9,7 +9,7 @@ import { init as initFeedbackModal, render as renderFeedbackModal } from "./moda
 import { init as initBugReportModal, render as renderBugReportModal } from "./modals/bug-report.js?v=17";
 import { init as initSetupPreviewModal, render as renderSetupPreviewModal } from "./modals/setup-preview.js?v=1";
 import { renderSidebar, renderSessionBar, renderWorkflowTabs } from "./views/sidebar.js?v=17";
-import { renderWorkspace } from "./views/workspace.js?v=17";
+import { renderWorkspace } from "./views/workspace.js?v=18";
 import { initDrawer, renderDrawer } from "./views/drawer.js?v=17";
 import { ensureHeroState, initHero, renderHero } from "./views/hero.js?v=1";
 

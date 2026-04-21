@@ -155,18 +155,6 @@
 }
 
 .posts-toolbar__select-all {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  gap: 0;
-  flex-shrink: 0;
-}
-
-.posts-toolbar__checkbox {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: var(--ref-color-electric-blue-100);
   flex-shrink: 0;
 }
 

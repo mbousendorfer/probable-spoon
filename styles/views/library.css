@@ -64,6 +64,10 @@
   padding-bottom: var(--ref-spacing-xxs);
 }
 
+.toolbar .search {
+  width: min(100%, 420px);
+}
+
 /* === Component overrides (migrated from components/) === */
 
 .empty-state .icon [class^="ap-icon-"] {

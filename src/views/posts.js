@@ -184,13 +184,15 @@ export function TwitterPostPreview(post) {
 
 export function renderPlatformSelector(ui) {
   return (
-    '<div class="platform-switch" aria-label="Post platform">' +
-    '<button type="button" class="' +
+    '<div class="ap-tabs platform-switch" aria-label="Post platform">' +
+    '<div class="ap-tabs-nav">' +
+    '<button type="button" class="ap-tabs-tab ' +
     (ui.generationPlatform === "linkedin" ? "active" : "") +
-    '" data-generation-platform="linkedin">LinkedIn</button>' +
-    '<button type="button" class="' +
+    '" data-generation-platform="linkedin"><span>LinkedIn</span></button>' +
+    '<button type="button" class="ap-tabs-tab ' +
     (ui.generationPlatform === "twitter" ? "active" : "") +
-    '" data-generation-platform="twitter">Twitter/X</button>' +
+    '" data-generation-platform="twitter"><span>Twitter/X</span></button>' +
+    "</div>" +
     "</div>"
   );
 }
@@ -466,11 +468,11 @@ export function renderDraftCard(post, ui, isBestDraft) {
     '" id="post-review-' +
     post.id +
     '">' +
-    '<label class="post-review-item__check"><input type="checkbox" class="checkbox" data-post-select="' +
+    '<label class="ap-checkbox-container post-review-item__check" aria-label="Select post"><input type="checkbox" data-post-select="' +
     post.id +
     '" ' +
     (selected ? "checked" : "") +
-    ' /><span class="sr-only">Select post</span></label>' +
+    " /><i></i></label>" +
     '<div class="post-review-card"><div class="post-review-card__body"><div class="post-review-card__preview-stack">' +
     issuesBanner +
     '<div class="post-review-card__preview">' +
@@ -552,8 +554,8 @@ export function renderPostsRail(session, ui) {
   const activeView = ui.postsActiveRailView;
 
   const renderItem = (item) =>
-    '<button type="button" class="posts-rail__item' +
-    (activeView === item.id ? " active" : "") +
+    '<button type="button" class="ap-list-panel-item posts-rail__item' +
+    (activeView === item.id ? " selected" : "") +
     '" data-posts-rail-item="' +
     item.id +
     '" data-posts-rail-kind="' +
@@ -562,20 +564,19 @@ export function renderPostsRail(session, ui) {
     (item.value || "") +
     '">' +
     (item.icon ? '<i class="ap-icon-' + item.icon + ' posts-rail__item-icon" aria-hidden="true"></i>' : "") +
-    '<span class="posts-rail__item-label">' +
+    '<span class="ap-list-panel-item-text"><span class="ap-list-panel-item-name">' +
     escapeHtml(item.label) +
-    "</span>" +
+    "</span></span>" +
     '<span class="posts-rail__item-count">' +
     item.count +
     "</span>" +
     "</button>";
 
   return (
-    '<nav class="posts-rail">' +
+    '<nav class="posts-rail" aria-label="Posts filters">' +
     '<div class="posts-rail__group">' +
     railItems.views.map(renderItem).join("") +
     "</div>" +
-    '<div class="posts-rail__divider"></div>' +
     '<div class="posts-rail__section-label">Network</div>' +
     '<div class="posts-rail__group">' +
     railItems.networks.map(renderItem).join("") +
@@ -626,11 +627,12 @@ export function renderPostsSelectionBar(session, ui) {
   return (
     '<div class="posts-toolbar">' +
     // Left — select-all checkbox + count
-    '<label class="posts-toolbar__select-all">' +
-    '<input type="checkbox" class="posts-toolbar__checkbox" data-select-all-posts' +
+    '<label class="ap-checkbox-container posts-toolbar__select-all' +
+    (indeterminate ? " indeterminate" : "") +
+    '" aria-label="Select all posts">' +
+    '<input type="checkbox" data-select-all-posts' +
     (allSelected ? " checked" : "") +
-    (indeterminate ? " data-indeterminate" : "") +
-    ' aria-label="Select all posts" />' +
+    " /><i></i>" +
     "</label>" +
     '<span class="posts-toolbar__count">' +
     count +

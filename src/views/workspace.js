@@ -2,7 +2,7 @@ import { store, getActiveSession, getSessionUi, countIdeas } from "../store.js?v
 import { icons, escapeHtml, actionButton } from "../utils.js?v=17";
 import { renderStrategyBriefView, renderContextDocumentView } from "./brief.js?v=17";
 import { renderLibraryView } from "./library.js?v=17";
-import { renderPostsView } from "./posts.js?v=17";
+import { renderPostsView } from "./posts.js?v=18";
 
 const workspaceContent = document.getElementById("workspaceContent");
 
@@ -84,7 +84,9 @@ export function renderWorkspace(state, session, ui) {
         ? renderStrategyBriefView(session, ui)
         : renderStepPlaceholder(state.currentTab, session, ui);
 
-  // Apply indeterminate state on select-all checkbox (can't be set via HTML attribute)
-  const selectAllCb = workspaceContent.querySelector("[data-select-all-posts][data-indeterminate]");
-  if (selectAllCb) selectAllCb.indeterminate = true;
+  // Mirror .ap-checkbox-container.indeterminate onto the native input (a11y + no HTML attr for it)
+  const indeterminateCb = workspaceContent.querySelector(
+    ".ap-checkbox-container.indeterminate [data-select-all-posts]",
+  );
+  if (indeterminateCb) indeterminateCb.indeterminate = true;
 }
