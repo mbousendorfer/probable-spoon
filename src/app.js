@@ -7,22 +7,41 @@ import { openGenerateImageModal } from "./modals/generate-image.js?v=17";
 import { init as initSessionModal, render as renderSessionModal } from "./modals/session.js?v=17";
 import { init as initFeedbackModal, render as renderFeedbackModal } from "./modals/feedback.js?v=17";
 import { init as initBugReportModal, render as renderBugReportModal } from "./modals/bug-report.js?v=17";
+import { init as initSetupPreviewModal, render as renderSetupPreviewModal } from "./modals/setup-preview.js?v=1";
 import { renderSidebar, renderSessionBar, renderWorkflowTabs } from "./views/sidebar.js?v=17";
 import { renderWorkspace } from "./views/workspace.js?v=17";
 import { initDrawer, renderDrawer } from "./views/drawer.js?v=17";
+import { ensureHeroState, initHero, renderHero } from "./views/hero.js?v=1";
 
 const sessionSwitcher = document.getElementById("sessionSwitcher");
 const workflowTabs = document.getElementById("workflowTabs");
 const assistantPanel = document.getElementById("assistantPanel");
 const assistantInput = document.getElementById("assistantInput");
 const workspaceContent = document.getElementById("workspaceContent");
+const appShell = document.querySelector(".app-shell");
 
 let briefAutoSaveTimer = 0;
+
+ensureHeroState();
 
 function renderApp() {
   const state = store.getState();
   const session = getActiveSession(state);
   const ui = session ? getSessionUi(session.id, state) : null;
+
+  const hero = ensureHeroState();
+  const isHeroPhase = hero.phase === "hero";
+  appShell.classList.toggle("phase-hero", isHeroPhase);
+
+  if (isHeroPhase) {
+    renderHero(state, session);
+    renderDrawer(state, session);
+    renderSessionModal(state);
+    renderBugReportModal(state);
+    renderFeedbackModal(state);
+    renderSetupPreviewModal();
+    return;
+  }
 
   renderWorkflowTabs(state.currentTab);
   renderSessionBar(state, session);
@@ -32,6 +51,7 @@ function renderApp() {
   renderSessionModal(state);
   renderBugReportModal(state);
   renderFeedbackModal(state);
+  renderSetupPreviewModal();
 }
 
 workflowTabs.addEventListener("click", (event) => {
@@ -476,9 +496,12 @@ workspaceContent.addEventListener("click", (event) => {
 initSessionModal();
 initFeedbackModal();
 initBugReportModal();
+initSetupPreviewModal();
 initDrawer();
+initHero();
 
 store.subscribe(renderApp);
+window.addEventListener("archie:hero-update", renderApp);
 
 hydrateStaticIcons();
 renderApp();

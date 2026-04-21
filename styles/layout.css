@@ -35,6 +35,14 @@
   font-weight: var(--ref-font-weight-bold);
   color: var(--ref-color-grey-150);
   font-size: var(--ref-font-size-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.product-mark:hover,
+.product-mark:focus-visible {
+  color: var(--ref-color-electric-blue-100);
+  outline: none;
 }
 
 .product-mark .mark {
@@ -90,6 +98,24 @@
   background: transparent;
   grid-template-columns: minmax(380px, 420px) minmax(0, 1fr);
   height: calc(100vh - 56px);
+}
+
+.app-shell.phase-hero .assistant-panel {
+  display: none;
+}
+
+.app-shell.phase-hero .workspace-chrome {
+  display: none;
+}
+
+.app-shell.phase-hero .app-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app-shell.phase-hero .workspace-main__inner {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
 }
 
 .workspace-main {
