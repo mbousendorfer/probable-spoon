@@ -1,0 +1,58 @@
+/* Admin chip — bottom-right floating toggle for first-time vs returning user.
+   Not part of the product UI; only visible in this prototype. */
+
+.admin-chip {
+  position: fixed;
+  right: var(--ref-spacing-sm);
+  bottom: var(--ref-spacing-sm);
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xxxs) var(--ref-spacing-xs);
+  border-radius: 999px;
+  background: var(--ref-color-grey-150);
+  color: var(--ref-color-white);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: inherit;
+  font-size: var(--ref-font-size-xs);
+  font-weight: var(--ref-font-weight-bold);
+  box-shadow: 0 8px 24px rgba(33, 46, 68, 0.18);
+  cursor: pointer;
+}
+
+.admin-chip:hover,
+.admin-chip:focus-visible {
+  background: var(--ref-color-grey-100);
+  outline: none;
+}
+
+.admin-chip--new {
+  background: var(--sys-color-main-default-bg-default);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.admin-chip--new:hover,
+.admin-chip--new:focus-visible {
+  background: var(--sys-color-main-default-bg-hover);
+}
+
+.admin-chip__label {
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-chip__divider {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.admin-chip__mode {
+  color: var(--ref-color-white);
+}
+
+.admin-chip__icon {
+  margin-left: var(--ref-spacing-xxxs);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: var(--sys-icon-css-xs);
+}

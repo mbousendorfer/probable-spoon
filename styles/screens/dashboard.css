@@ -1,0 +1,504 @@
+/* Dashboard screen — sidebar (new project + templates) + main (tabs + content). */
+
+.dashboard {
+  gap: 0;
+}
+
+.dashboard__sidebar {
+  border-right: 1px solid var(--app-border-soft);
+  padding: var(--ref-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-md);
+  overflow-y: auto;
+  background: var(--app-surface);
+}
+
+.dashboard__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--ref-spacing-md) var(--ref-spacing-xl);
+  gap: var(--ref-spacing-md);
+}
+
+/* New project form */
+
+.dashboard__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+}
+
+.dashboard__field-label {
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--sys-text-color-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Template starter buttons (plain list, no ap-list-panel because we want
+   cards-as-links). */
+
+.dashboard__templates-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.dashboard__template {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ref-spacing-xxxs);
+  width: 100%;
+  padding: var(--ref-spacing-xs);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-md);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dashboard__template:hover {
+  border-color: var(--ref-color-electric-blue-60);
+  background: var(--ref-color-electric-blue-05);
+}
+
+.dashboard__template-name {
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.dashboard__template-desc {
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--sys-text-color-light);
+}
+
+/* Main tabs container */
+
+.dashboard__main-tabs {
+  margin-top: calc(-1 * var(--ref-spacing-xs));
+}
+
+.dashboard__subtabs {
+  margin-bottom: calc(-1 * var(--ref-spacing-xs));
+}
+
+.dashboard__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-md);
+}
+
+.dashboard__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+/* Recent sessions */
+
+.dashboard__session-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--ref-spacing-sm);
+}
+
+.dashboard__session-card {
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  border-width: 1px;
+  background: var(--app-surface);
+  width: 100%;
+  transition: border-color 120ms ease;
+}
+
+.dashboard__session-card:hover {
+  border-color: var(--ref-color-electric-blue-60);
+}
+
+.dashboard__session-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+}
+
+.dashboard__session-name {
+  font-size: var(--ref-font-size-md);
+  line-height: var(--ref-font-line-height-md);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.dashboard__session-meta {
+  display: flex;
+  gap: var(--ref-spacing-xxs);
+  flex-wrap: wrap;
+  font-size: var(--ref-font-size-xs);
+}
+
+/* Source card (library) — primary content is the embedded idea previews,
+   not the file metadata. Used by the dashboard Library list and the session
+   Library tab. */
+
+.source-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.source-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+}
+
+.source-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.source-card__kind-icon {
+  font-size: var(--sys-icon-css-md);
+  color: var(--ref-color-grey-80);
+  flex-shrink: 0;
+}
+
+.source-card__name {
+  margin: 0;
+  font-size: var(--ref-font-size-md);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  line-height: var(--ref-font-line-height-md);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.source-card__more {
+  flex-shrink: 0;
+}
+
+.source-card__sub {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxs);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--ref-color-grey-80);
+}
+
+/* Idea previews — vertical list with subtle dividers, no nested cards. */
+
+.source-card__ideas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ref-color-grey-10);
+  border-radius: var(--app-radius-md);
+  background: var(--ref-color-grey-05);
+  overflow: hidden;
+}
+
+.source-card__idea + .source-card__idea {
+  border-top: 1px solid var(--ref-color-grey-10);
+}
+
+.source-card__idea-button {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+  width: 100%;
+  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ref-color-grey-150);
+}
+
+.source-card__idea-button:hover,
+.source-card__idea-button:focus-visible {
+  background: var(--ref-color-electric-blue-05);
+  outline: none;
+}
+
+.source-card__idea-title {
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-card__idea-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--ref-color-grey-80);
+  white-space: nowrap;
+}
+
+.source-card__idea-score {
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  font-variant-numeric: tabular-nums;
+}
+
+.source-card__idea-sep {
+  color: var(--ref-color-grey-60);
+}
+
+.source-card__idea-chevron {
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-grey-60);
+}
+
+.source-card__idea-button:hover .source-card__idea-chevron,
+.source-card__idea-button:focus-visible .source-card__idea-chevron {
+  color: var(--ref-color-electric-blue-100);
+}
+
+/* Empty / processing state inside the card. */
+.source-card__ideas-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
+  border: 1px dashed var(--ref-color-grey-20);
+  border-radius: var(--app-radius-md);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--ref-color-grey-80);
+}
+
+/* Quiet footer — view-all on the left, secondary actions on the right. */
+.source-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+  flex-wrap: wrap;
+}
+
+.source-card__footer-actions {
+  display: flex;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.source-card__more-hint {
+  margin: 0;
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+}
+
+/* Idea card — helps the user decide whether an idea is worth publishing
+   BEFORE generating a post. Engagement potential leads; AI confidence is
+   secondary; "Why this could work" frames the editorial pitch. */
+
+.idea-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.idea-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+  flex-wrap: wrap;
+}
+
+.idea-card__signals {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxs);
+}
+
+/* Engagement potential — score + label in one pill so it reads as a single
+   unit ("82 · High potential"). Uses semantic .ap-status colors. */
+.idea-card__potential {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.idea-card__potential strong {
+  font-weight: var(--ref-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.idea-card__confidence {
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+}
+
+.idea-card__more {
+  flex-shrink: 0;
+}
+
+/* Body — title is the strongest element, hook follows, rationale closes. */
+
+.idea-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+}
+
+.idea-card__title {
+  margin: 0;
+  font-size: var(--ref-font-size-md);
+  line-height: var(--ref-font-line-height-md);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.idea-card__hook {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
+  color: var(--ref-color-grey-100);
+}
+
+.idea-card__rationale {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxxs);
+  padding: var(--ref-spacing-xs);
+  background: var(--ref-color-mermaid-10);
+  border-radius: var(--app-radius-md);
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
+  color: var(--ref-color-grey-100);
+}
+
+.idea-card__rationale-label {
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Source provenance line — muted but visible. */
+.idea-card__source {
+  margin: 0;
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+}
+
+.idea-card__source strong {
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-100);
+}
+
+/* Actions footer — primary "Open idea" left, quiet secondaries right. */
+
+.idea-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+  flex-wrap: wrap;
+}
+
+.idea-card__secondary-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.idea-card__pin.is-active {
+  color: var(--ref-color-electric-blue-100);
+}
+
+/* First-run empty state (shown in the Projects tab when user-mode is "new") */
+
+.dashboard__first-run {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+}
+
+.dashboard__first-run-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--ref-color-electric-blue-10);
+  border-radius: var(--app-radius-md);
+  flex-shrink: 0;
+}
+
+/* Global contexts */
+
+.dashboard__context-create {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+}
+
+.dashboard__context-create-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--ref-color-electric-blue-10);
+  border-radius: var(--app-radius-md);
+  color: var(--ref-color-electric-blue-150);
+  flex-shrink: 0;
+}
+
+.dashboard__context-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-sm);
+}
+
+.dashboard__context-left {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+  min-width: 0;
+}
+
+.dashboard__context-title {
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.dashboard__context-actions {
+  display: flex;
+  gap: var(--ref-spacing-xxs);
+  flex-shrink: 0;
+}

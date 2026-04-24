@@ -1,0 +1,252 @@
+/* Shared conversational chat styles.
+ * Used by the Analyse wizards AND the session assistant panel.
+ *
+ * Figma (node 25:881) layout:
+ *   AI turn   — horizontal: [mermaid sparkle 16px] [white bubble]
+ *   User turn — vertical, right-aligned: [You label] stacked over [blue bubble]
+ */
+
+.chat-turn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+  max-width: 560px;
+}
+
+.chat-turn--ai {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.chat-turn--user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+/* Inline AI layout (Figma 25:881) — when the sparkle avatar is a direct child
+   of the turn (no header wrapper), lay out horizontally: avatar | bubble.
+   The Analyse wizards still emit a header wrapper (icon + role label), so
+   they keep the default column layout. */
+.chat-turn--ai:has(> .chat-turn-avatar) {
+  flex-direction: row;
+}
+
+.chat-turn-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+}
+
+.chat-turn-avatar {
+  font-size: var(--sys-icon-css-sm);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* When the avatar is a direct child (inline AI turn), nudge it down slightly
+   so the 16px sparkle aligns with the first line of the 14/20 body text.
+   Uses the DS --ref-spacing-xxxs scale (4px). */
+.chat-turn--ai > .chat-turn-avatar {
+  margin-top: var(--ref-spacing-xxxs);
+}
+
+/* AI sparkles icon is a mask-based glyph (see ds/ap-icons.css) — its visible
+   color is whatever we put in `background`. Paint it with the DS mermaid
+   gradient so the icon itself becomes the purple→pink AI accent. */
+.chat-turn--ai .chat-turn-avatar {
+  background: var(--ref-color-mermaid-gradient-background);
+}
+
+.chat-turn-role {
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+/* User + source-intake labels (Figma 25:1039 + 25:1130) — smaller caption size
+   in electric-blue-100. */
+.chat-turn--user .chat-turn-role {
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--ref-color-electric-blue-100);
+}
+
+.chat-bubble {
+  border-radius: var(--app-radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+}
+
+/* AI bubble (Figma 25:886) — borderless, no background, no padding; the text
+   sits directly beside the sparkle avatar. */
+.chat-bubble--ai {
+  color: var(--ref-color-grey-150);
+}
+
+/* User bubble (Figma 25:892) — solid electric-blue with spacing-xxs padding. */
+/* User bubble (Figma 25:1040) — solid electric-blue with spacing-xxs padding.
+   Corners 12 / 0 / 12 / 12 — sharp top-right corner points at the user avatar. */
+.chat-bubble--user {
+  background: var(--ref-color-electric-blue-100);
+  color: var(--ref-color-white);
+  padding: var(--ref-spacing-xxs);
+  border: 0;
+  border-radius: 12px;
+  border-top-right-radius: 0;
+}
+
+/* Source-intake bubble (Figma 25:1131) — light electric-blue with icon + text.
+   Same 12 / 0 / 12 / 12 corner treatment as the regular user bubble. */
+.chat-bubble--source-intake {
+  background: var(--ref-color-electric-blue-20);
+  color: var(--ref-color-electric-blue-150);
+  padding: var(--ref-spacing-xxs);
+  border: 0;
+  border-radius: 12px;
+  border-top-right-radius: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+}
+
+.chat-bubble--source-intake .chat-bubble-text {
+  color: var(--ref-color-electric-blue-150);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+}
+
+.chat-bubble--source-intake i {
+  color: var(--ref-color-electric-blue-150);
+  font-size: var(--sys-icon-css-sm);
+}
+
+.chat-bubble.is-loading {
+  opacity: 0.7;
+}
+
+.chat-bubble-text {
+  margin: 0;
+  line-height: var(--ref-font-line-height-md);
+}
+
+.chat-bubble--ai .chat-bubble-text {
+  color: var(--ref-color-grey-150);
+}
+
+.chat-bubble--user .chat-bubble-text {
+  color: var(--ref-color-white);
+}
+
+/* -- Content blocks rendered INSIDE an AI bubble --------------------------- */
+
+.chat-bubble-list {
+  margin: var(--ref-spacing-xxs) 0 0;
+  padding: 0 0 0 var(--ref-spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+}
+
+.chat-bubble-list li {
+  position: relative;
+  padding-left: var(--ref-spacing-sm);
+  color: var(--sys-text-color-default);
+  line-height: var(--ref-font-line-height-md);
+}
+
+.chat-bubble-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ref-color-grey-60);
+}
+
+.chat-bubble-fields {
+  margin: var(--ref-spacing-xxs) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.chat-bubble-fields div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.chat-bubble-fields dt {
+  font-size: var(--ref-font-size-xs);
+  color: var(--sys-text-color-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: var(--ref-font-weight-bold);
+  margin: 0;
+}
+
+.chat-bubble-fields dd {
+  margin: 0;
+  color: var(--ref-color-grey-150);
+  font-weight: var(--ref-font-weight-bold);
+}
+
+.chat-bubble-header-extra {
+  margin-top: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
+  background: var(--ref-color-electric-blue-05);
+  border: 1px solid var(--ref-color-electric-blue-20);
+  border-radius: var(--app-radius-md);
+}
+
+.chat-bubble-summary {
+  margin-top: var(--ref-spacing-xxs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-sm);
+}
+
+.chat-bubble-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+}
+
+.chat-bubble-section h4 {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.chat-bubble-section ul {
+  margin: 0;
+  padding: 0 0 0 var(--ref-spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+}
+
+.chat-bubble-section li {
+  position: relative;
+  padding-left: var(--ref-spacing-sm);
+}
+
+.chat-bubble-section li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ref-color-grey-60);
+}

@@ -1,0 +1,435 @@
+/* Analyse hub + wizards (Voice / Brief / Brand).
+   Hub     = chromeless 3-card picker.
+   Wizards = conversational flow (chat bubbles) with a sticky picker bar at
+             the bottom of the viewport. */
+
+.analyse {
+  background: var(--app-bg);
+  overflow: hidden;
+}
+
+/* ---------- Hub ---------- */
+
+.analyse--hub {
+  padding: var(--ref-spacing-xl) var(--ref-spacing-md);
+  overflow-y: auto;
+}
+
+.analyse__hub-inner {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  gap: var(--ref-spacing-md);
+}
+
+.analyse__hub-header {
+  text-align: center;
+  align-items: center;
+}
+
+.analyse__hub-card {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--app-surface);
+  transition: border-color 120ms ease;
+}
+
+.analyse__hub-card:hover {
+  border-color: var(--ref-color-electric-blue-60);
+}
+
+.analyse__hub-card-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--ref-color-electric-blue-10);
+  color: var(--ref-color-electric-blue-150);
+  border-radius: var(--app-radius-md);
+  flex-shrink: 0;
+}
+
+.analyse__hub-card-text h2 {
+  color: var(--ref-color-grey-150);
+}
+
+.analyse__hub-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  color: var(--ref-color-electric-blue-100);
+  font-weight: var(--ref-font-weight-bold);
+  flex-shrink: 0;
+}
+
+/* ---------- Wizard shell (conversational + sticky picker) ---------- */
+
+.analyse--wizard {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  background: var(--app-bg);
+}
+
+.analyse__chat {
+  overflow-y: auto;
+  padding: var(--ref-spacing-lg) var(--ref-spacing-md);
+}
+
+.analyse__chat-inner {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-sm);
+}
+
+/* Sticky bar — lives in the auto row of the grid so it's always pinned to
+   the bottom of the viewport above the app topbar. */
+
+.analyse__sticky-bar {
+  background: var(--app-surface);
+  border-top: 1px solid var(--app-border-soft);
+  box-shadow: 0 -4px 16px rgba(33, 46, 68, 0.06);
+  padding: var(--ref-spacing-sm) var(--ref-spacing-md);
+}
+
+.analyse__sticky-bar-inner {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+/* Chat turn + bubble styles live in styles/chat.css (shared with the
+   session assistant panel). */
+
+/* -- Intake checkbox-card variant used by the context-intake step -------- */
+
+.analyse__hub-card--check {
+  cursor: pointer;
+}
+
+.analyse__hub-card--check:focus-within {
+  border-color: var(--ref-color-electric-blue-100);
+}
+
+/* -- Summary screen (context wizard end) -------------------------------- */
+
+.analyse__summary-badge {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: var(--ref-color-electric-blue-10);
+  color: var(--ref-color-electric-blue-150);
+  border-radius: 50%;
+  margin: 0 auto;
+  font-size: var(--sys-icon-css-md);
+}
+
+.analyse__summary-list-card {
+  background: var(--app-surface);
+}
+
+.analyse__summary-bullets {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.analyse__summary-bullets li {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+  color: var(--ref-color-grey-150);
+}
+
+.analyse__summary-bullets li i {
+  color: var(--ref-color-green-100, var(--ref-color-electric-blue-100));
+}
+
+/* ---------- Sticky picker: options + custom input ---------- */
+
+.analyse__options {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-md);
+  overflow: hidden;
+  background: var(--app-surface);
+}
+
+.analyse__option {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: var(--ref-font-size-sm);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--app-border-soft);
+  cursor: pointer;
+  color: inherit;
+  transition: background-color 80ms ease;
+}
+
+.analyse__option:last-child {
+  border-bottom: 0;
+}
+
+.analyse__option:hover {
+  background: var(--app-surface-subtle);
+}
+
+.analyse__option:focus-visible {
+  background: var(--ref-color-electric-blue-05);
+  outline: 2px solid var(--ref-color-electric-blue-100);
+  outline-offset: -2px;
+}
+
+.analyse__option-shortcut {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--app-radius-sm);
+  background: var(--ref-color-grey-05);
+  border: 1px solid var(--app-border-soft);
+  color: var(--sys-text-color-light);
+  font-size: var(--ref-font-size-xs);
+  font-weight: var(--ref-font-weight-bold);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.analyse__option:focus-visible .analyse__option-shortcut,
+.analyse__option--input:focus-within .analyse__option-shortcut {
+  border-color: var(--ref-color-electric-blue-100);
+  color: var(--ref-color-electric-blue-150);
+  background: var(--ref-color-electric-blue-05);
+}
+
+.analyse__option-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: var(--ref-color-grey-05);
+  color: var(--ref-color-grey-100);
+  border-radius: var(--app-radius-md);
+  flex-shrink: 0;
+}
+
+.analyse__option-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxxs);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.analyse__option-label {
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.analyse__option-chevron {
+  color: var(--sys-text-color-light);
+  flex-shrink: 0;
+}
+
+/* Custom "Something else" input row */
+
+.analyse__option--input {
+  cursor: text;
+}
+
+.analyse__option--input:focus-within {
+  background: var(--ref-color-electric-blue-05);
+  outline: 2px solid var(--ref-color-electric-blue-100);
+  outline-offset: -2px;
+}
+
+.analyse__option-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--ref-font-size-sm);
+  color: var(--ref-color-grey-150);
+}
+
+.analyse__option-input::placeholder {
+  color: var(--sys-text-color-light);
+  font-weight: var(--ref-font-weight-regular);
+}
+
+.analyse__option-input:focus {
+  outline: none;
+}
+
+.analyse__option-send {
+  flex-shrink: 0;
+}
+
+/* Footer actions (Brand preview step — Start over / Apply) */
+
+.analyse__footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+}
+
+.analyse__footer-hint {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  text-align: center;
+}
+
+.analyse__footer-hint kbd {
+  padding: 2px 6px;
+  background: var(--ref-color-grey-05);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-sm);
+  font-family: inherit;
+  font-size: var(--ref-font-size-xs);
+}
+
+/* ---------- Keyboard hints (under the sticky bar content) ---------- */
+
+.analyse__hints {
+  margin: 0;
+  font-size: var(--ref-font-size-xs);
+  text-align: center;
+}
+
+.analyse__hints kbd {
+  padding: 2px 6px;
+  background: var(--ref-color-grey-05);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-sm);
+  font-family: inherit;
+  font-size: var(--ref-font-size-xs);
+  color: inherit;
+}
+
+/* ---------- Brand URL input card (rendered inside AI bubble) -------- */
+
+.analyse__url-card {
+  margin-top: var(--ref-spacing-xxs);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ref-spacing-sm);
+  padding: var(--ref-spacing-sm);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-subtle);
+}
+
+.analyse__url-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ---------- Brand theme preview (rendered inside AI bubble) -------- */
+
+.analyse__theme-preview {
+  margin-top: var(--ref-spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-sm);
+}
+
+.analyse__theme-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+  padding-bottom: var(--ref-spacing-sm);
+  border-bottom: 1px solid var(--app-border-soft);
+}
+
+.analyse__theme-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.analyse__theme-section h4 {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.analyse__color-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ref-spacing-sm);
+}
+
+.analyse__color {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+}
+
+.analyse__color-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--app-radius-md);
+  border: 1px solid var(--app-border-soft);
+  flex-shrink: 0;
+}
+
+.analyse__color-name {
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.analyse__imagery-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ref-spacing-sm);
+}
+
+.analyse__imagery-tile {
+  padding: var(--ref-spacing-sm);
+  background: var(--app-surface-subtle);
+  border: 1px dashed var(--app-border);
+  border-radius: var(--app-radius-md);
+  display: flex;
+  gap: var(--ref-spacing-xs);
+  align-items: flex-start;
+  color: var(--ref-color-grey-80);
+}
+
+.analyse__personality-row {
+  flex-wrap: wrap;
+}
+
+/* Brief summary uses .ap-toggle-container — inline shell */
+.ap-toggle-container {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  cursor: pointer;
+  font-size: var(--ref-font-size-sm);
+}

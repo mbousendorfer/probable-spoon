@@ -1,0 +1,425 @@
+// All prototype data. One module, hardcoded, easy to edit.
+// No network, no persistence, no randomness.
+
+export const recentSessions = [
+  {
+    id: "s-acme-launch",
+    name: "Acme — Q2 product launch",
+    lastActivity: "2 hours ago",
+    sourceCount: 6,
+    ideaCount: 7,
+    postCount: 3,
+    contextId: "ctx-acme",
+  },
+  {
+    id: "s-founder-stories",
+    name: "Founder stories — monthly cadence",
+    lastActivity: "yesterday",
+    sourceCount: 3,
+    ideaCount: 4,
+    postCount: 1,
+    contextId: null,
+  },
+];
+
+export const templateStarters = [
+  {
+    id: "tpl-thought-leadership",
+    name: "Thought leadership series",
+    description: "Weekly LinkedIn posts grounded in one long-form source.",
+  },
+  {
+    id: "tpl-launch",
+    name: "Product launch drumbeat",
+    description: "Teaser → reveal → recap across 3 weeks.",
+  },
+  {
+    id: "tpl-podcast",
+    name: "Podcast repurposing",
+    description: "Turn a 40-minute episode into 6 social posts.",
+  },
+];
+
+export const sources = [
+  {
+    id: "src-1",
+    filename: "q2-strategy-offsite-notes.pdf",
+    kind: "PDF",
+    status: "Processed",
+    signal: "High signal",
+    signalColor: "orange",
+    ideaCount: 4,
+    addedAt: "2d ago",
+  },
+  {
+    id: "src-2",
+    filename: "founder-keynote.mp4",
+    kind: "Video",
+    status: "Processed",
+    signal: "Medium signal",
+    signalColor: "tagOrange",
+    ideaCount: 2,
+    addedAt: "2d ago",
+  },
+  {
+    id: "src-3",
+    filename: "roadmap-blogpost.com/launch",
+    kind: "URL",
+    status: "Processing",
+    signal: "Pending",
+    signalColor: "grey",
+    ideaCount: 1,
+    addedAt: "just now",
+  },
+];
+
+export const ideas = [
+  {
+    id: "idea-1",
+    title: "The three constraints that killed our first launch",
+    body: "A candid retro framed around the three bottlenecks we kept underestimating: scope, distribution, and onboarding.",
+    rationale:
+      "Concrete and personal — operator retros are the kind of post readers save and reread. Strong pull on discussion.",
+    relevance: "High relevance",
+    relevanceColor: "orange",
+    confidence: 92,
+    pinned: true,
+    sourceId: "src-1",
+    extractedAt: "2d ago",
+  },
+  {
+    id: "idea-2",
+    title: "Why we stopped writing quarterly OKRs",
+    body: "Contrarian take grounded in the offsite notes. Frames OKRs as a lagging signal rather than a tool for focus.",
+    rationale:
+      "A contrarian frame on a rituals-heavy topic. High comment potential from teams with their own OKR scars.",
+    relevance: "High relevance",
+    relevanceColor: "orange",
+    confidence: 88,
+    pinned: false,
+    sourceId: "src-1",
+    extractedAt: "2d ago",
+  },
+  {
+    id: "idea-3",
+    title: "What a founder keynote looks like at 50 people",
+    body: "Behind-the-scenes recap of the keynote, including the bits that got cut.",
+    rationale:
+      "Behind-the-scenes posts earn trust fast — readers get a rare look at how the company actually operates.",
+    relevance: "Medium relevance",
+    relevanceColor: "tagOrange",
+    confidence: 76,
+    pinned: false,
+    sourceId: "src-2",
+    extractedAt: "2d ago",
+  },
+  {
+    id: "idea-4",
+    title: "How we pick which roadmap items we talk about publicly",
+    body: "An editorial rule of thumb the team actually uses.",
+    rationale:
+      "Editorial restraint is under-used as an angle. Positions the team as thoughtful rather than hype-driven.",
+    relevance: "Medium relevance",
+    relevanceColor: "tagOrange",
+    confidence: 71,
+    pinned: false,
+    sourceId: "src-3",
+    extractedAt: "just now",
+  },
+  {
+    id: "idea-5",
+    title: "The one founder story we won't tell (and why)",
+    body: "A meta-post about editorial restraint.",
+    rationale:
+      "Meta-post about judgement, not the story itself. Niche but memorable for founders in similar positions.",
+    relevance: "Low relevance",
+    relevanceColor: "grey",
+    confidence: 54,
+    pinned: false,
+    sourceId: "src-1",
+    extractedAt: "2d ago",
+  },
+];
+
+// ---- Contexts --------------------------------------------------------------
+//
+// A *context* is a named bundle that can hold Voice, Brief and Brand
+// components. A session attaches at most ONE context. Components are
+// optional — a context may have only voice, for instance.
+
+// Component samples (reused inside contexts + by the stage wizards).
+
+export const voiceAnalysis = {
+  sections: [
+    {
+      id: "hooks",
+      title: "Opening Hooks",
+      bullets: [
+        "Cold-open with a contrarian claim, then immediately soften with a personal story.",
+        "Never start with a question — always a statement the reader can disagree with.",
+      ],
+    },
+    {
+      id: "closing",
+      title: "Closing Patterns",
+      bullets: [
+        "Close with a one-line callback to the opening claim, rarely with a CTA.",
+        "Avoid the word 'takeaway'. Leave the reader to name it themselves.",
+      ],
+    },
+    {
+      id: "rhythm",
+      title: "Formatting Rhythm",
+      bullets: [
+        "Short sentence, short sentence, longer sentence that earns it.",
+        "Line breaks carry weight — never fill them with filler words.",
+      ],
+    },
+    {
+      id: "style",
+      title: "Visual Style",
+      bullets: [
+        "No emojis. No bullets except under a header.",
+        "Bold a maximum of one phrase per post, and only when it's the thesis.",
+      ],
+    },
+    {
+      id: "soul",
+      title: "Soul",
+      bullets: [
+        "Trust the reader to be smart. Don't explain the joke.",
+        "If the post can be read aloud without sounding like a brand, it passes.",
+      ],
+    },
+    {
+      id: "verbatim",
+      title: "Verbatim Examples",
+      bullets: [
+        '"We didn\'t ship the thing. We shipped a version of the thing that we could live with."',
+        '"Quarterly OKRs are a retrospective tool wearing a planning costume."',
+      ],
+    },
+    {
+      id: "metadata",
+      title: "Metadata",
+      bullets: ["Average post length: 85 words.", "Posts per week analyzed: 14."],
+    },
+  ],
+};
+
+export const strategyBrief = {
+  sections: [
+    {
+      id: "goals",
+      title: "Goals",
+      fields: [
+        { label: "Primary objective", value: "Establish the founder as a credible voice on product discipline." },
+        { label: "Target action", value: "Inbound intros from operators at 50–200-person startups." },
+      ],
+    },
+    {
+      id: "audience",
+      title: "Audience",
+      fields: [
+        {
+          label: "Target demographic",
+          value: "Product leaders, 5–15 years in, operator-track rather than investor-track.",
+        },
+        {
+          label: "Pain points",
+          value: "Team is shipping, but no one outside the company can tell what the strategy is.",
+        },
+      ],
+    },
+    {
+      id: "voice",
+      title: "Brand Voice",
+      fields: [
+        { label: "Tone", value: "Candid, specific, allergic to LinkedIn platitudes." },
+        { label: "Style", value: "Short paragraphs, no emojis, one thesis per post." },
+      ],
+    },
+  ],
+};
+
+export const brandTheme = {
+  url: "https://acme.com",
+  colors: [
+    { name: "Primary", hex: "#FF6726" },
+    { name: "Surface", hex: "#F9F9FA" },
+    { name: "Ink", hex: "#212E44" },
+    { name: "Accent", hex: "#178DFE" },
+  ],
+  imageryNotes: [
+    "Studio-lit product photography, shallow depth of field.",
+    "Never stock imagery. Never AI-generated faces.",
+  ],
+  buttons: [
+    { label: "Get started", variant: "primary" },
+    { label: "Learn more", variant: "secondary" },
+  ],
+  personality: ["Candid", "Precise", "Warm", "Operator-first", "No-nonsense"],
+};
+
+// Named contexts — whole bundles. Sessions attach one of these by id.
+
+export const contexts = [
+  {
+    id: "ctx-acme",
+    name: "Acme · Q2 marketing",
+    updatedAt: "3 minutes ago",
+    voice: voiceAnalysis,
+    brief: strategyBrief,
+    brand: brandTheme,
+  },
+  {
+    id: "ctx-founder-voice",
+    name: "Founder voice only",
+    updatedAt: "yesterday",
+    voice: voiceAnalysis,
+    brief: null,
+    brand: null,
+  },
+];
+
+// ---- Posts (shown in the session Posts tab when populated) ----------------
+
+const AUTHOR_MC = {
+  name: "Maya Chen",
+  title: "Head of Marketing",
+  initials: "MC",
+  connection: "1st",
+  visibility: "Public",
+};
+
+export const posts = [
+  {
+    id: "post-1",
+    author: AUTHOR_MC,
+    network: "linkedin",
+    status: "ready", // "ready" | "needs_fixes" | "scheduled"
+    timeLabel: "1h",
+    text: [
+      "A quick operator note for B2B teams: weekly proof points build more trust than polished campaign reveals.",
+      "The PDF repeatedly emphasizes how audience trust rises when brands publish one concrete learning per week instead of one massive campaign wrap-up at the end of the quarter.",
+      "If Q2 B2B Social Growth wants more repeatable reach, publish the useful lesson now, support it with one real signal from B2B Social…",
+    ],
+    hashtags: ["Turn", "Longform", "Reports", "B2BMarketing"],
+    cta: "Follow for more practical B2B content systems and repeatable editorial angles.",
+    stats: { likes: 281, comments: 13, reposts: 19 },
+    hasImage: false,
+  },
+  {
+    id: "post-2",
+    author: AUTHOR_MC,
+    network: "linkedin",
+    status: "ready",
+    timeLabel: "3h",
+    text: [
+      "Your Q2 plan isn't a plan, it's a wish list — unless every objective names the single signal you'll watch weekly to prove it.",
+      "Teams who track one weekly proof point ship on cadence. Teams who wait for quarterly wrap-ups publish less, and ship less.",
+    ],
+    hashtags: ["Q2Planning", "ContentOps"],
+    cta: "",
+    stats: { likes: 147, comments: 8, reposts: 11 },
+    hasImage: false,
+  },
+  {
+    id: "post-3",
+    author: AUTHOR_MC,
+    network: "linkedin",
+    status: "needs_fixes",
+    timeLabel: "6h",
+    text: [
+      "Short version of today's offsite: we stopped writing quarterly OKRs. Here's what replaced them and why the team ships faster now.",
+      "[TODO — finish the 3-part breakdown before scheduling]",
+    ],
+    hashtags: ["OKRs", "OperatorNotes"],
+    cta: "",
+    stats: { likes: 0, comments: 0, reposts: 0 },
+    hasImage: false,
+  },
+  {
+    id: "post-4",
+    author: AUTHOR_MC,
+    network: "linkedin",
+    status: "scheduled",
+    scheduledForLabel: "Thu · 9:00",
+    timeLabel: "yesterday",
+    text: [
+      "The one founder story we won't tell — and why editorial restraint is a better brand move than another launch anthem.",
+      "A meta-post about why our team chooses which roadmap pieces to talk about publicly. Restraint is a feature.",
+    ],
+    hashtags: ["Editorial", "Founders"],
+    cta: "Save this one — useful the next time you're tempted to post something just to post.",
+    stats: { likes: 62, comments: 4, reposts: 2 },
+    hasImage: false,
+  },
+  {
+    id: "post-5",
+    author: AUTHOR_MC,
+    network: "linkedin",
+    status: "ready",
+    timeLabel: "2d",
+    text: [
+      "Three constraints killed our first launch: scope, distribution, and onboarding. All three were visible at the offsite — and all three were missing from the retrospective doc.",
+      "If your retro doesn't name the constraints, your next launch will hit the same ones.",
+    ],
+    hashtags: ["Launches", "Retros"],
+    cta: "",
+    stats: { likes: 198, comments: 22, reposts: 14 },
+    hasImage: false,
+  },
+  {
+    id: "post-6",
+    author: AUTHOR_MC,
+    network: "linkedin",
+    status: "ready",
+    timeLabel: "3d",
+    text: [
+      "Behind-the-scenes on the founder keynote — including the parts that got cut. The cuts are more instructive than the keynote itself.",
+    ],
+    hashtags: ["FounderKeynote", "BTS"],
+    cta: "",
+    stats: { likes: 93, comments: 6, reposts: 3 },
+    hasImage: false,
+  },
+];
+
+// Lookup helpers ----------------------------------------------------------------
+
+export function getSessionById(id) {
+  return recentSessions.find((s) => s.id === id) || null;
+}
+
+export function getContextById(id) {
+  return contexts.find((c) => c.id === id) || null;
+}
+
+// Which component keys a context actually has — used for the dashboard row
+// subtitle and the session Context tab.
+export function contextComponentsFor(context) {
+  if (!context) return [];
+  const out = [];
+  if (context.voice) out.push("Voice");
+  if (context.brief) out.push("Brief");
+  if (context.brand) out.push("Brand");
+  return out;
+}
+
+// Derived — used by the sidebar filter rail.
+export function postCountsByFilter() {
+  return {
+    all: posts.length,
+    needs_fixes: posts.filter((p) => p.status === "needs_fixes").length,
+    scheduled: posts.filter((p) => p.status === "scheduled").length,
+  };
+}
+
+export function postCountsByNetwork() {
+  return {
+    all: posts.length,
+    linkedin: posts.filter((p) => p.network === "linkedin").length,
+    twitter: posts.filter((p) => p.network === "twitter").length,
+  };
+}

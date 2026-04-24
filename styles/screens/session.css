@@ -1,0 +1,647 @@
+/* Session screen — assistant panel (left) + workspace with tabs (right). */
+
+.session {
+  grid-template-columns: minmax(360px, 420px) minmax(0, 1fr);
+}
+
+/* ---------- Assistant panel ---------- */
+
+.session__assistant {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  background: var(--app-surface);
+  border-right: 1px solid var(--app-border-soft);
+  overflow: hidden;
+}
+
+.session__assistant-thread {
+  overflow-y: auto;
+  padding: var(--ref-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-sm);
+  scroll-behavior: smooth;
+}
+
+.session__assistant-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xxs) var(--ref-spacing-md);
+  border-top: 1px solid var(--app-border-soft);
+  background: var(--app-surface);
+}
+
+.assistant-prompt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  padding: 6px var(--ref-spacing-xs);
+  border: 1px solid var(--app-border-soft);
+  border-radius: 999px;
+  background: var(--app-surface);
+  color: var(--ref-color-grey-100);
+  font-family: inherit;
+  font-size: var(--ref-font-size-xs);
+  font-weight: var(--ref-font-weight-bold);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.assistant-prompt:hover,
+.assistant-prompt:focus-visible {
+  background: var(--ref-color-electric-blue-05);
+  border-color: var(--ref-color-electric-blue-60);
+  color: var(--ref-color-electric-blue-150);
+  outline: none;
+}
+
+/* Assistant notice (Figma 25:1043 / 25:1054) — a mermaid `.ap-status` pill
+   with an 8px mermaid-purple dot + "Drafting" / "Extracted N ideas" label,
+   followed by a chevron that toggles the optional detail body. */
+
+.assistant-notice {
+  align-self: flex-start;
+  width: 100%;
+  max-width: 560px;
+}
+
+.assistant-notice__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  padding: 4px 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.assistant-notice__toggle::-webkit-details-marker {
+  display: none;
+}
+
+.assistant-notice__chevron {
+  font-size: var(--sys-icon-css-sm);
+  color: var(--sys-text-color-light);
+  transition: transform 160ms ease;
+}
+
+.assistant-notice[open] .assistant-notice__chevron {
+  transform: rotate(180deg);
+}
+
+/* Optional detail body — used by the existing reasoning-text flow (not shown
+   in Figma 25:1029 but still used when the user sends a question and the AI
+   returns a prose reasoning block). Muted grey card. */
+.assistant-notice__detail {
+  margin-top: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xs);
+  background: var(--ref-color-grey-05);
+  border: 1px solid var(--ref-color-grey-10);
+  border-radius: var(--app-radius-md);
+  color: var(--ref-color-grey-80);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+}
+
+/* Soft pulse on the pill while the AI is still thinking. */
+@keyframes assistant-notice-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.assistant-notice.is-loading .ap-status.mermaid {
+  animation: assistant-notice-pulse 1.4s ease-in-out infinite;
+}
+
+/* --- Extracting notice (Figma 25:1413) ------------------------------- */
+/* Inline "Extracting" pill + 16px blue spinner, shown in the thread while a
+   source extraction is running. Lifecycle is owned by the pending marker in
+   the assistant thread (assistant.js startPending / finishPending). */
+
+.chat-turn--extracting {
+  align-items: center;
+}
+
+.extracting-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+}
+
+.extracting-notice__spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--ref-color-electric-blue-20);
+  border-top-color: var(--ref-color-electric-blue-100);
+  animation: session-thinking-spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+
+/* --- Extraction turn (Figma 25:1053) ---------------------------------- */
+/* AI chat-turn containing: [notice pill] → [Analyzed <filename>] → N cards. */
+
+.chat-turn--extraction {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ref-spacing-xxs);
+  max-width: 420px;
+  width: 100%;
+}
+
+/* When the extraction <details> is open, stack analyzed-row + idea cards. */
+.chat-turn--extraction .extraction-turn__detail {
+  margin-top: var(--ref-spacing-xxs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+}
+
+/* Focused idea in the Content Ideas tab — briefly outlined in electric-blue
+   after navigating from an extraction-card external-link. */
+@keyframes idea-focus-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(23, 141, 254, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px var(--ref-color-electric-blue-20);
+  }
+}
+
+.idea-card.is-focused {
+  animation: idea-focus-pulse 1.6s ease;
+  border-color: var(--ref-color-electric-blue-100);
+}
+
+.extraction-turn__analyzed-row {
+  display: flex;
+  gap: var(--ref-spacing-xxxs);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--ref-color-grey-100);
+}
+
+.extraction-turn__analyzed-row strong {
+  font-weight: var(--ref-font-weight-bold);
+}
+
+/* Idea card (Figma 25:1057 / 25:1053) — vertical stack: text column on top,
+   feedback + "View idea" footer row below. */
+.extraction-turn__idea-card {
+  background: var(--ref-color-grey-05);
+  border: 1px solid var(--ref-color-grey-10);
+  border-radius: var(--app-radius-md);
+  padding: var(--ref-spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+  width: 360px;
+  max-width: 100%;
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+}
+
+.extraction-turn__idea-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.extraction-turn__idea-card-title {
+  margin: 0;
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-100);
+}
+
+.extraction-turn__idea-card-body {
+  margin: 0;
+  color: var(--ref-color-grey-80);
+}
+
+.extraction-turn__idea-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+}
+
+.extraction-turn__idea-card-feedback {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+}
+
+/* Thumb up / down — 20x20 transparent icon button, grey-80 by default,
+   electric-blue on hover, electric-blue-100 + filled glyph when active. */
+.extraction-turn__idea-card-thumb {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--app-radius-sm);
+  color: var(--ref-color-grey-80);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.extraction-turn__idea-card-thumb i {
+  font-size: var(--sys-icon-css-sm);
+}
+
+.extraction-turn__idea-card-thumb:hover,
+.extraction-turn__idea-card-thumb:focus-visible {
+  color: var(--ref-color-electric-blue-150);
+  outline: none;
+}
+
+.extraction-turn__idea-card-thumb.is-active {
+  color: var(--ref-color-electric-blue-100);
+}
+
+/* "View idea" — text + external-link icon link, anchored bottom-right. */
+.extraction-turn__idea-card-view {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+  cursor: pointer;
+}
+
+.extraction-turn__idea-card-view i {
+  font-size: var(--sys-icon-css-sm);
+}
+
+/* Composer — Figma 35:764.
+   Structure:
+     .session__composer        white panel with top border, padding spacing-sm
+       .session__composer-card grey-05 card, radius 12
+         .session__composer-input    white bordered input with embedded actions
+           <textarea>                 body (14/18 text, placeholder in grey-40)
+           .session__composer-actions action row inside the input (+ / send)
+         .session__composer-session  folder · session name · chevron chip */
+
+.session__composer {
+  border-top: 1px solid var(--ref-color-grey-10);
+  padding: var(--ref-spacing-sm);
+  background: var(--app-surface);
+}
+
+.session__composer-card {
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.session__composer-input {
+  background: var(--app-surface);
+  border: 1px solid var(--ref-color-grey-20);
+  border-radius: var(--app-radius-md);
+  padding: var(--ref-spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.session__composer-input:focus-within {
+  border-color: var(--ref-color-electric-blue-100);
+}
+
+.session__composer-input-field {
+  width: 100%;
+  resize: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
+  color: var(--ref-color-grey-150);
+  min-height: 60px;
+}
+
+.session__composer-input-field::placeholder {
+  color: var(--ref-color-grey-40);
+  opacity: 1;
+}
+
+.session__composer-input-field:focus {
+  outline: none;
+}
+
+.session__composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+}
+
+/* Send button — DS primary orange sized as an icon-only square (Figma 35:773).
+   Qualified with .ap-button to raise specificity to (0,2,0) — matches the DS
+   .ap-button.primary selector, and wins via later source order. */
+.ap-button.session__composer-send {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Thinking counter (Figma 25:1181) — 12px loader + bold xs caption.
+   Lives on the same surface as the composer; no background of its own. */
+.session__composer-thinking {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xs) 0;
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-100);
+}
+
+.session__composer-thinking[hidden] {
+  display: none;
+}
+
+.session__composer-thinking-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ref-color-mermaid-20);
+  border-top-color: var(--ref-color-mermaid-gradient-from);
+  animation: session-thinking-spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes session-thinking-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Session chip inside the composer card. */
+.session__composer-session {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+  padding: var(--ref-spacing-xs);
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--ref-color-grey-80);
+  cursor: pointer;
+  text-align: left;
+}
+
+.session__composer-session:hover,
+.session__composer-session:focus-visible {
+  background: var(--ref-color-grey-10);
+  outline: none;
+}
+
+.session__composer-session i {
+  font-size: var(--sys-icon-css-sm);
+}
+
+/* Attach dropdown */
+
+.assistant-attach {
+  position: relative;
+}
+
+.assistant-attach__menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--ref-spacing-xxs));
+  min-width: 180px;
+  padding: var(--ref-spacing-xxs);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-md);
+  box-shadow: 0 8px 24px rgba(33, 46, 68, 0.12);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.assistant-attach__menu[hidden] {
+  display: none;
+}
+
+.assistant-attach__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-xxs) var(--ref-spacing-xs);
+  border: 0;
+  background: transparent;
+  border-radius: var(--app-radius-sm);
+  font-family: inherit;
+  font-size: var(--ref-font-size-sm);
+  color: var(--ref-color-grey-150);
+  cursor: pointer;
+  text-align: left;
+}
+
+.assistant-attach__item:hover,
+.assistant-attach__item:focus-visible {
+  background: var(--app-surface-subtle);
+  outline: none;
+}
+
+/* ---------- Workspace ---------- */
+
+.session__workspace {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.session__tabs {
+  padding: 0 var(--ref-spacing-xl);
+  border-bottom: 1px solid var(--app-border-soft);
+  background: var(--app-surface);
+}
+
+.session__tab-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--ref-spacing-lg) var(--ref-spacing-xl);
+}
+
+/* Empty-state block */
+
+.session__empty {
+  max-width: 520px;
+  margin: var(--ref-spacing-xxl) auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+}
+
+.session__empty-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  background: var(--ref-color-electric-blue-05);
+  color: var(--ref-color-electric-blue-100);
+  border-radius: var(--app-radius-lg);
+}
+
+/* ---------- Context tab (single-context view) ---------- */
+
+.session__context {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-md);
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.session__context-actions {
+  display: flex;
+  gap: var(--ref-spacing-xs);
+}
+
+.session__context-missing {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+  padding: var(--ref-spacing-sm);
+  border: 1px dashed var(--app-border);
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-subtle);
+}
+
+.session__accordion {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-md);
+}
+
+.session__component-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-sm);
+}
+
+.session__component-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+  padding-bottom: var(--ref-spacing-sm);
+  border-bottom: 1px solid var(--app-border-soft);
+}
+
+.session__component-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.session__component-section h4 {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.session__component-section ul {
+  margin: 0;
+  padding: 0 0 0 var(--ref-spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+}
+
+.session__component-section li {
+  position: relative;
+  padding-left: var(--ref-spacing-sm);
+}
+
+.session__component-section li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ref-color-grey-60);
+}
+
+.session__component-section dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.session__component-section dl dt {
+  font-size: var(--ref-font-size-xs);
+  color: var(--sys-text-color-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: var(--ref-font-weight-bold);
+  margin: 0;
+}
+
+.session__component-section dl dd {
+  margin: 0;
+  color: var(--ref-color-grey-150);
+  font-weight: var(--ref-font-weight-bold);
+}
+
+.session__component-brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-sm);
+}
+
+.session__component-brand-colors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ref-spacing-xs);
+}
+
+.session__component-brand-color {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+}
+
+.session__component-brand-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--app-radius-sm);
+  border: 1px solid var(--app-border-soft);
+  flex-shrink: 0;
+}
+
+.session__component-brand-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxs);
+}

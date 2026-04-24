@@ -1,55 +1,103 @@
-# bigbet-tests
+# Archie
 
-Prototype interactif pour explorer et valider des redesigns de l'interface Agorapulse. Pas de build, pas de framework — juste des fichiers statiques servis localement.
+Interactive prototype for Archie — navigable click-through of the wireframe in [Figma](https://www.figma.com/design/ulQHaMfPhTQwNLib6IDOez/Archie?node-id=0-1) built on the Agorapulse V2 Design System.
+
+## Run it
+
+```bash
+npm install   # installs the DS and syncs ds/ via postinstall
+npm start     # runs `npx serve -p 8000` — open http://localhost:8000
+```
+
+With Claude Code, the dev server auto-launches via `.claude/launch.json`.
 
 ## Stack
 
-- HTML/CSS/JS vanilla (ES modules)
-- Design System Agorapulse (`@agorapulse/ui-theme` + `@agorapulse/ui-symbol`) — composants `.ap-*`, icônes `<i class="ap-icon-*">`, tokens `--ref-*` / `--sys-*`
-- État : Zustand vanilla store, persisté dans `localStorage`
+- **Vanilla JS** — no framework, no bundler, ES modules loaded straight from `src/`.
+- **Hash router** — `src/router.js`, routes declared in `src/app.js`.
+- **Agorapulse V2 DS** — `@agorapulse/ui-theme` + `@agorapulse/ui-symbol`, copied to `ds/` by `scripts/sync-ds.mjs` at install time. UI is composed from `.ap-*` CSS-UI classes and DS tokens (`--ref-*`, `--sys-*`) — no raw hex or pixel values.
+- **Mocks** — `src/mocks.js`. Hardcoded, no network, no persistence.
 
-## Lancer le projet
+## Screens
 
-```bash
-npm install   # installe le Design System (@agorapulse/ui-theme + ui-symbol)
-npm start     # lance le serveur local sur http://localhost:8000
+| Screen                       | Route                                   | Notes                                                  |
+| ---------------------------- | --------------------------------------- | ------------------------------------------------------ |
+| Dashboard — Projects         | `#/?tab=projects&subtab=library`        | Recent sessions + library list (default)               |
+| Dashboard — Projects / Ideas | `#/?tab=projects&subtab=ideas`          | Recent sessions + ideas list                           |
+| Dashboard — Global contexts  | `#/?tab=contexts`                       | Create + manage reusable contexts                      |
+| Session — empty              | `#/session/new?tab=posts`               | Empty Posts tab, default landing for a new session     |
+| Session — Library            | `#/session/:id?tab=library`             | Empty state                                            |
+| Session — Ideas              | `#/session/:id?tab=ideas`               | Empty state                                            |
+| Session — Context hub        | `#/session/:id?tab=context`             | 3 Start cards (Voice / Brief / Brand)                  |
+| Session — Context populated  | `#/session/:id?tab=context&populated=1` | Merged voice profile in an accordion                   |
+| Analyse hub                  | `#/analyse`                             | Chromeless "Create new context"                        |
+| Analyse — Voice              | `#/analyse/voice?step=0..N`             | Chat-driven wizard, 7 section steps + summary          |
+| Analyse — Brief              | `#/analyse/brief?step=0..2`             | 3 section steps + summary with "use as default" toggle |
+| Analyse — Brand              | `#/analyse/brand?step=0..1`             | URL → theme preview → summary                          |
+
+## Navigation graph
+
+```
+Dashboard
+├── [Create] → Session (#/session/new)
+├── [Session card] → Session (existing)
+└── [Create context] / Global contexts → Analyse hub
+      ├── Voice  → Analyse-Voice wizard  → Dashboard
+      ├── Brief  → Analyse-Brief wizard  → Dashboard
+      └── Brand  → Analyse-Brand wizard  → Dashboard
+
+Session
+├── Tab: Posts / Library / Ideas (empty states)
+└── Tab: Context
+      ├── [Start Voice] → Analyse-Voice wizard
+      ├── [Start Brief] → Analyse-Brief wizard
+      └── [Start Brand] → Analyse-Brand wizard
 ```
 
-Puis ouvrir [http://localhost:8000](http://localhost:8000).
+Brand / Archie home button (top bar) always returns to the Dashboard.
 
-> Avec Claude Code, le serveur se lance automatiquement via la config `.claude/launch.json`.
-
-## Structure
+## Code layout
 
 ```
-index.html             # Shell HTML (topbar, sidebar, workspace)
+index.html                      # shell: DS imports + #topbar + #app
 src/
-  app.js               # Entrée : imports, renderApp(), event listeners globaux
-  store.js             # Zustand store + sélecteurs
-  utils.js             # Helpers partagés : icons, escapeHtml, actionButton, pills
-  mock-generators.js   # Données de démo (déterministes via seed hashing)
-  views/               # Renderers de vues (un fichier par zone du workspace)
-    sidebar.js           # session bar, workflow tabs, assistant chat
-    library.js           # sources, idées, sélection
-    brief.js             # strategy brief
-    posts.js             # drafts, previews, rail, filtres
-    drawer.js            # idea detail (HTML injecté + listeners)
-    workspace.js         # router entre les vues par tab
-  modals/              # Modals self-contained (HTML injecté à init)
-    session.js           # créer/renommer une session
-    feedback.js          # feedback form
-    bug-report.js        # bug report + capture screenshot
-    schedule.js          # planifier des posts
-    generate-image.js    # génération d'image AI
-ds/                    # Design System Agorapulse (généré par `npm install` — ne pas éditer)
-styles/                # Styles app : tokens, base, layout, composants, vues
-scripts/
-  sync-ds.mjs          # Copie le DS depuis node_modules/ vers ds/ (lancé via postinstall)
+  app.js                        # route table + boot
+  router.js                     # hash router
+  mocks.js                      # all hardcoded data (sessions, sources, ideas, voice/brief/brand)
+  utils.js                      # html`` tagged template + escapeHtml
+  components/
+    topbar.js                   # persistent top bar (brand + feedback + bug + settings)
+  screens/
+    dashboard.js                # Projects / Global contexts
+    session.js                  # Posts / Library / Ideas / Context
+    analyse-hub.js              # /analyse — the 3 Start cards, chromeless
+    analyse-voice.js            # Voice wizard
+    analyse-brief.js            # Strategy brief wizard
+    analyse-brand.js            # Brand theme wizard
+    _analyse-common.js          # shared chat bubble / picker / summary helpers
+
+styles/
+  tokens.css                    # app-level aliases only (DS tokens live in ds/)
+  base.css                      # resets
+  layout.css                    # app shell + topbar + utility helpers
+  ds-patches.css                # legit place to extend .ap-* classes
+  screens/
+    dashboard.css
+    session.css
+    analyse.css
+
+ds/                             # generated by `npm install` — do not edit
+scripts/sync-ds.mjs             # copies @agorapulse/ui-theme + ui-symbol into ds/
 ```
 
-## Périmètre couvert
+## DS gaps flagged during implementation
 
-- **Library** — sources, idées extraites, filtres, tri
-- **Posts** — drafts, revue, actions (éditer, planifier, dupliquer, supprimer)
-- **Prévisualisations sociales** — LinkedIn, X/Twitter, Facebook, Instagram
-- **Assistant** — fil de conversation, suggestions, pièces jointes
+- **No semantic icon** for some canonical affordances — fell back to the closest match: `more` (kebab menu), `pen` (edit), `cog` (settings), `headset` (voice), `file--text` (document), `paper-clip` (attach), `paper-plane` (send). Worth auditing.
+- **`.ap-status`** ships `blue/green/grey/orange/red/tagOrange` — no yellow. Not used here but patched in earlier versions (see `ds-patches.css`).
+- **Accordion** in the populated-context view uses native `<details>` rather than the DS `.collapsed` modifier pattern. The DS version requires a JS toggle; `<details>` is native and good enough for a prototype. If we adopt this in production the accordion should be switched to the DS component.
+- **Brief "Use as default" toggle** uses `.ap-toggle-container` with the documented structure but the DS toggle component was not introspected in detail; visual parity is approximate.
+
+## Wireframe fidelity notes
+
+- The 4 Start Screen frames, 8 New Session frames, and the step variants in the Analyse flows are **states of the same screen** — encoded here as URL query params (`?tab=...&subtab=...&populated=1&step=...`) rather than distinct routes. This keeps the nav tree flat and shareable.
+- Wireframe colors, spacing, and typography are **not copied** — everything is driven by Agorapulse V2 tokens.

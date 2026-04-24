@@ -3,209 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Library Redesign Demo</title>
+    <title>Archie</title>
     <!-- Agorapulse Design System -->
     <link rel="stylesheet" href="./ds/desktop_variables.css" />
     <link rel="stylesheet" href="./ds/css-ui/font-face.css" />
     <link rel="stylesheet" href="./ds/ap-icons.css" />
     <link rel="stylesheet" href="./ds/css-ui/index.css" />
-    <!-- App overrides -->
+    <!-- App styles -->
     <link rel="stylesheet" href="./styles/tokens.css" />
     <link rel="stylesheet" href="./styles/base.css" />
     <link rel="stylesheet" href="./styles/layout.css" />
-    <link rel="stylesheet" href="./styles/ds-patches.css" />
-    <link rel="stylesheet" href="./styles/app-components.css" />
-    <link rel="stylesheet" href="./styles/views/session.css" />
-    <link rel="stylesheet" href="./styles/views/assistant.css" />
-    <link rel="stylesheet" href="./styles/views/library.css" />
-    <link rel="stylesheet" href="./styles/views/hero.css" />
-    <link rel="stylesheet" href="./styles/views/sources.css" />
-    <link rel="stylesheet" href="./styles/views/ideas.css" />
-    <link rel="stylesheet" href="./styles/views/brief.css" />
-    <link rel="stylesheet" href="./styles/views/posts.css" />
-    <link rel="stylesheet" href="./styles/views/previews.css" />
-    <link rel="stylesheet" href="./styles/views/drawer.css" />
-    <link rel="stylesheet" href="./styles/views/modals.css" />
-    <link rel="stylesheet" href="./styles/responsive.css" />
+    <link rel="stylesheet" href="./styles/ds-patches.css?v=17" />
+    <link rel="stylesheet" href="./styles/chat.css?v=17" />
+    <link rel="stylesheet" href="./styles/screens/dashboard.css?v=17" />
+    <link rel="stylesheet" href="./styles/screens/session.css?v=17" />
+    <link rel="stylesheet" href="./styles/screens/posts.css?v=17" />
+    <link rel="stylesheet" href="./styles/screens/analyse.css?v=17" />
+    <link rel="stylesheet" href="./styles/admin-chip.css?v=17" />
   </head>
   <body>
-    <div class="page">
-      <div class="app-shell phase-hero">
-        <header class="app-topbar">
-          <div class="topbar-left">
-            <div class="product-mark"><span class="mark" aria-hidden="true"></span>Content Studio</div>
-            <span class="ap-badge orange">Beta</span>
-            <button class="topbar-feedback-btn" type="button" id="openFeedbackBtn">
-              <i class="ap-icon-single-chat-bubble"></i>
-              Give feedback
-            </button>
-          </div>
-          <div class="topbar-right">
-            <button class="ap-button stroked grey" type="button" id="openBugReportBtn" aria-label="Report a bug">
-              <i class="ap-icon-bug"></i>
-              <span>Report a bug</span>
-            </button>
-          </div>
-        </header>
-
-        <div class="app-body">
-          <aside class="assistant-panel" id="assistantPanel">
-            <div class="assistant-panel__top">
-              <section class="sidebar-session-shell" aria-label="Work sessions">
-                <div id="sessionSwitcher"></div>
-              </section>
-
-              <section class="assistant-chat" aria-label="AI conversation">
-                <div class="assistant-thread">
-                  <div class="assistant-thread__list" id="assistantThread" aria-live="polite"></div>
-                </div>
-
-                <div class="assistant-suggestions" id="assistantPromptDeck"></div>
-              </section>
-            </div>
-
-            <div class="assistant-panel__bottom">
-              <div class="assistant-composer" aria-label="Ask the AI copilot">
-                <div class="assistant-composer__toolbar">
-                  <div class="source-type-tabs" aria-label="Attachment mode" id="sourceTypeTabs">
-                    <button class="source-type-tab active" type="button" data-source-kind="pdf">PDF</button>
-                    <button class="source-type-tab" type="button" data-source-kind="url">URL</button>
-                    <button class="source-type-tab" type="button" data-source-kind="video">Video</button>
-                    <button class="source-type-tab" type="button" data-source-kind="audio">Audio</button>
-                  </div>
-                  <div class="assistant-composer__mode" id="assistantModeLabel">PDF mode</div>
-                </div>
-
-                <textarea
-                  class="assistant-input"
-                  id="assistantInput"
-                  placeholder="Ask the AI to compare ideas, find the strongest signal, or draft your next move..."
-                  aria-label="Composer"
-                ></textarea>
-
-                <div class="assistant-composer__actions">
-                  <div class="assistant-composer__actions-right">
-                    <button
-                      class="ap-icon-button stroked"
-                      type="button"
-                      id="assistantAttach"
-                      aria-label="Attach source"
-                    >
-                      <i class="ap-icon-plus"></i>
-                    </button>
-                    <button class="ap-button primary orange" type="button" id="assistantSend">Send</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          <main class="workspace-main">
-            <section class="workspace-chrome">
-              <div class="workspace-chrome__inner">
-                <nav class="workflow-tabs" aria-label="Workflow" id="workflowTabs">
-                  <button class="workflow-tab active" type="button" data-tab="library">
-                    <i class="ap-icon-feature-library"></i>Library
-                  </button>
-                  <button class="workflow-tab" type="button" data-tab="brief">
-                    <i class="ap-icon-file--text"></i>Brief
-                  </button>
-                  <button class="workflow-tab" type="button" data-tab="voice">
-                    <i class="ap-icon-headset"></i>Voice
-                  </button>
-                  <button class="workflow-tab" type="button" data-tab="brand">
-                    <i class="ap-icon-sparkles"></i>Brand Theme
-                  </button>
-                  <button class="workflow-tab" type="button" data-tab="posts">
-                    <i class="ap-icon-megaphone"></i>Posts
-                  </button>
-                </nav>
-              </div>
-            </section>
-            <div class="workspace-main__inner" id="workspaceContent"></div>
-          </main>
-        </div>
-      </div>
+    <div class="app-shell" id="appShell">
+      <header class="app-topbar" id="topbar"></header>
+      <main class="app-content" id="app"></main>
     </div>
-
-    <div class="drawer-backdrop" id="drawerBackdrop"></div>
-    <aside class="drawer" id="ideaDrawer" aria-hidden="true">
-      <div class="drawer-header">
-        <div class="drawer-header-top">
-          <div class="drawer-header-copy">
-            <div class="source-title-row">
-              <span class="ap-status orange" id="drawerPriority"><span class="dot"></span>High relevance</span>
-              <span class="ap-status grey">
-                <span class="dot"></span>
-                Idea detail
-              </span>
-            </div>
-            <h2
-              id="drawerTitle"
-              style="
-                margin-top: var(--ref-spacing-sm);
-                font-size: var(--ref-font-size-xxl);
-                line-height: var(--ref-font-line-height-xl);
-                color: var(--ref-color-grey-150);
-              "
-            ></h2>
-            <p id="drawerDescription"></p>
-            <div class="drawer-meta" id="drawerMeta"></div>
-            <div class="drawer-facts">
-              <div class="drawer-fact">
-                <div class="drawer-fact__label">Confidence</div>
-                <div class="drawer-fact__value" id="drawerConfidence">91%</div>
-              </div>
-              <div class="drawer-fact">
-                <div class="drawer-fact__label">Status</div>
-                <div class="drawer-fact__value" id="drawerSourceStatus">Processed</div>
-              </div>
-              <div class="drawer-fact">
-                <div class="drawer-fact__label">Pinned</div>
-                <div class="drawer-fact__value" id="drawerPinnedState">Not pinned</div>
-              </div>
-            </div>
-          </div>
-          <button type="button" class="ap-icon-button stroked" id="closeDrawer" aria-label="Close idea detail">
-            <i class="ap-icon-close"></i>
-          </button>
-        </div>
-      </div>
-      <div class="drawer-content">
-        <div class="drawer-section drawer-section--primary">
-          <h4>Summary</h4>
-          <p id="drawerSummary"></p>
-        </div>
-        <div class="drawer-section">
-          <h4>Why this could work</h4>
-          <p id="drawerWhyItWorks">
-            This idea is grounded in the current source context and can be promoted into the next content step without
-            losing traceability.
-          </p>
-        </div>
-        <div class="drawer-section">
-          <h4>Use this idea next</h4>
-          <ul>
-            <li>Pressure-test the angle before drafting if the claim still feels broad.</li>
-            <li>Move it into the brief when it should shape the whole session narrative.</li>
-            <li>Generate a post only once the source material and signal feel strong enough.</li>
-          </ul>
-        </div>
-        <div class="drawer-note">
-          <div class="drawer-note__eyebrow">Session context</div>
-          <p id="drawerSessionNote">
-            This idea stays attached to the active work session, so the brief, voice, and posts can all inherit the same
-            source context.
-          </p>
-        </div>
-        <div class="drawer-actions">
-          <button type="button" class="ap-button primary orange" id="drawerGeneratePost">Generate post</button>
-          <button type="button" class="ap-button secondary blue" id="drawerAskQuestion">Ask a question</button>
-          <button type="button" class="ap-button ghost blue" id="drawerMoveToBrief">Move to brief</button>
-        </div>
-      </div>
-    </aside>
-
-    <script type="module" src="./src/app.js?v=18"></script>
+    <script type="module" src="./src/app.js?v=17"></script>
   </body>
 </html>

@@ -1,29 +1,25 @@
 /*
- * DS patches — styles needed by the app that the DS doesn't provide.
- * This file should shrink over time as the DS evolves.
+ * DS patches — the only legitimate place to extend .ap-* classes.
+ * This file should shrink as the DS evolves.
  */
 
-/* ── Modal backdrop (DS provides dialog styling but not the overlay) ── */
-
-.modal-backdrop {
+/* The DS doesn't ship a full-viewport modal backdrop primitive. */
+.app-modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(33, 46, 68, 0.26);
-  display: none;
   z-index: 50;
 }
 
-.modal-backdrop.open {
-  display: block;
+/* .ap-status ships blue/green/grey/orange/red/tagOrange — no mermaid variant
+   even though the DS defines the mermaid token family. Archie's Drafting +
+   Extracted-N-ideas pills (Figma 25:1113, 25:1107) need a mermaid-tinted
+   status with a purple dot. */
+.ap-status.mermaid {
+  background: var(--ref-color-mermaid-10);
+  color: var(--ref-color-grey-100);
 }
 
-/* ── .ap-status yellow variant — not in the DS (has orange/red/green/blue/grey/tagOrange) ── */
-
-.ap-status.yellow {
-  background: var(--ref-color-yellow-10);
-  color: var(--ref-color-yellow-150);
-}
-
-.ap-status.yellow::before {
-  background: var(--ref-color-yellow-150);
+.ap-status.mermaid::before {
+  background: var(--ref-color-mermaid-gradient-from);
 }
