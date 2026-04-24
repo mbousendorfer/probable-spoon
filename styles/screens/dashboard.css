@@ -577,3 +577,41 @@
   gap: var(--ref-spacing-xxs);
   flex-shrink: 0;
 }
+
+/* ---------- All-ideas grouped layout ----------
+   Groups ideas by source: one source-separator row + a 2-column auto-fill
+   grid of idea cards. The separator makes the source redundant on each card
+   (hideSourceRow: true), eliminating the repeated file-name noise. */
+
+.dashboard__ideas-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+  margin-bottom: var(--ref-spacing-sm);
+}
+
+.dashboard__ideas-group:last-child {
+  margin-bottom: 0;
+}
+
+.dashboard__ideas-separator {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  padding-bottom: var(--ref-spacing-xxs);
+  border-bottom: 1px solid var(--ref-color-grey-10);
+  font-size: var(--ref-font-size-sm);
+  color: var(--ref-color-grey-150);
+}
+
+.dashboard__ideas-separator-name {
+  font-weight: var(--ref-font-weight-bold);
+}
+
+/* auto-fill + minmax gives a 2-column layout at typical widths and collapses
+   to 1 column gracefully on narrow screens — no media query needed. */
+.dashboard__ideas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: var(--ref-spacing-sm);
+}

@@ -1,22 +1,22 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=20";
-import {
-  getSessionById,
-  getContextById,
-  contextComponentsFor,
-  contexts as allContexts,
-  posts as allPosts,
-  postCountsByFilter,
-  postCountsByNetwork,
-  attachImageToPost,
-  createPostFromIdea,
-} from "../mocks.js?v=20";
+import { getSessionById, getContextById, contextComponentsFor, contexts as allContexts } from "../mocks.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
-import { getThread, sendMessage, pickSuggestedPrompts, postAssistantMessage, subscribe } from "../assistant.js?v=20";
+import {
+  getThread,
+  sendMessage,
+  pickSuggestedPrompts,
+  postAssistantMessage,
+  subscribe,
+  submitAssistantChoice,
+} from "../assistant.js?v=20";
 import { getSources, getIdeas, subscribe as subscribeLibrary, addSource } from "../library.js?v=20";
+import { getPosts, attachImageToDraft, subscribe as subscribePostsStore } from "../posts-store.js?v=20";
+import { startDraftFlow, executeDraft } from "../draft-flow.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=20";
 import { renderIdeaCard } from "../components/idea-card.js?v=20";
+import { renderIdeasBySource } from "../components/ideas-by-source.js?v=20";
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 
 // Session screen — persistent assistant panel on the left, workspace with
@@ -236,6 +236,16 @@ function renderTurn(message) {
     return renderExtractionTurn(message);
   }
 
+  // Draft result — "Drafted N posts" mermaid-pill + mini post cards.
+  if (message.role === "assistant" && message.variant === "draft") {
+    return renderDraftTurn(message);
+  }
+
+  // Channel-picker choice turn — chip row + "Draft them" button.
+  if (message.role === "assistant-choice") {
+    return renderChoiceTurn(message);
+  }
+
   // Drafting / system notices — mermaid status pill + optional detail body.
   if (message.role === "system") {
     return renderSystemNotice(message);
@@ -423,12 +433,35 @@ function wireAssistantPanel(root, session) {
     applyIdeaFocus(root);
   });
 
+  // Subscribe to posts-store changes — re-render the Posts tab if active.
+  const offPosts = subscribePostsStore(session.id, () => {
+    const body = root.querySelector("[data-tab-body]");
+    if (!body || body.dataset.tabBody !== "posts") return;
+    body.innerHTML = renderPopulatedPosts(readQuery(), session.id);
+    // Focus the newest draft (first post in the store) if it was just added.
+    const firstCard = body.querySelector(".posts__card");
+    if (firstCard) {
+      firstCard.classList.add("is-focused");
+      firstCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      setTimeout(() => firstCard.classList.remove("is-focused"), 1600);
+    }
+  });
+
   // Apply idea focus on initial render if ?focusIdea= is present.
   applyIdeaFocus(root);
+
+  // Check for a pending draft intent set by the dashboard handler — start the
+  // conversational flow after subscriptions are active so thread updates show.
+  const pendingIdeaId = sessionStorage.getItem("pendingDraftIdeaId");
+  if (pendingIdeaId) {
+    sessionStorage.removeItem("pendingDraftIdeaId");
+    setTimeout(() => startDraftFlow(session.id, pendingIdeaId), 100);
+  }
 
   currentUnsubscribe = () => {
     offThread();
     offLibrary();
+    offPosts();
     stopThinkingTimer();
   };
 }
@@ -533,7 +566,11 @@ function renderTab(q, attachedContext, isRealSession, session) {
   if (q.tab === "context") return renderContextTab(attachedContext);
 
   if (q.tab === "posts") {
-    if (isRealSession || q.focusPost) return renderPopulatedPosts(q);
+    // Show the populated view if this is a real session, if there's a focused
+    // post (e.g. just navigated here), or if the posts store already has posts
+    // (a draft was generated for this session).
+    const hasPosts = getPosts(session.id).length > 0;
+    if (isRealSession || q.focusPost || hasPosts) return renderPopulatedPosts(q, session.id);
     return renderEmptyState({
       icon: "ap-icon-megaphone",
       title: "No posts yet",
@@ -684,7 +721,12 @@ function renderAllIdeasBody(ideas, allSources, search) {
       body: search ? `No idea matches "${search}". Try a different term.` : "No ideas yet.",
     });
   }
-  return `<div class="stack-sm">${ideas.map((i) => renderIdeaCard(i, allSources)).join("")}</div>`;
+  // Group ideas by source so the source name appears once as a separator
+  // instead of repeating on every card.
+  return (
+    renderIdeasBySource(ideas, allSources) ||
+    `<div class="stack-sm">${ideas.map((i) => renderIdeaCard(i, allSources)).join("")}</div>`
+  );
 }
 
 // Called from bindSession to re-render only the content workspace body (not
@@ -735,11 +777,21 @@ function renderEmptyState({ icon, title, body }) {
 
 // ---------- Populated Posts tab ----------
 
-function renderPopulatedPosts(q) {
-  const filterCounts = postCountsByFilter();
-  const networkCounts = postCountsByNetwork();
+function renderPopulatedPosts(q, sessionId) {
+  const sessionPosts = getPosts(sessionId);
 
-  const filtered = allPosts.filter((p) => {
+  const filterCounts = {
+    all: sessionPosts.length,
+    needs_fixes: sessionPosts.filter((p) => p.status === "needs_fixes").length,
+    scheduled: sessionPosts.filter((p) => p.status === "scheduled").length,
+  };
+  const networkCounts = {
+    all: sessionPosts.length,
+    linkedin: sessionPosts.filter((p) => p.network === "linkedin").length,
+    twitter: sessionPosts.filter((p) => p.network === "twitter").length,
+  };
+
+  const filtered = sessionPosts.filter((p) => {
     if (q.postsFilter === "needs_fixes" && p.status !== "needs_fixes") return false;
     if (q.postsFilter === "scheduled" && p.status !== "scheduled") return false;
     if (q.postsNetwork !== "all" && p.network !== q.postsNetwork) return false;
@@ -928,12 +980,109 @@ function renderPostCard(post, q = {}) {
   `;
 }
 
-function postAssistantGeneratedDraft(sessionId, idea, post) {
-  postAssistantMessage(
-    sessionId,
-    `I created a draft from "${idea.title}" and moved it into Posts as ${post.id}. Review the hook, then use the rewrite action to keep refining it.`,
-    { meta: "Archie" },
-  );
+// Channel-picker choice turn — chips toggle on click, "Draft them" submits.
+function renderChoiceTurn(message) {
+  const isAnswered = message.status === "answered";
+  const chips = (message.choices || [])
+    .map((c) => {
+      const isSelected = (message.selected || []).includes(c.value);
+      const selectedClass = isSelected ? " is-selected" : "";
+      if (isAnswered) {
+        return `<span class="chat-bubble-choice-chip${selectedClass}">
+          <i class="${c.icon}" aria-hidden="true"></i>
+          <span>${c.label}</span>
+        </span>`;
+      }
+      return `<button
+        type="button"
+        class="chat-bubble-choice-chip${selectedClass}"
+        data-assistant-choice="${c.value}"
+        data-assistant-choice-msg="${message.id}"
+        aria-pressed="${isSelected ? "true" : "false"}"
+      >
+        <i class="${c.icon}" aria-hidden="true"></i>
+        <span>${c.label}</span>
+      </button>`;
+    })
+    .join("");
+
+  const footer = isAnswered
+    ? ""
+    : `<div class="chat-bubble-choices-footer">
+        <button
+          type="button"
+          class="ap-button primary orange"
+          data-assistant-choice-submit="${message.id}"
+        >
+          <span>Draft them</span>
+        </button>
+      </div>`;
+
+  return `
+    <div class="chat-turn chat-turn--ai">
+      <i class="ap-icon-sparkles-mermaid chat-turn-avatar" aria-hidden="true"></i>
+      <div class="chat-bubble chat-bubble--ai">
+        <p class="chat-bubble-text">${message.text}</p>
+        <div class="chat-bubble-choices">${chips}</div>
+        ${footer}
+      </div>
+    </div>
+  `;
+}
+
+// Structured "Drafted N posts" result — mirrors the extraction turn chrome.
+const NETWORK_ICON = {
+  linkedin: "ap-icon-linkedin",
+  twitter: "ap-icon-twitter-official",
+  x: "ap-icon-twitter-official",
+  instagram: "ap-icon-instagram",
+};
+
+function networkLabel(network) {
+  if (network === "twitter") return "X";
+  if (!network) return "";
+  return network.charAt(0).toUpperCase() + network.slice(1);
+}
+
+function renderDraftTurn(message) {
+  const openAttr = message.open === false ? "" : " open";
+  const count = message.count ?? (message.drafts ? message.drafts.length : 0);
+
+  const miniCards = (message.drafts || [])
+    .map(
+      (d) => `
+        <div class="ap-card draft-turn__post-card">
+          <div class="draft-turn__post-header">
+            <i class="${NETWORK_ICON[d.network] || "ap-icon-megaphone"}" aria-hidden="true"></i>
+            <span>${networkLabel(d.network)}</span>
+          </div>
+          <p class="draft-turn__post-preview">${d.preview || ""}</p>
+          <a href="#" class="ap-link standalone small" data-go-to-posts>
+            <span>View in Posts</span>
+            <i class="ap-icon-external-link"></i>
+          </a>
+        </div>
+      `,
+    )
+    .join("");
+
+  return `
+    <div class="chat-turn chat-turn--ai chat-turn--extraction">
+      <details class="assistant-notice assistant-notice--mermaid"${openAttr}>
+        <summary class="assistant-notice__toggle">
+          <span class="ap-status mermaid">Drafted ${count} post${count === 1 ? "" : "s"}</span>
+          <i class="ap-icon-chevron-down assistant-notice__chevron"></i>
+        </summary>
+        <div class="extraction-turn__detail">
+          <div class="extraction-turn__analyzed-row">
+            <strong>From idea</strong>
+            <span>${message.ideaTitle || ""}</span>
+          </div>
+          ${miniCards}
+        </div>
+      </details>
+    </div>
+  `;
 }
 
 // Context tab — single-context view. A session attaches at most one context;
@@ -1165,6 +1314,46 @@ function bindSession(root, session) {
         return;
       }
 
+      // Channel-picker chip toggle — visual only, no state change yet.
+      const choiceChip = event.target.closest("[data-assistant-choice]");
+      if (choiceChip && choiceChip.tagName === "BUTTON") {
+        event.preventDefault();
+        const wasSelected = choiceChip.classList.contains("is-selected");
+        choiceChip.classList.toggle("is-selected", !wasSelected);
+        choiceChip.setAttribute("aria-pressed", !wasSelected ? "true" : "false");
+        return;
+      }
+
+      // "Draft them" submit — freeze the choice message + run executeDraft.
+      const submitChoiceBtn = event.target.closest("[data-assistant-choice-submit]");
+      if (submitChoiceBtn) {
+        event.preventDefault();
+        const msgId = submitChoiceBtn.dataset.assistantChoiceSubmit;
+        const thread = getThread(session.id);
+        const msg = thread.find((m) => m.id === msgId);
+        if (!msg) return;
+        // Collect selected chip values from the DOM.
+        const bubble = submitChoiceBtn.closest(".chat-bubble");
+        const selectedValues = bubble
+          ? [...bubble.querySelectorAll("button.chat-bubble-choice-chip.is-selected")]
+              .map((c) => c.dataset.assistantChoice)
+              .filter(Boolean)
+          : [];
+        if (selectedValues.length === 0) return; // nothing selected — no-op
+        submitAssistantChoice(session.id, msgId, selectedValues);
+        if (msg.handler === "draft-channels" && msg.context?.ideaId) {
+          executeDraft(session.id, msg.context.ideaId, selectedValues);
+        }
+        return;
+      }
+
+      // "View in Posts" link inside a draft result turn.
+      if (event.target.closest("[data-go-to-posts]")) {
+        event.preventDefault();
+        setQuery({ tab: "posts", postsFilter: "all", postsNetwork: "all" });
+        return;
+      }
+
       // External-link on an extraction idea card — jump to Content ideas + focus.
       const focusBtn = event.target.closest("[data-focus-idea]");
       if (focusBtn) {
@@ -1226,13 +1415,7 @@ function bindSession(root, session) {
       if (event.target.closest("[data-idea-generate]")) {
         event.preventDefault();
         const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
-        const idea = getIdeas(session.id).find((i) => i.id === ideaId);
-        if (idea) {
-          const source = getSources(session.id).find((s) => s.id === idea.sourceId);
-          const post = createPostFromIdea(idea, source);
-          setQuery({ tab: "posts", focusPost: post.id, postsFilter: "all", postsNetwork: "all" });
-          postAssistantGeneratedDraft(session.id, idea, post);
-        }
+        if (ideaId) startDraftFlow(session.id, ideaId);
         return;
       }
 
@@ -1266,7 +1449,7 @@ function bindSession(root, session) {
         event.preventDefault();
         const postId = genImageBtn.dataset.generateImage;
         openGenerateImageModal(postId, (imageUrl) => {
-          attachImageToPost(postId, imageUrl);
+          attachImageToDraft(session.id, postId, imageUrl);
           setQuery({ tab: "posts", focusPost: postId, postsFilter: "all", postsNetwork: "all" });
         });
         return;

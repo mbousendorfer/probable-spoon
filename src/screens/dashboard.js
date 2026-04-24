@@ -1,18 +1,11 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=20";
-import {
-  createPostFromIdea,
-  recentSessions,
-  templateStarters,
-  sources,
-  ideas,
-  contexts,
-  contextComponentsFor,
-} from "../mocks.js?v=20";
+import { recentSessions, templateStarters, sources, ideas, contexts, contextComponentsFor } from "../mocks.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=20";
 import { renderIdeaCard } from "../components/idea-card.js?v=20";
+import { renderIdeasBySource } from "../components/ideas-by-source.js?v=20";
 
 // Dashboard — one URL (#/), multiple state variants encoded in URL params so
 // screens like "Projects · Library" vs "Global Contexts" stay shareable.
@@ -161,9 +154,11 @@ function renderProjectsPanel(q) {
 
 function renderContentSection(q) {
   const view = q.view === "ideas" ? "ideas" : "sources";
+  // Ideas view: group by source so the source name appears once as a separator
+  // row rather than repeating on every card.
   const body =
     view === "ideas"
-      ? `<div class="stack-sm">${ideas.map((i) => renderIdeaCard(i, sources)).join("")}</div>`
+      ? renderIdeasBySource(ideas, sources) || `<p class="muted">No ideas yet.</p>`
       : `<div class="stack-sm">${sources.map((s) => renderSourceCard(s, ideas)).join("")}</div>`;
   return html`
     <section class="dashboard__section">
@@ -399,13 +394,11 @@ function bindDashboard(root) {
     if (event.target.closest("[data-idea-generate]")) {
       event.preventDefault();
       const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
-      const idea = ideas.find((i) => i.id === ideaId);
-      if (idea) {
-        const post = createPostFromIdea(
-          idea,
-          sources.find((s) => s.id === idea.sourceId),
-        );
-        navigate(`/session/${defaultSessionId}?tab=posts&focusPost=${post.id}`);
+      if (ideaId) {
+        // Store the intent; session.js reads + clears it on mount and starts
+        // the conversational draft flow without a second navigation hop.
+        sessionStorage.setItem("pendingDraftIdeaId", ideaId);
+        navigate(`/session/${defaultSessionId}?tab=content&view=ideas`);
       }
       return;
     }

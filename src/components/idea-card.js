@@ -121,25 +121,29 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeAllIdeaMoreMenus();
 });
 
-export function renderIdeaCard(idea, allSources = []) {
+export function renderIdeaCard(idea, allSources = [], { hideSourceRow = false } = {}) {
   const source = allSources.find((s) => s.id === idea.sourceId) || null;
   const potential = potentialFor(idea.confidence || 0);
 
   // Source info row. The link itself triggers data-idea-open — the removed
   // "Open idea →" button handler takes over here.
-  const sourceRow = source
-    ? `
-      <div class="idea-card__source-row">
-        <a class="ap-link standalone idea-card__source-link" href="#" data-idea-open="${idea.id}">
-          <i class="${iconFor(source.kind)}"></i>
-          <span>${source.filename}</span>
-        </a>
-        ${idea.extractedAt ? `<span class="muted idea-card__source-meta">· extracted ${idea.extractedAt}</span>` : ""}
-      </div>
-    `
-    : idea.extractedAt
-      ? `<div class="idea-card__source-row"><span class="muted idea-card__source-meta">Extracted ${idea.extractedAt}</span></div>`
-      : "";
+  // When hideSourceRow is true (e.g. inside a grouped by-source layout where
+  // the source is already shown as a section separator), skip this row.
+  const sourceRow = hideSourceRow
+    ? ""
+    : source
+      ? `
+        <div class="idea-card__source-row">
+          <a class="ap-link standalone idea-card__source-link" href="#" data-idea-open="${idea.id}">
+            <i class="${iconFor(source.kind)}"></i>
+            <span>${source.filename}</span>
+          </a>
+          ${idea.extractedAt ? `<span class="muted idea-card__source-meta">· extracted ${idea.extractedAt}</span>` : ""}
+        </div>
+      `
+      : idea.extractedAt
+        ? `<div class="idea-card__source-row"><span class="muted idea-card__source-meta">Extracted ${idea.extractedAt}</span></div>`
+        : "";
 
   const pinLabel = idea.pinned ? "Unpin idea" : "Pin idea";
 
@@ -162,7 +166,7 @@ export function renderIdeaCard(idea, allSources = []) {
             data-idea-generate="${idea.id}"
           >
             <i class="ap-icon-sparkles"></i>
-            <span>Create post from this idea</span>
+            <span>Draft a post</span>
           </button>
 
           <div class="idea-card__more-wrap">

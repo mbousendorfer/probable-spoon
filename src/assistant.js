@@ -192,6 +192,83 @@ export function finishPending(sessionId, id) {
   notify(sessionId);
 }
 
+// Push only a user bubble — no reasoning chip, no AI placeholder.
+// Used by the draft flow so the user sees their intent echoed without
+// triggering a generic AI reply.
+export function postUserTurn(sessionId, text) {
+  const thread = getThread(sessionId);
+  thread.push({
+    id: newId(),
+    role: "user",
+    meta: "You",
+    text: text.trim(),
+    status: "ready",
+    createdAt: Date.now(),
+  });
+  notify(sessionId);
+}
+
+// Convenience alias — same implementation as postUserTurn but semantically
+// signals "channel selection echo" at call sites.
+export function postUserChoice(sessionId, { text }) {
+  postUserTurn(sessionId, text);
+}
+
+// Push an "assistant-choice" turn that renders a set of toggle chips plus a
+// submit button. Keeps the module generic — the handler string identifies
+// what the click delegate in session.js should do on submit.
+export function postAssistantChoice(sessionId, { text, choices, multi = true, handler = "", context = {} }) {
+  const thread = getThread(sessionId);
+  thread.push({
+    id: newId(),
+    role: "assistant-choice",
+    meta: "Archie",
+    text,
+    choices, // [{ value, label, icon }]
+    selected: [],
+    multi,
+    handler,
+    context,
+    status: "ready",
+    createdAt: Date.now(),
+  });
+  notify(sessionId);
+}
+
+// Freeze a choice message after the user submits — chips become read-only.
+export function submitAssistantChoice(sessionId, messageId, selectedValues) {
+  const thread = getThread(sessionId);
+  const msg = thread.find((m) => m.id === messageId);
+  if (!msg) return;
+  msg.selected = selectedValues;
+  msg.status = "answered";
+  notify(sessionId);
+}
+
+// Structured "Drafted N posts" result turn. Reuses the extraction-turn chrome
+// (mermaid pill + collapsible detail) but shows post mini-cards instead of
+// idea cards.
+export function postDraftResult(sessionId, { ideaTitle, drafts }) {
+  const thread = getThread(sessionId);
+  thread.push({
+    id: newId(),
+    role: "assistant",
+    variant: "draft",
+    meta: "Archie",
+    ideaTitle,
+    drafts: drafts.map((d) => ({
+      id: d.id,
+      network: d.network,
+      preview: Array.isArray(d.text) ? d.text[0] : d.text,
+    })),
+    count: drafts.length,
+    status: "ready",
+    open: true,
+    createdAt: Date.now(),
+  });
+  notify(sessionId);
+}
+
 export function pickSuggestedPrompts({ hasContext } = {}) {
   const base = [
     { title: "Find strongest signal", value: "Find the strongest post angle in this session" },
