@@ -1,7 +1,15 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=20";
-import { recentSessions, templateStarters, sources, ideas, contexts, contextComponentsFor } from "../mocks.js?v=20";
+import {
+  createPostFromIdea,
+  recentSessions,
+  templateStarters,
+  sources,
+  ideas,
+  contexts,
+  contextComponentsFor,
+} from "../mocks.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=20";
 import { renderIdeaCard } from "../components/idea-card.js?v=20";
@@ -12,7 +20,7 @@ import { renderIdeaCard } from "../components/idea-card.js?v=20";
 // Params:
 //   tab       "projects" (default) | "contexts"
 //   subtab    "library" (default) | "ideas"
-//   ctx       "none" (default) | "auto"   — affects the "New project" form on the left
+//   ctx       "none" (default) | "voice" | "brief" | "brand"
 //
 // The wireframe shows these combinations as the 4 Start Screen variants.
 
@@ -27,6 +35,7 @@ function readQuery() {
   return {
     tab: params.get("tab") || "projects",
     ctx: params.get("ctx") || "none",
+    title: params.get("title") || "",
     view,
   };
 }
@@ -64,8 +73,9 @@ function renderNewProjectCard(q) {
       <div class="ap-form-field">
         <label>Project name</label>
         <div class="ap-input-group">
-          <input placeholder="e.g. Q2 launch drumbeat" data-new-project-name />
+          <input placeholder="e.g. Q2 launch drumbeat" data-new-project-name value="${q.title}" />
         </div>
+        <p class="dashboard__form-error" data-new-project-error hidden>Give this project a name before creating it.</p>
       </div>
       <div class="ap-form-field">
         <label>Context</label>
@@ -159,7 +169,7 @@ function renderContentSection(q) {
     <section class="dashboard__section">
       <div class="row-between">
         <h2 class="text-section">Content</h2>
-        <button type="button" class="ap-button stroked blue">
+        <button type="button" class="ap-button stroked blue" data-dashboard-add-source>
           <i class="ap-icon-plus"></i>
           <span>Add source</span>
         </button>
@@ -306,9 +316,44 @@ function bindDashboard(root) {
       return;
     }
 
+    const templateBtn = event.target.closest("[data-template-id]");
+    if (templateBtn) {
+      const template = templateStarters.find((t) => t.id === templateBtn.dataset.templateId);
+      if (template) {
+        const nameInput = root.querySelector("[data-new-project-name]");
+        const contextSelect = root.querySelector("[data-new-project-context]");
+        const title = `${template.name} project`;
+        if (nameInput) nameInput.value = title;
+        if (contextSelect) contextSelect.value = template.id === "tpl-launch" ? "brand" : "voice";
+        setQuery({
+          tab: "projects",
+          title,
+          ctx: contextSelect?.value || "voice",
+        });
+      }
+      return;
+    }
+
     if (event.target.closest("[data-new-project-create]")) {
-      // In the prototype, all new projects land on the same empty session.
-      navigate("/session/new");
+      const nameInput = root.querySelector("[data-new-project-name]");
+      const contextSelect = root.querySelector("[data-new-project-context]");
+      const error = root.querySelector("[data-new-project-error]");
+      const title = nameInput?.value.trim() || "";
+      if (!title) {
+        if (error) error.hidden = false;
+        nameInput?.focus();
+        return;
+      }
+      if (error) error.hidden = true;
+      const contextId = contextIdForNewProject(contextSelect?.value || "none");
+      const qs = new URLSearchParams({ tab: "posts", title });
+      if (contextId) qs.set("contextId", contextId);
+      navigate(`/session/new?${qs.toString()}`);
+      return;
+    }
+
+    if (event.target.closest("[data-dashboard-add-source]")) {
+      navigate(`/session/${recentSessions[0]?.id || "new"}?tab=content&view=sources`);
       return;
     }
 
@@ -353,13 +398,35 @@ function bindDashboard(root) {
     }
     if (event.target.closest("[data-idea-generate]")) {
       event.preventDefault();
+      const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
+      const idea = ideas.find((i) => i.id === ideaId);
+      if (idea) {
+        const post = createPostFromIdea(
+          idea,
+          sources.find((s) => s.id === idea.sourceId),
+        );
+        navigate(`/session/${defaultSessionId}?tab=posts&focusPost=${post.id}`);
+      }
       return;
     }
   });
 
   root.addEventListener("change", (event) => {
     if (event.target.matches("[data-new-project-context]")) {
-      setQuery({ ctx: event.target.value === "none" ? "none" : "auto" });
+      setQuery({ ctx: event.target.value || "none" });
     }
   });
+
+  root.addEventListener("input", (event) => {
+    if (event.target.matches("[data-new-project-name]")) {
+      const error = root.querySelector("[data-new-project-error]");
+      if (error && event.target.value.trim()) error.hidden = true;
+    }
+  });
+}
+
+function contextIdForNewProject(value) {
+  if (value === "voice") return "ctx-founder-voice";
+  if (value === "brief" || value === "brand") return "ctx-acme";
+  return "";
 }

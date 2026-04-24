@@ -342,7 +342,7 @@ export const posts = [
     timeLabel: "6h",
     text: [
       "Short version of today's offsite: we stopped writing quarterly OKRs. Here's what replaced them and why the team ships faster now.",
-      "[TODO — finish the 3-part breakdown before scheduling]",
+      "The replacement is simple: one weekly operating signal, one owner, and one decision the team can actually make before Friday.",
     ],
     hashtags: ["OKRs", "OperatorNotes"],
     cta: "",
@@ -395,6 +395,42 @@ export const posts = [
     hasImage: false,
   },
 ];
+
+let generatedPostCounter = 0;
+
+export function createPostFromIdea(idea, source = null) {
+  generatedPostCounter += 1;
+  const title = idea?.title || "Untitled idea";
+  const sourceLabel = source?.filename ? ` from ${source.filename}` : "";
+  const post = {
+    id: `post-generated-${Date.now().toString(36)}-${generatedPostCounter}`,
+    author: AUTHOR_MC,
+    network: idea?.channels?.[0] === "x" ? "twitter" : "linkedin",
+    status: "ready",
+    timeLabel: "just now",
+    text: [
+      title,
+      idea?.body ||
+        "Archie turned this idea into a first draft. Tighten the proof point, then schedule it when it feels ready.",
+      `Drafted from the selected idea${sourceLabel}.`,
+    ],
+    hashtags: ["Draft", "Archie"],
+    cta: "Pressure-test the angle, then schedule the final version.",
+    stats: { likes: 0, comments: 0, reposts: 0 },
+    hasImage: false,
+    generatedFromIdeaId: idea?.id || null,
+  };
+  posts.unshift(post);
+  return post;
+}
+
+export function attachImageToPost(postId, imageUrl) {
+  const post = posts.find((p) => p.id === postId);
+  if (!post) return null;
+  post.hasImage = true;
+  post.imageUrl = imageUrl;
+  return post;
+}
 
 // Lookup helpers ----------------------------------------------------------------
 

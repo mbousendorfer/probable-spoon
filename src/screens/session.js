@@ -9,9 +9,11 @@ import {
   posts as allPosts,
   postCountsByFilter,
   postCountsByNetwork,
+  attachImageToPost,
+  createPostFromIdea,
 } from "../mocks.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
-import { getThread, sendMessage, pickSuggestedPrompts, subscribe } from "../assistant.js?v=20";
+import { getThread, sendMessage, pickSuggestedPrompts, postAssistantMessage, subscribe } from "../assistant.js?v=20";
 import { getSources, getIdeas, subscribe as subscribeLibrary, addSource } from "../library.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=20";
 import { renderIdeaCard } from "../components/idea-card.js?v=20";
@@ -41,10 +43,14 @@ function readQuery() {
   }
   return {
     tab,
-    populated: params.get("populated") === "1",
+    populated: params.get("populated") === "1" || params.get("populated") === "true",
+    title: params.get("title") || "",
+    contextId: params.get("contextId") || "",
+    detached: params.get("detached") === "1" || params.get("detached") === "true",
     postsFilter: params.get("postsFilter") || "all",
     postsNetwork: params.get("postsNetwork") || "all",
     focusIdea: params.get("focusIdea") || "",
+    focusPost: params.get("focusPost") || "",
     // Content tab state
     view: params.get("view") || viewFromOldTab || "sources",
   };
@@ -58,6 +64,9 @@ const contentState = { q: "", sort: "potential" };
 function setQuery(next) {
   const current = readQuery();
   const merged = { ...current, ...next };
+  Object.keys(merged).forEach((key) => {
+    if (merged[key] == null || merged[key] === "" || merged[key] === false) delete merged[key];
+  });
   const qs = new URLSearchParams(merged).toString();
   const sessionId = getActiveSessionIdFromHash();
   window.location.hash = `#/session/${sessionId}?${qs}`;
@@ -80,18 +89,26 @@ let currentListenerController = null;
 export function renderSession(params, target) {
   const mockedSession = getSessionById(params.id);
   const isRealSession = !!mockedSession && !isNewUser();
+  const q = readQuery();
 
   const session = mockedSession || {
     id: params.id,
-    name: params.id === "new" ? "Untitled session" : "Session",
-    contextId: null,
+    name: q.title || (params.id === "new" ? "Untitled session" : "Session"),
+    contextId: q.contextId || null,
   };
   renderTopbar({ crumb: session.name });
 
-  const q = readQuery();
   // In "populated=1" mode we pretend the session has the default context
   // attached so the UI can demo the populated Context tab.
-  const attachedContext = session.contextId ? getContextById(session.contextId) : q.populated ? allContexts[0] : null;
+  const attachedContext = q.detached
+    ? null
+    : q.contextId
+      ? getContextById(q.contextId)
+      : session.contextId
+        ? getContextById(session.contextId)
+        : q.populated
+          ? allContexts[0]
+          : null;
   const hasContext = !!attachedContext;
 
   target.innerHTML = html`
@@ -516,7 +533,7 @@ function renderTab(q, attachedContext, isRealSession, session) {
   if (q.tab === "context") return renderContextTab(attachedContext);
 
   if (q.tab === "posts") {
-    if (isRealSession) return renderPopulatedPosts(q);
+    if (isRealSession || q.focusPost) return renderPopulatedPosts(q);
     return renderEmptyState({
       icon: "ap-icon-megaphone",
       title: "No posts yet",
@@ -733,7 +750,7 @@ function renderPopulatedPosts(q) {
     <div class="posts">
       ${raw(renderPostsFilterRail(q, filterCounts, networkCounts))}
       <div class="posts__feed">
-        ${raw(filtered.length ? filtered.map(renderPostCard).join("") : renderPostsEmpty(q))}
+        ${raw(filtered.length ? filtered.map((post) => renderPostCard(post, q)).join("") : renderPostsEmpty(q))}
       </div>
     </div>
   `;
@@ -799,7 +816,7 @@ function renderPostsEmpty(q) {
   `;
 }
 
-function renderPostCard(post) {
+function renderPostCard(post, q = {}) {
   const statusPill = (() => {
     if (post.status === "needs_fixes") {
       return '<span class="ap-status red">Needs fixes</span>';
@@ -833,8 +850,15 @@ function renderPostCard(post) {
       `
       : "";
 
+  const imageBlock = post.imageUrl
+    ? `<img class="posts__card-image" src="${post.imageUrl}" alt="Generated image for this post" />`
+    : `<button type="button" class="posts__card-image-placeholder" data-generate-image="${post.id}">
+          <i class="ap-icon-sparkles-mermaid"></i>
+          <span>Generate an image</span>
+        </button>`;
+
   return html`
-    <article class="posts__row">
+    <article class="posts__row ${q.focusPost === post.id ? "is-focused" : ""}" data-post-id="${post.id}">
       <label class="ap-checkbox-container posts__row-check" aria-label="Select post">
         <input type="checkbox" />
         <i></i>
@@ -856,12 +880,7 @@ function renderPostCard(post) {
 
         <div class="posts__card-body">${raw(bodyParagraphs)} ${raw(hashtags)} ${raw(cta)}</div>
 
-        <button type="button" class="posts__card-image-placeholder" data-generate-image="${post.id}">
-          <i class="ap-icon-sparkles-mermaid"></i>
-          <span>Generate an image</span>
-        </button>
-
-        ${raw(engagement)}
+        ${raw(imageBlock)} ${raw(engagement)}
 
         <footer class="posts__card-footer">
           <button class="posts__card-action" type="button">
@@ -887,7 +906,12 @@ function renderPostCard(post) {
         <button type="button" class="ap-icon-button stroked" aria-label="Edit post">
           <i class="ap-icon-pen"></i>
         </button>
-        <button type="button" class="ap-icon-button stroked" aria-label="Rewrite with AI">
+        <button
+          type="button"
+          class="ap-icon-button stroked"
+          aria-label="Rewrite with AI"
+          data-post-rewrite="${post.id}"
+        >
           <i class="ap-icon-sparkles"></i>
         </button>
         <button type="button" class="ap-icon-button stroked" aria-label="Schedule post">
@@ -902,6 +926,14 @@ function renderPostCard(post) {
       </div>
     </article>
   `;
+}
+
+function postAssistantGeneratedDraft(sessionId, idea, post) {
+  postAssistantMessage(
+    sessionId,
+    `I created a draft from "${idea.title}" and moved it into Posts as ${post.id}. Review the hook, then use the rewrite action to keep refining it.`,
+    { meta: "Archie" },
+  );
 }
 
 // Context tab — single-context view. A session attaches at most one context;
@@ -928,10 +960,24 @@ function renderNoContext() {
           <i class="ap-icon-plus"></i>
           <span>Create a context</span>
         </button>
-        <button type="button" class="ap-button stroked blue" data-attach-existing>
-          <span>Attach existing</span>
-          <i class="ap-icon-arrow-right"></i>
-        </button>
+      </div>
+      <div class="session__context-picker">
+        <h3 class="text-section">Attach existing</h3>
+        <div class="stack-sm">
+          ${raw(
+            allContexts
+              .map(
+                (context) => `
+                  <button type="button" class="ap-card session__context-option" data-attach-context="${context.id}">
+                    <span class="session__context-option-title">${context.name}</span>
+                    <span class="muted">${contextComponentsFor(context).join(" · ")} · Updated ${context.updatedAt}</span>
+                    <i class="ap-icon-arrow-right"></i>
+                  </button>
+                `,
+              )
+              .join(""),
+          )}
+        </div>
       </div>
     </div>
   `;
@@ -1179,6 +1225,14 @@ function bindSession(root, session) {
 
       if (event.target.closest("[data-idea-generate]")) {
         event.preventDefault();
+        const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
+        const idea = getIdeas(session.id).find((i) => i.id === ideaId);
+        if (idea) {
+          const source = getSources(session.id).find((s) => s.id === idea.sourceId);
+          const post = createPostFromIdea(idea, source);
+          setQuery({ tab: "posts", focusPost: post.id, postsFilter: "all", postsNetwork: "all" });
+          postAssistantGeneratedDraft(session.id, idea, post);
+        }
         return;
       }
 
@@ -1210,7 +1264,11 @@ function bindSession(root, session) {
       const genImageBtn = event.target.closest("[data-generate-image]");
       if (genImageBtn) {
         event.preventDefault();
-        openGenerateImageModal(genImageBtn.dataset.generateImage);
+        const postId = genImageBtn.dataset.generateImage;
+        openGenerateImageModal(postId, (imageUrl) => {
+          attachImageToPost(postId, imageUrl);
+          setQuery({ tab: "posts", focusPost: postId, postsFilter: "all", postsNetwork: "all" });
+        });
         return;
       }
 
@@ -1219,8 +1277,9 @@ function bindSession(root, session) {
         navigate("/analyse");
         return;
       }
-      if (event.target.closest("[data-attach-existing]")) {
-        setQuery({ tab: "context", populated: "1" });
+      const attachContext = event.target.closest("[data-attach-context]");
+      if (attachContext) {
+        setQuery({ tab: "context", contextId: attachContext.dataset.attachContext, detached: "", populated: "" });
         return;
       }
       const editCtx = event.target.closest("[data-edit-context]");
@@ -1229,7 +1288,7 @@ function bindSession(root, session) {
         return;
       }
       if (event.target.closest("[data-detach-context]")) {
-        setQuery({ tab: "context", populated: "" });
+        setQuery({ tab: "context", detached: "1", contextId: "", populated: "" });
         return;
       }
       const addComp = event.target.closest("[data-add-component]");
@@ -1248,6 +1307,13 @@ function bindSession(root, session) {
 
       if (event.target.closest("[data-assistant-send]")) {
         submitInput();
+        return;
+      }
+
+      const rewritePost = event.target.closest("[data-post-rewrite]");
+      if (rewritePost && input) {
+        input.value = "Rewrite this post with a sharper hook and one concrete proof point.";
+        input.focus();
         return;
       }
 

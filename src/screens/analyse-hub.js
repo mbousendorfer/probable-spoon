@@ -1,6 +1,7 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=20";
+import { getContextById } from "../mocks.js?v=20";
 
 // Context intake — step 1 of the context wizard, chromeless.
 // The user names the context and picks which components to include (Voice,
@@ -37,6 +38,7 @@ function readQuery() {
 export function renderAnalyseHub(_params, target) {
   const params = readQuery();
   const editingId = params.get("contextId");
+  const editingContext = editingId ? getContextById(editingId) : null;
   const crumb = editingId ? "Edit context" : "Create context";
   renderTopbar({ crumb });
 
@@ -55,7 +57,12 @@ export function renderAnalyseHub(_params, target) {
         <div class="ap-form-field">
           <label>Context name</label>
           <div class="ap-input-group">
-            <input type="text" placeholder="e.g. Acme · Q2 marketing" data-context-name value="${editingId || ""}" />
+            <input
+              type="text"
+              placeholder="e.g. Acme · Q2 marketing"
+              data-context-name
+              value="${editingContext?.name || ""}"
+            />
           </div>
         </div>
 
@@ -65,7 +72,7 @@ export function renderAnalyseHub(_params, target) {
               (c) => `
                 <label class="ap-card analyse__hub-card analyse__hub-card--check">
                   <span class="ap-checkbox-container">
-                    <input type="checkbox" data-component="${c.key}" checked />
+                    <input type="checkbox" data-component="${c.key}" ${isComponentChecked(editingContext, c.key)} />
                     <i></i>
                   </span>
                   <div class="analyse__hub-card-icon">
@@ -118,4 +125,9 @@ export function renderAnalyseHub(_params, target) {
       window.location.hash = `#/analyse/${stages[0]}?${qs.toString()}`;
     }
   });
+}
+
+function isComponentChecked(context, key) {
+  if (!context) return "checked";
+  return context[key] ? "checked" : "";
 }

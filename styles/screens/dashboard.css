@@ -81,6 +81,17 @@
   color: var(--sys-text-color-light);
 }
 
+.dashboard__form-error {
+  margin: var(--ref-spacing-xxxs) 0 0;
+  color: var(--ref-color-red-100);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+}
+
+.dashboard__form-error[hidden] {
+  display: none;
+}
+
 /* Main tabs container */
 
 .dashboard__main-tabs {

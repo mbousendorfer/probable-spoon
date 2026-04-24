@@ -71,9 +71,12 @@ export function renderAnalyseSummary(_params, target) {
       return;
     }
     if (event.target.closest("[data-analyse-open-session]")) {
-      // Demo-quality link — lands in the existing seeded session with populated=1
-      // so the Context tab shows the "attached" state visually.
-      window.location.hash = "#/session/s-acme-launch?tab=context&populated=1";
+      const qs = new URLSearchParams({
+        tab: "context",
+        title: `${name} session`,
+        contextId: q.get("contextId") || "ctx-acme",
+      });
+      window.location.hash = `#/session/new?${qs.toString()}`;
     }
   });
 }

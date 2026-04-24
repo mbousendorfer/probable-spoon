@@ -29,7 +29,7 @@ export function renderTopbar(_options = {}) {
         <i class="ap-icon-bug"></i>
         <span>Report a bug</span>
       </button>
-      <button type="button" class="ap-icon-button stroked" aria-label="Settings">
+      <button type="button" class="ap-icon-button stroked" aria-label="Settings" data-topbar-settings>
         <i class="ap-icon-cog"></i>
       </button>
     </div>
@@ -51,6 +51,10 @@ export function initTopbar() {
     }
     if (event.target.closest("[data-topbar-bug]")) {
       openBugReportModal();
+      return;
+    }
+    if (event.target.closest("[data-topbar-settings]")) {
+      navigate("/?tab=contexts");
     }
   });
 }
