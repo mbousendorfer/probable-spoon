@@ -1,6 +1,6 @@
-import { navigate } from "../router.js?v=17";
-import { renderTopbar } from "../components/topbar.js?v=17";
-import { voiceAnalysis } from "../mocks.js?v=17";
+import { navigate } from "../router.js?v=20";
+import { renderTopbar } from "../components/topbar.js?v=20";
+import { voiceAnalysis } from "../mocks.js?v=20";
 import {
   wizardChrome,
   chatTurn,
@@ -11,7 +11,8 @@ import {
   advanceContextStage,
   bindWizardKeyboard,
   unbindWizardKeyboard,
-} from "./_analyse-common.js?v=17";
+  scrollChatToLatest,
+} from "./_analyse-common.js?v=20";
 
 // Voice wizard — conversational flow.
 // Step 0        → "Want me to learn how you write?"
@@ -65,6 +66,7 @@ export function renderAnalyseVoice(_params, target) {
   const { body, picker } = renderStep(step);
 
   target.innerHTML = wizardChrome({ body, picker });
+  scrollChatToLatest(target);
 
   target.addEventListener("click", (event) => {
     const answer = event.target.closest("[data-voice-answer]");
@@ -91,37 +93,54 @@ export function renderAnalyseVoice(_params, target) {
   });
 }
 
+// Each step returns the FULL accumulated conversation so prior answers stay
+// visible as the user advances. Because the prototype doesn't persist the
+// user's typed-or-picked answers, past user turns use canonical text for each
+// step ("Yes, analyze my writing.", "Looks good, continue.", etc.) — the only
+// way to reach step N is to have taken the advancing branch, so these labels
+// are accurate for any thread that actually renders.
 function renderStep(step) {
+  const intakeQ = chatTurn({
+    role: "ai",
+    text: "Want me to learn how you write? I'll analyze a profile or a document to match your voice.",
+  });
+
   if (step === "0") {
-    return {
-      body: chatTurn({
-        role: "ai",
-        text: "Want me to learn how you write? I'll analyze a profile or a document to match your voice.",
-      }),
-      picker: INTAKE_PICKER,
-    };
+    return { body: intakeQ, picker: INTAKE_PICKER };
   }
+
+  const intakeA = chatTurn({ role: "user", text: "Yes, analyze my writing." });
+  const sourceQ = chatTurn({ role: "ai", text: "Which profile should I analyze?" });
 
   if (step === "1") {
-    return {
-      body:
-        chatTurn({
-          role: "ai",
-          text: "Want me to learn how you write? I'll analyze a profile or a document to match your voice.",
-        }) +
-        chatTurn({ role: "user", text: "Yes, analyze my writing." }) +
-        chatTurn({
-          role: "ai",
-          text: "Which profile should I analyze?",
-        }),
-      picker: SOURCE_PICKER,
-    };
+    return { body: intakeQ + intakeA + sourceQ, picker: SOURCE_PICKER };
   }
 
-  if (step === "summary") {
+  const sourceA = chatTurn({ role: "user", text: "Use the sources I already attached." });
+
+  const isSummary = step === "summary";
+  const idx = Number(step);
+  const currentSectionIdx = isSummary ? SECTIONS.length : idx - 2;
+
+  // Replay every section Q + "Looks good, continue." answer the user has
+  // already taken to reach the current step.
+  let sectionHistory = "";
+  for (let i = 0; i < currentSectionIdx; i++) {
+    const section = SECTIONS[i];
+    sectionHistory += chatTurn({
+      role: "ai",
+      text: `Here's what I'm hearing in the ${section.title.toLowerCase()} (${i + 1} of ${SECTIONS.length}). Does it fit?`,
+      contentHtml: bulletsBlock(section.bullets),
+    });
+    sectionHistory += chatTurn({ role: "user", text: "Looks good, continue." });
+  }
+
+  const priorTurns = intakeQ + intakeA + sourceQ + sourceA + sectionHistory;
+
+  if (isSummary) {
     return {
       body:
-        chatTurn({ role: "user", text: "Looks good, continue." }) +
+        priorTurns +
         chatTurn({
           role: "ai",
           text: "Here's your full voice profile. Keep it or start over.",
@@ -131,25 +150,18 @@ function renderStep(step) {
     };
   }
 
-  const idx = Number(step);
-  const sectionIndex = idx - 2;
-  const section = SECTIONS[sectionIndex];
-  if (!section) {
+  const currentSection = SECTIONS[currentSectionIdx];
+  if (!currentSection) {
     return renderStep("0");
   }
 
-  const lastUser =
-    sectionIndex === 0
-      ? chatTurn({ role: "user", text: "Use the sources I already attached." })
-      : chatTurn({ role: "user", text: "Looks good, continue." });
-
   return {
     body:
-      lastUser +
+      priorTurns +
       chatTurn({
         role: "ai",
-        text: `Here's what I'm hearing in the ${section.title.toLowerCase()} (${sectionIndex + 1} of ${SECTIONS.length}). Does it fit?`,
-        contentHtml: bulletsBlock(section.bullets),
+        text: `Here's what I'm hearing in the ${currentSection.title.toLowerCase()} (${currentSectionIdx + 1} of ${SECTIONS.length}). Does it fit?`,
+        contentHtml: bulletsBlock(currentSection.bullets),
       }),
     picker: SECTION_PICKER,
   };

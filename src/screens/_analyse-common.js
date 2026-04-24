@@ -1,4 +1,4 @@
-import { html, raw } from "../utils.js?v=17";
+import { html, raw } from "../utils.js?v=20";
 
 // Shared pieces for all three Analyse wizards.
 //
@@ -80,21 +80,33 @@ export function wizardChrome({ body, picker = null, stickyFooter = null }) {
   `;
 }
 
+// Called by each wizard after innerHTML = wizardChrome(...). Once the thread
+// grows past the viewport the flex `margin: auto` trick in .analyse__chat-inner
+// (styles/screens/analyse.css) stops pinning the content to the bottom —
+// force the scroll container to its latest message so the new AI question is
+// always in view on advance.
+export function scrollChatToLatest(target) {
+  const chat = target.querySelector("#analyseChat");
+  if (chat) chat.scrollTop = chat.scrollHeight;
+}
+
 // -- Chat turns -------------------------------------------------------------
 
 export function chatTurn({ role, text, contentHtml = "" }) {
   // role = "ai" | "user"
-  // Layout: header row (icon + role label) stacked above the bubble body.
-  const iconClass = role === "ai" ? "ap-icon-sparkles-mermaid" : "ap-icon-question";
-  const label = role === "ai" ? "Archie" : "You";
+  // Mirrors the session assistant panel layout (src/screens/session.js):
+  //   AI   → [sparkle] [bubble] inline row (the :has(> .chat-turn-avatar)
+  //          rule in chat.css kicks in when the avatar is a direct child)
+  //   User → [You label] stacked over a blue bubble, right-aligned
+  const isAi = role === "ai";
+  const header = isAi
+    ? `<i class="ap-icon-sparkles-mermaid chat-turn-avatar" aria-hidden="true"></i>`
+    : `<span class="chat-turn-role">You</span>`;
 
   return `
-    <div class="chat-turn chat-turn--${role === "ai" ? "ai" : "user"}">
-      <div class="chat-turn-header">
-        <i class="${iconClass} chat-turn-avatar" aria-hidden="true"></i>
-        <span class="chat-turn-role">${label}</span>
-      </div>
-      <div class="chat-bubble chat-bubble--${role === "ai" ? "ai" : "user"}">
+    <div class="chat-turn chat-turn--${isAi ? "ai" : "user"}">
+      ${header}
+      <div class="chat-bubble chat-bubble--${isAi ? "ai" : "user"}">
         ${text ? `<p class="chat-bubble-text">${text}</p>` : ""}
         ${contentHtml || ""}
       </div>
@@ -104,13 +116,12 @@ export function chatTurn({ role, text, contentHtml = "" }) {
 
 // -- Content blocks rendered INSIDE an AI bubble ----------------------------
 
+// Figma 73:1394 renders each extracted observation as its own grey-05 card
+// (border grey-10, radius-md, padding spacing-xs) inside the AI bubble
+// column-flex — not as bullets with markers. One card per item.
 export function bulletsBlock(bulletsList) {
   if (!bulletsList || !bulletsList.length) return "";
-  return `
-    <ul class="chat-bubble-list">
-      ${bulletsList.map((b) => `<li>${b}</li>`).join("")}
-    </ul>
-  `;
+  return bulletsList.map((b) => `<div class="chat-bubble-card">${b}</div>`).join("");
 }
 
 export function fieldsBlock(fields) {

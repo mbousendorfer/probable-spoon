@@ -7,15 +7,15 @@
 //   subscribe(sessionId, fn) → unsubscribe
 //   addSource(sessionId, kind)  kicks off the mocked add → extract flow
 
-import { sources as seedSources, ideas as seedIdeas } from "./mocks.js?v=17";
-import { isNewUser } from "./user-mode.js?v=17";
+import { sources as seedSources, ideas as seedIdeas } from "./mocks.js?v=20";
+import { isNewUser } from "./user-mode.js?v=20";
 import {
   postAssistantMessage,
   postExtractionResult,
   postSourceIntake,
   startPending,
   finishPending,
-} from "./assistant.js?v=17";
+} from "./assistant.js?v=20";
 
 // --- Module state -------------------------------------------------------
 
@@ -106,6 +106,8 @@ export function addSource(sessionId, kind) {
       relevance: seed.relevance,
       relevanceColor: seed.relevanceColor,
       confidence: seed.confidence,
+      channels: seed.channels || ["linkedin"],
+      state: "New",
       pinned: false,
       sourceId,
       extractedAt: "just now",
@@ -164,6 +166,7 @@ const SCRIPTS = {
         relevance: "High relevance",
         relevanceColor: "orange",
         confidence: 92,
+        channels: ["linkedin"],
       },
       {
         title: "Why we stopped writing quarterly OKRs",
@@ -173,6 +176,7 @@ const SCRIPTS = {
         relevance: "High relevance",
         relevanceColor: "orange",
         confidence: 88,
+        channels: ["linkedin", "x"],
       },
     ],
   },
@@ -191,6 +195,7 @@ const SCRIPTS = {
         relevance: "Medium relevance",
         relevanceColor: "tagOrange",
         confidence: 76,
+        channels: ["linkedin", "instagram"],
       },
       {
         title: "The one founder story we won't tell (and why)",
@@ -200,6 +205,7 @@ const SCRIPTS = {
         relevance: "Low relevance",
         relevanceColor: "grey",
         confidence: 54,
+        channels: ["x"],
       },
     ],
   },
@@ -218,6 +224,7 @@ const SCRIPTS = {
         relevance: "Medium relevance",
         relevanceColor: "tagOrange",
         confidence: 71,
+        channels: ["linkedin"],
       },
     ],
   },

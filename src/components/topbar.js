@@ -1,5 +1,7 @@
-import { html } from "../utils.js?v=17";
-import { navigate } from "../router.js?v=17";
+import { html } from "../utils.js?v=20";
+import { navigate } from "../router.js?v=20";
+import { open as openBugReportModal } from "./bug-report-modal.js?v=20";
+import { open as openFeedbackModal } from "./feedback-modal.js?v=20";
 
 // Persistent top bar. The wireframe shows it on every screen (dashboard, session,
 // wizards), so it lives in index.html and is re-rendered on each route change.
@@ -44,11 +46,11 @@ export function initTopbar() {
       return;
     }
     if (event.target.closest("[data-topbar-feedback]")) {
-      window.alert("Feedback — not implemented in the prototype.");
+      openFeedbackModal();
       return;
     }
     if (event.target.closest("[data-topbar-bug]")) {
-      window.alert("Bug report — not implemented in the prototype.");
+      openBugReportModal();
     }
   });
 }

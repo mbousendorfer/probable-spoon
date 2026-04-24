@@ -1,10 +1,10 @@
-import { html, raw } from "../utils.js?v=17";
-import { navigate } from "../router.js?v=17";
-import { renderTopbar } from "../components/topbar.js?v=17";
-import { recentSessions, templateStarters, sources, ideas, contexts, contextComponentsFor } from "../mocks.js?v=17";
-import { isNewUser } from "../user-mode.js?v=17";
-import { renderSourceCard } from "../components/source-card.js?v=17";
-import { renderIdeaCard } from "../components/idea-card.js?v=17";
+import { html, raw } from "../utils.js?v=20";
+import { navigate } from "../router.js?v=20";
+import { renderTopbar } from "../components/topbar.js?v=20";
+import { recentSessions, templateStarters, sources, ideas, contexts, contextComponentsFor } from "../mocks.js?v=20";
+import { isNewUser } from "../user-mode.js?v=20";
+import { renderSourceCard } from "../components/source-card.js?v=20";
+import { renderIdeaCard } from "../components/idea-card.js?v=20";
 
 // Dashboard — one URL (#/), multiple state variants encoded in URL params so
 // screens like "Projects · Library" vs "Global Contexts" stay shareable.
@@ -19,10 +19,15 @@ import { renderIdeaCard } from "../components/idea-card.js?v=17";
 function readQuery() {
   const raw = window.location.hash.split("?")[1] || "";
   const params = new URLSearchParams(raw);
+  // Back-compat: `subtab=library` or `subtab=ideas` → merged `content`
+  // tab with the corresponding inner view.
+  let view = params.get("view") || "sources";
+  const subtab = params.get("subtab");
+  if (subtab === "ideas") view = "ideas";
   return {
     tab: params.get("tab") || "projects",
-    subtab: params.get("subtab") || "library",
     ctx: params.get("ctx") || "none",
+    view,
   };
 }
 
@@ -141,11 +146,26 @@ function renderProjectsPanel(q) {
       </div>
     `;
   }
+  return html` <div class="dashboard__panel">${raw(renderRecentSessions())} ${raw(renderContentSection(q))}</div> `;
+}
+
+function renderContentSection(q) {
+  const view = q.view === "ideas" ? "ideas" : "sources";
+  const body =
+    view === "ideas"
+      ? `<div class="stack-sm">${ideas.map((i) => renderIdeaCard(i, sources)).join("")}</div>`
+      : `<div class="stack-sm">${sources.map((s) => renderSourceCard(s, ideas)).join("")}</div>`;
   return html`
-    <div class="dashboard__panel">
-      ${raw(renderRecentSessions())} ${raw(renderProjectsSubtabs(q))}
-      ${raw(q.subtab === "ideas" ? renderIdeasBody() : renderLibraryBody())}
-    </div>
+    <section class="dashboard__section">
+      <div class="row-between">
+        <h2 class="text-section">Content</h2>
+        <button type="button" class="ap-button stroked blue">
+          <i class="ap-icon-plus"></i>
+          <span>Add source</span>
+        </button>
+      </div>
+      ${raw(renderContentViewTabs(q))} ${raw(body)}
+    </section>
   `;
 }
 
@@ -187,47 +207,23 @@ function renderRecentSessions() {
   `;
 }
 
-function renderProjectsSubtabs(q) {
+function renderContentViewTabs(q) {
+  const view = q.view === "ideas" ? "ideas" : "sources";
   return html`
     <div class="ap-tabs dashboard__subtabs">
       <div class="ap-tabs-nav">
-        <button type="button" class="ap-tabs-tab ${q.subtab === "ideas" ? "active" : ""}" data-subtab="ideas">
-          <span>Content ideas</span>
-          <span class="ap-counter normal ${q.subtab === "ideas" ? "blue" : "grey"}"> ${ideas.length} </span>
+        <button type="button" class="ap-tabs-tab ${view === "sources" ? "active" : ""}" data-content-view="sources">
+          <i class="ap-icon-feature-library"></i>
+          <span>By source</span>
+          <span class="ap-counter normal ${view === "sources" ? "blue" : "grey"}">${sources.length}</span>
         </button>
-        <button type="button" class="ap-tabs-tab ${q.subtab === "library" ? "active" : ""}" data-subtab="library">
-          <span>Library</span>
-          <span class="ap-counter normal ${q.subtab === "library" ? "blue" : "grey"}"> ${sources.length} </span>
+        <button type="button" class="ap-tabs-tab ${view === "ideas" ? "active" : ""}" data-content-view="ideas">
+          <i class="ap-icon-sparkles"></i>
+          <span>All ideas</span>
+          <span class="ap-counter normal ${view === "ideas" ? "blue" : "grey"}">${ideas.length}</span>
         </button>
       </div>
     </div>
-  `;
-}
-
-function renderLibraryBody() {
-  return html`
-    <section class="dashboard__section">
-      <div class="row-between">
-        <h2 class="text-section">Library</h2>
-        <button type="button" class="ap-button stroked blue">
-          <i class="ap-icon-plus"></i>
-          <span>Add source</span>
-        </button>
-      </div>
-      <div class="stack-sm">${raw(sources.map((s) => renderSourceCard(s, ideas)).join(""))}</div>
-    </section>
-  `;
-}
-
-function renderIdeasBody() {
-  return html`
-    <section class="dashboard__section">
-      <div class="row-between">
-        <h2 class="text-section">Content ideas</h2>
-        <a class="ap-link small" href="#/?tab=projects&subtab=ideas">View all ${ideas.length} ideas →</a>
-      </div>
-      <div class="stack-sm">${raw(ideas.map((i) => renderIdeaCard(i, sources)).join(""))}</div>
-    </section>
   `;
 }
 
@@ -298,9 +294,9 @@ function bindDashboard(root) {
       return;
     }
 
-    const subtab = event.target.closest("[data-subtab]");
-    if (subtab) {
-      setQuery({ subtab: subtab.dataset.subtab });
+    const contentView = event.target.closest("[data-content-view]");
+    if (contentView) {
+      setQuery({ tab: "projects", view: contentView.dataset.contentView });
       return;
     }
 
@@ -327,18 +323,13 @@ function bindDashboard(root) {
       return;
     }
 
-    // Source-card actions on the Library tab — open the default session
-    // and land in the right tab.
+    // Source-card actions on the Content section — open the default session
+    // and land in the right tab. The card now exposes three actions:
+    // "Ask" → posts tab, "View all N ideas" → All ideas view, more → no-op.
     const defaultSessionId = recentSessions[0]?.id || "new";
-    const sourceIdeaBtn = event.target.closest("[data-source-idea]");
-    if (sourceIdeaBtn) {
-      event.preventDefault();
-      navigate(`/session/${defaultSessionId}?tab=ideas&focusIdea=${sourceIdeaBtn.dataset.sourceIdea}`);
-      return;
-    }
     if (event.target.closest("[data-source-view]")) {
       event.preventDefault();
-      navigate(`/session/${defaultSessionId}?tab=ideas`);
+      navigate(`/session/${defaultSessionId}?tab=content&view=ideas`);
       return;
     }
     if (event.target.closest("[data-source-ask]")) {
@@ -346,35 +337,21 @@ function bindDashboard(root) {
       navigate(`/session/${defaultSessionId}?tab=posts`);
       return;
     }
-    if (event.target.closest("[data-source-extract]")) {
-      event.preventDefault();
-      navigate(`/session/${defaultSessionId}?tab=library`);
-      return;
-    }
     if (event.target.closest("[data-source-more]")) {
       event.preventDefault();
       return;
     }
 
-    // Idea-card actions on the Content ideas tab — "Open idea" routes into
-    // the default session's Content ideas tab with focus; pin toggles the
-    // icon state on-card; others no-op.
+    // Idea-card source link doubles as "Open idea" — jump to the default
+    // session's All ideas view with focus on that idea. Pin + more-menu
+    // behavior is encapsulated inside src/components/idea-card.js.
     const openIdeaBtn = event.target.closest("[data-idea-open]");
     if (openIdeaBtn) {
       event.preventDefault();
-      navigate(`/session/${defaultSessionId}?tab=ideas&focusIdea=${openIdeaBtn.dataset.ideaOpen}`);
+      navigate(`/session/${defaultSessionId}?tab=content&view=ideas&focusIdea=${openIdeaBtn.dataset.ideaOpen}`);
       return;
     }
-    const pinBtn = event.target.closest("[data-idea-pin]");
-    if (pinBtn) {
-      event.preventDefault();
-      const wasActive = pinBtn.classList.contains("is-active");
-      pinBtn.classList.toggle("is-active", !wasActive);
-      pinBtn.setAttribute("aria-pressed", wasActive ? "false" : "true");
-      pinBtn.setAttribute("aria-label", wasActive ? "Pin idea" : "Unpin idea");
-      return;
-    }
-    if (event.target.closest("[data-idea-generate]") || event.target.closest("[data-idea-more]")) {
+    if (event.target.closest("[data-idea-generate]")) {
       event.preventDefault();
       return;
     }

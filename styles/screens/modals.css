@@ -1,0 +1,593 @@
+/* Shared modal chrome + per-modal tweaks.
+ * The DS ships .ap-dialog (card + header/content/footer/close button) but
+ * not a full-viewport positioning primitive. We add:
+ *   - Centered fixed-position for .ap-dialog when it has .open
+ *   - Dropzone / category chip / context pill primitives for the bug report
+ *   - Textarea + intro/thank-you copy for the feedback form
+ */
+
+/* ── Backdrop ─────────────────────────────────────────────── */
+
+.app-modal-backdrop {
+  display: none;
+}
+.app-modal-backdrop.open {
+  display: block;
+}
+
+/* `.ap-status { display: flex }` wins over the browser's default
+ * `[hidden] { display: none }` rule via specificity. Force it back so
+ * `hidden`-toggling status pills (Auto-captured / Capturing…) actually hide. */
+.bug-report-modal [hidden],
+.feedback-modal [hidden] {
+  display: none !important;
+}
+
+body.has-modal {
+  overflow: hidden;
+}
+
+/* ── Centered modal shell (opt-in via .open) ──────────────── */
+
+.bug-report-modal,
+.feedback-modal,
+.generate-image-modal {
+  position: fixed;
+  top: 50vh;
+  left: 50vw;
+  transform: translate(-50%, -50%);
+  display: none;
+  z-index: 60;
+  max-height: calc(100vh - 48px);
+  border: 1px solid var(--sys-border-color-default);
+  box-shadow: 0 12px 32px rgba(33, 46, 68, 0.12);
+}
+
+.bug-report-modal {
+  width: min(calc(100% - 32px), 560px);
+}
+
+.feedback-modal {
+  width: min(calc(100% - 32px), 640px);
+}
+
+.bug-report-modal.open,
+.feedback-modal.open,
+.generate-image-modal.open {
+  display: flex;
+}
+
+.bug-report-modal .ap-dialog-content,
+.feedback-modal .ap-dialog-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* While in the success state, hide the form + footer. */
+.bug-report-modal.success .ap-dialog-content,
+.bug-report-modal.success .ap-dialog-footer,
+.feedback-modal.success .ap-dialog-content,
+.feedback-modal.success .ap-dialog-footer {
+  display: none;
+}
+
+/* ── Bug report: form layout ──────────────────────────────── */
+
+.bug-report-modal__fields {
+  display: grid;
+  gap: var(--ref-spacing-sm);
+}
+
+.bug-field {
+  display: grid;
+  gap: 6px;
+  font-size: var(--ref-font-size-xs);
+  color: var(--sys-text-color-light);
+}
+
+.bug-field > label {
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-100);
+}
+
+.bug-field__label-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+}
+
+.bug-field__required {
+  color: var(--ref-color-red-100);
+  margin-left: 2px;
+}
+
+/* ── Bug report: category chips ──────────────────────────── */
+
+.bug-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxs);
+}
+
+.bug-category-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px var(--ref-spacing-xs);
+  height: 28px;
+  border: 1px solid var(--ref-color-grey-20);
+  border-radius: 999px;
+  background: var(--ref-color-white);
+  font-size: var(--ref-font-size-xs);
+  color: var(--sys-text-color-light);
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+
+.bug-category-chip:hover {
+  border-color: var(--ref-color-orange-40);
+  color: var(--ref-color-grey-150);
+}
+
+.bug-category-chip.selected {
+  border-color: var(--ref-color-orange-100);
+  background: var(--ref-color-orange-10);
+  color: var(--ref-color-orange-100);
+  font-weight: var(--ref-font-weight-bold);
+}
+
+/* ── Bug report: native-feel input + textarea ─────────────── */
+
+.bug-input,
+.bug-textarea,
+.feedback-modal__textarea {
+  width: 100%;
+  border: 1px solid var(--ref-color-grey-20);
+  border-radius: var(--ref-border-radius-md);
+  padding: 8px var(--ref-spacing-xs);
+  font-size: var(--ref-font-size-sm);
+  font-family: inherit;
+  color: var(--ref-color-grey-150);
+  background: var(--ref-color-white);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.bug-textarea,
+.feedback-modal__textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: var(--ref-font-line-height-md);
+}
+
+.bug-input::placeholder,
+.bug-textarea::placeholder,
+.feedback-modal__textarea::placeholder {
+  color: var(--ref-color-grey-40);
+}
+
+.bug-input:focus,
+.bug-textarea:focus,
+.feedback-modal__textarea:focus {
+  border-color: var(--ref-color-electric-blue-100);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ref-color-electric-blue-10);
+}
+
+.bug-textarea.invalid,
+.feedback-modal__textarea.invalid {
+  border-color: var(--ref-color-red-100);
+  box-shadow: 0 0 0 3px var(--ref-color-red-10);
+}
+
+/* ── Bug report: dropzone + preview ──────────────────────── */
+
+.bug-report-dropzone {
+  border: 1.5px dashed var(--ref-color-grey-20);
+  border-radius: var(--ref-border-radius-md);
+  padding: var(--ref-spacing-md);
+  text-align: center;
+  cursor: pointer;
+  color: var(--ref-color-grey-60);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-md);
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  user-select: none;
+}
+
+.bug-report-dropzone:hover {
+  border-color: var(--ref-color-grey-40);
+  background: var(--ref-color-grey-05);
+}
+
+.bug-report-dropzone.drag-over {
+  border-color: var(--ref-color-orange-100);
+  background: var(--ref-color-orange-10);
+}
+
+.bug-report-dropzone.has-file {
+  padding: var(--ref-spacing-xs);
+  text-align: left;
+  cursor: default;
+  border-style: solid;
+}
+
+.bug-report-dropzone.has-file:hover {
+  background: transparent;
+  border-color: var(--ref-color-grey-20);
+}
+
+.bug-report-dropzone__primary {
+  margin-bottom: 4px;
+}
+
+.bug-report-dropzone__browse {
+  color: var(--ref-color-orange-100);
+}
+
+.bug-report-dropzone__hint {
+  color: var(--ref-color-grey-40);
+  font-size: 11px;
+}
+
+.bug-report-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+}
+
+.bug-report-preview img {
+  width: 80px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: var(--ref-border-radius-sm);
+  border: 1px solid var(--sys-border-color-default);
+  flex-shrink: 0;
+}
+
+.bug-report-preview__name {
+  flex: 1;
+  font-size: var(--ref-font-size-xs);
+  color: var(--sys-text-color-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bug-report-preview__remove {
+  flex-shrink: 0;
+}
+
+/* ── Bug report: context bar ─────────────────────────────── */
+
+.bug-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xs);
+  background: var(--ref-color-grey-05);
+  border-radius: var(--ref-border-radius-md);
+}
+
+.bug-context__label {
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ref-color-grey-40);
+  margin-right: 2px;
+}
+
+.bug-context__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--ref-border-radius-sm);
+  background: var(--ref-color-white);
+  border: 1px solid var(--sys-border-color-default);
+  font-size: var(--ref-font-size-xs);
+  color: var(--sys-text-color-light);
+}
+
+/* ── Feedback modal: intro + outro copy ──────────────────── */
+
+.feedback-modal__intro {
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-md);
+  color: var(--sys-text-color-light);
+  margin: 0;
+}
+
+.feedback-modal__intro a {
+  color: var(--ref-color-electric-blue-100);
+  text-decoration: underline;
+}
+
+.feedback-modal__thank-you {
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-md);
+  color: var(--ref-color-grey-60);
+  margin: 0;
+}
+
+/* ── Success panels (shown when .success is set) ─────────── */
+
+.bug-report-modal__success,
+.feedback-modal__success {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-lg) var(--ref-spacing-md);
+  text-align: center;
+}
+
+.bug-report-modal.success .bug-report-modal__success,
+.feedback-modal.success .feedback-modal__success {
+  display: flex;
+}
+
+.bug-report-modal__success-icon,
+.feedback-modal__success-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--ref-color-green-10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ref-color-green-100);
+}
+
+.bug-report-modal__success h3,
+.feedback-modal__success h3 {
+  font-size: var(--ref-font-size-md);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  margin: 0;
+}
+
+.bug-report-modal__success p,
+.feedback-modal__success p {
+  font-size: var(--ref-font-size-sm);
+  color: var(--sys-text-color-light);
+  line-height: var(--ref-font-line-height-md);
+  margin: 0;
+}
+
+/* ── Generate Image modal ────────────────────────────────── */
+
+.generate-image-modal {
+  width: min(calc(100% - 32px), 560px);
+}
+
+.generate-image-modal .ap-dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  gap: var(--ref-spacing-md);
+}
+
+/* Sections — Describe / Visual style / Mood share the same layout. */
+.gen-image-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-md);
+}
+
+.gen-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.gen-section-label {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.gen-section-label span {
+  font-weight: var(--ref-font-weight-regular);
+  color: var(--ref-color-grey-60);
+  margin-left: 4px;
+}
+
+/* Prompt textarea — orange focus ring to line up with the Generate CTA. */
+.gen-prompt-area {
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  border: 1px solid var(--ref-color-grey-20);
+  border-radius: var(--ref-border-radius-md);
+  padding: 10px 12px;
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-md);
+  font-family: inherit;
+  color: var(--ref-color-grey-150);
+  background: var(--ref-color-white);
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+  box-sizing: border-box;
+}
+
+.gen-prompt-area::placeholder {
+  color: var(--ref-color-grey-40);
+}
+
+.gen-prompt-area:focus {
+  border-color: var(--ref-color-orange-100);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ref-color-orange-10);
+}
+
+/* "Re-derive from post content" quiet link-button. */
+.gen-derive-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: var(--ref-font-size-sm);
+  font-family: inherit;
+  color: var(--ref-color-electric-blue-100);
+  cursor: pointer;
+}
+
+.gen-derive-btn:hover:not(:disabled),
+.gen-derive-btn:focus-visible {
+  color: var(--ref-color-electric-blue-150);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  outline: none;
+}
+
+.gen-derive-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.gen-derive-btn i {
+  font-size: 14px;
+}
+
+/* Chip selectors — single-select with toggle-off. */
+.gen-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xs);
+}
+
+.gen-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+  padding: 6px 14px;
+  border: 1px solid var(--ref-color-grey-20);
+  border-radius: 999px;
+  background: var(--ref-color-white);
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.2;
+  transition:
+    border-color 0.12s,
+    background 0.12s,
+    color 0.12s;
+}
+
+.gen-chip:hover {
+  border-color: var(--ref-color-grey-60);
+}
+
+.gen-chip.selected {
+  border-color: var(--ref-color-orange-100);
+  background: var(--ref-color-orange-10);
+  color: var(--ref-color-orange-100);
+}
+
+.gen-chip-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Loading state — pulsing skeleton + tiny spinner. */
+.gen-image-skeleton {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--ref-border-radius-md);
+  background: linear-gradient(90deg, #eceff3 25%, #f6f8fb 50%, #eceff3 75%);
+  background-size: 200% 100%;
+  animation: gen-image-pulse 1.2s linear infinite;
+}
+
+@keyframes gen-image-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.gen-image-loading-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ref-spacing-xs);
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  color: var(--ref-color-grey-60);
+}
+
+.gen-image-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--ref-color-grey-20);
+  border-top-color: var(--ref-color-grey-100);
+  border-radius: 50%;
+  animation: gen-image-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes gen-image-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Result state — preview + Regenerate / Edit options / Use-this-image. */
+.gen-image-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-sm);
+}
+
+.gen-image-preview {
+  width: 100%;
+  display: block;
+  border: 1px solid var(--ref-color-grey-10);
+  border-radius: var(--ref-border-radius-md);
+}
+
+.gen-image-result-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ref-spacing-xs);
+  flex-wrap: wrap;
+}
+
+/* Summary tags — shown while loading and on the result view. */
+.gen-summary-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxs);
+}
+
+.gen-summary-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+  padding: 2px var(--ref-spacing-xs);
+  border-radius: 999px;
+  background: var(--ref-color-grey-05);
+  border: 1px solid var(--ref-color-grey-10);
+  font-size: var(--ref-font-size-xs);
+  color: var(--ref-color-grey-80);
+}

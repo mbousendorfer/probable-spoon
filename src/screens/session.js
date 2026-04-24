@@ -1,6 +1,6 @@
-import { html, raw } from "../utils.js?v=17";
-import { navigate } from "../router.js?v=17";
-import { renderTopbar } from "../components/topbar.js?v=17";
+import { html, raw } from "../utils.js?v=20";
+import { navigate } from "../router.js?v=20";
+import { renderTopbar } from "../components/topbar.js?v=20";
 import {
   getSessionById,
   getContextById,
@@ -9,12 +9,13 @@ import {
   posts as allPosts,
   postCountsByFilter,
   postCountsByNetwork,
-} from "../mocks.js?v=17";
-import { isNewUser } from "../user-mode.js?v=17";
-import { getThread, sendMessage, pickSuggestedPrompts, subscribe } from "../assistant.js?v=17";
-import { getSources, getIdeas, subscribe as subscribeLibrary, addSource } from "../library.js?v=17";
-import { renderSourceCard } from "../components/source-card.js?v=17";
-import { renderIdeaCard } from "../components/idea-card.js?v=17";
+} from "../mocks.js?v=20";
+import { isNewUser } from "../user-mode.js?v=20";
+import { getThread, sendMessage, pickSuggestedPrompts, subscribe } from "../assistant.js?v=20";
+import { getSources, getIdeas, subscribe as subscribeLibrary, addSource } from "../library.js?v=20";
+import { renderSourceCard } from "../components/source-card.js?v=20";
+import { renderIdeaCard } from "../components/idea-card.js?v=20";
+import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 
 // Session screen — persistent assistant panel on the left, workspace with
 // tabs on the right.
@@ -27,14 +28,32 @@ import { renderIdeaCard } from "../components/idea-card.js?v=17";
 function readQuery() {
   const raw = window.location.hash.split("?")[1] || "";
   const params = new URLSearchParams(raw);
+  // Back-compat: old `?tab=library` / `?tab=ideas` now map to the merged
+  // Content tab.
+  let tab = params.get("tab") || "posts";
+  let viewFromOldTab = null;
+  if (tab === "library") {
+    tab = "content";
+    viewFromOldTab = "sources";
+  } else if (tab === "ideas") {
+    tab = "content";
+    viewFromOldTab = "ideas";
+  }
   return {
-    tab: params.get("tab") || "posts",
+    tab,
     populated: params.get("populated") === "1",
     postsFilter: params.get("postsFilter") || "all",
     postsNetwork: params.get("postsNetwork") || "all",
     focusIdea: params.get("focusIdea") || "",
+    // Content tab state
+    view: params.get("view") || viewFromOldTab || "sources",
   };
 }
+
+// Per-tab ephemeral state — search query + sort — scoped to the Content tab.
+// Not URL-persisted so typing in the search input doesn't reset cursor on
+// every keystroke and doesn't pollute the shareable URL.
+const contentState = { q: "", sort: "potential" };
 
 function setQuery(next) {
   const current = readQuery();
@@ -369,32 +388,22 @@ function wireAssistantPanel(root, session) {
     updateThinkingChip(session.id);
   });
 
-  // Subscribe to library/ideas changes — re-render the currently visible
-  // tab body (Library or Content ideas) when sources or ideas change.
+  // Subscribe to library/ideas changes — re-render the Content workspace
+  // body (both By source and All ideas share the same data).
   const offLibrary = subscribeLibrary(session.id, ({ sources, ideas }) => {
     const body = root.querySelector("[data-tab-body]");
     if (!body) return;
     const tab = body.dataset.tabBody;
-    if (tab === "library") {
-      body.innerHTML =
-        sources.length === 0
-          ? renderEmptyState({
-              icon: "ap-icon-feature-library",
-              title: "No sources yet",
-              body: "Add a PDF, a video, or a URL on the left. Archie processes it and extracts content ideas.",
-            })
-          : renderPopulatedLibrary(sources, ideas);
-    } else if (tab === "ideas") {
-      body.innerHTML =
-        ideas.length === 0
-          ? renderEmptyState({
-              icon: "ap-icon-sparkles",
-              title: "Ideas appear here",
-              body: "Once Archie has a source, it will surface content ideas you can draft posts from.",
-            })
-          : renderPopulatedIdeas(ideas, sources);
-      applyIdeaFocus(root);
+    if (tab !== "content") return;
+    // If the workspace wasn't rendered before (empty state → populated now),
+    // re-render the whole tab body. Otherwise patch just the list body.
+    const hasWorkspace = !!body.querySelector("[data-content-body]");
+    if (!hasWorkspace) {
+      body.innerHTML = renderTab(readQuery(), null, false, session);
+    } else {
+      rerenderContentWorkspace(root, session);
     }
+    applyIdeaFocus(root);
   });
 
   // Apply idea focus on initial render if ?focusIdea= is present.
@@ -474,7 +483,7 @@ function stopThinkingTimer() {
 
 function applyIdeaFocus(root) {
   const q = readQuery();
-  if (!q.focusIdea || q.tab !== "ideas") return;
+  if (!q.focusIdea || q.tab !== "content" || q.view !== "ideas") return;
   const card = root.querySelector(`[data-idea-id="${q.focusIdea}"]`);
   if (!card) return;
   card.classList.add("is-focused");
@@ -496,8 +505,8 @@ function renderWorkspaceTabs(q) {
   return html`
     <div class="ap-tabs session__tabs">
       <div class="ap-tabs-nav">
-        ${raw(tab("posts", "ap-icon-megaphone", "Posts"))} ${raw(tab("library", "ap-icon-feature-library", "Library"))}
-        ${raw(tab("ideas", "ap-icon-sparkles", "Content ideas"))} ${raw(tab("context", "ap-icon-headset", "Context"))}
+        ${raw(tab("posts", "ap-icon-megaphone", "Posts"))} ${raw(tab("content", "ap-icon-feature-library", "Content"))}
+        ${raw(tab("context", "ap-icon-headset", "Context"))}
       </div>
     </div>
   `;
@@ -515,28 +524,17 @@ function renderTab(q, attachedContext, isRealSession, session) {
     });
   }
 
-  if (q.tab === "library") {
+  if (q.tab === "content") {
     const libSources = getSources(session.id);
-    if (libSources.length === 0) {
+    const libIdeas = getIdeas(session.id);
+    if (libSources.length === 0 && libIdeas.length === 0) {
       return renderEmptyState({
         icon: "ap-icon-feature-library",
-        title: "No sources yet",
-        body: "Add a PDF, a video, or a URL on the left. Archie processes it and extracts content ideas.",
+        title: "No content yet",
+        body: "Add a PDF, a video, or a URL on the left. Archie processes it and surfaces ideas you can publish.",
       });
     }
-    return renderPopulatedLibrary(libSources, getIdeas(session.id));
-  }
-
-  if (q.tab === "ideas") {
-    const libIdeas = getIdeas(session.id);
-    if (libIdeas.length === 0) {
-      return renderEmptyState({
-        icon: "ap-icon-sparkles",
-        title: "Ideas appear here",
-        body: "Once Archie has a source, it will surface content ideas you can draft posts from.",
-      });
-    }
-    return renderPopulatedIdeas(libIdeas, getSources(session.id));
+    return renderContentWorkspace(libSources, libIdeas, q);
   }
 
   return renderEmptyState({
@@ -546,28 +544,164 @@ function renderTab(q, attachedContext, isRealSession, session) {
   });
 }
 
-function renderPopulatedLibrary(libSources, libIdeas = []) {
+// Unified Content workspace — "By source" vs "All ideas" view switch,
+// plus a compact toolbar (search + sort).
+function renderContentWorkspace(libSources, libIdeas, q) {
+  const view = q.view === "ideas" ? "ideas" : "sources";
+  const search = contentState.q.toLowerCase();
+  const sort = contentState.sort;
+
+  // Apply filters
+  const matchesQuery = (text) => !search || (text || "").toLowerCase().includes(search);
+  const filteredIdeas = libIdeas.filter(
+    (i) => matchesQuery(i.title) || matchesQuery(i.body) || matchesQuery(i.rationale),
+  );
+  const filteredSources = libSources.filter((s) => {
+    if (matchesQuery(s.filename) || matchesQuery(s.kind)) return true;
+    // Also surface a source if any of its ideas match.
+    return libIdeas.some((i) => i.sourceId === s.id && (matchesQuery(i.title) || matchesQuery(i.body)));
+  });
+
+  const sortedIdeas = sortIdeas(filteredIdeas, sort);
+
+  const body =
+    view === "sources"
+      ? renderBySourceBody(filteredSources, libIdeas, search)
+      : renderAllIdeasBody(sortedIdeas, libSources, search);
+
   return html`
-    <section class="session__tab-stack">
-      <div class="row-between">
-        <h2 class="text-section">Library</h2>
-        <span class="muted">${libSources.length} source${libSources.length === 1 ? "" : "s"}</span>
-      </div>
-      <div class="stack-sm">${raw(libSources.map((s) => renderSourceCard(s, libIdeas)).join(""))}</div>
+    <section class="content-workspace">
+      <header class="content-workspace__header">
+        <div class="row-between">
+          <h2 class="text-section">Content</h2>
+          <span class="muted">
+            ${libSources.length} source${libSources.length === 1 ? "" : "s"} · ${libIdeas.length}
+            idea${libIdeas.length === 1 ? "" : "s"}
+          </span>
+        </div>
+        ${raw(renderContentToolbar(view, filteredSources.length, filteredIdeas.length))}
+      </header>
+      <div class="content-workspace__body" data-content-body>${raw(body)}</div>
     </section>
   `;
 }
 
-function renderPopulatedIdeas(libIdeas, libSources = []) {
-  return html`
-    <section class="session__tab-stack">
-      <div class="row-between">
-        <h2 class="text-section">Content ideas</h2>
-        <span class="muted">${libIdeas.length} idea${libIdeas.length === 1 ? "" : "s"}</span>
+function renderContentToolbar(view, sourcesCount, ideasCount) {
+  const sort = contentState.sort;
+  const q = contentState.q;
+  return `
+    <div class="content-workspace__toolbar">
+      <div class="ap-input-group content-workspace__search">
+        <i class="ap-icon-search"></i>
+        <input
+          type="text"
+          placeholder="Search sources and ideas…"
+          value="${q.replace(/"/g, "&quot;")}"
+          data-content-search
+          aria-label="Search content"
+        />
       </div>
-      <div class="stack-sm">${raw(libIdeas.map((i) => renderIdeaCard(i, libSources)).join(""))}</div>
-    </section>
+      <div class="content-workspace__toolbar-right">
+        <label class="content-workspace__sort-label">
+          <span class="muted">Sort</span>
+          <select class="ap-native-select" data-content-sort aria-label="Sort ideas">
+            <option value="potential" ${sort === "potential" ? "selected" : ""}>Highest potential</option>
+            <option value="newest" ${sort === "newest" ? "selected" : ""}>Newest</option>
+            <option value="source" ${sort === "source" ? "selected" : ""}>Source</option>
+            <option value="state" ${sort === "state" ? "selected" : ""}>Workflow state</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="ap-tabs content-workspace__view-tabs">
+      <div class="ap-tabs-nav">
+        <button type="button" class="ap-tabs-tab ${view === "sources" ? "active" : ""}" data-content-view="sources">
+          <i class="ap-icon-feature-library"></i>
+          <span>By source</span>
+          <span class="ap-counter normal ${view === "sources" ? "blue" : "grey"}">${sourcesCount}</span>
+        </button>
+        <button type="button" class="ap-tabs-tab ${view === "ideas" ? "active" : ""}" data-content-view="ideas">
+          <i class="ap-icon-sparkles"></i>
+          <span>All ideas</span>
+          <span class="ap-counter normal ${view === "ideas" ? "blue" : "grey"}">${ideasCount}</span>
+        </button>
+      </div>
+    </div>
   `;
+}
+
+function sortIdeas(ideas, sort) {
+  const copy = ideas.slice();
+  if (sort === "newest") {
+    // Preserve insertion order for extracted ideas (newest-first is already
+    // how library.js unshifts them). Use the original libIdeas order proxy.
+    return copy;
+  }
+  if (sort === "source") {
+    return copy.sort((a, b) => String(a.sourceId || "").localeCompare(String(b.sourceId || "")));
+  }
+  if (sort === "state") {
+    const rank = { Pinned: 0, Reviewed: 1, Generated: 2, New: 3 };
+    return copy.sort((a, b) => (rank[a.state] ?? 99) - (rank[b.state] ?? 99));
+  }
+  // default: potential
+  return copy.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+}
+
+function renderBySourceBody(sources, allIdeas, search) {
+  if (sources.length === 0) {
+    return renderEmptyState({
+      icon: "ap-icon-feature-library",
+      title: "No sources match",
+      body: search ? `No source matches "${search}". Try a different term.` : "No sources yet.",
+    });
+  }
+  return `<div class="stack-sm">${sources.map((s) => renderSourceCard(s, allIdeas)).join("")}</div>`;
+}
+
+function renderAllIdeasBody(ideas, allSources, search) {
+  if (ideas.length === 0) {
+    return renderEmptyState({
+      icon: "ap-icon-sparkles",
+      title: "No ideas match",
+      body: search ? `No idea matches "${search}". Try a different term.` : "No ideas yet.",
+    });
+  }
+  return `<div class="stack-sm">${ideas.map((i) => renderIdeaCard(i, allSources)).join("")}</div>`;
+}
+
+// Called from bindSession to re-render only the content workspace body (not
+// the whole tab), preserving the focus of the search input.
+function rerenderContentWorkspace(root, session) {
+  const q = readQuery();
+  if (q.tab !== "content") return;
+  const libSources = getSources(session.id);
+  const libIdeas = getIdeas(session.id);
+  const view = q.view === "ideas" ? "ideas" : "sources";
+  const search = contentState.q.toLowerCase();
+  const matchesQuery = (text) => !search || (text || "").toLowerCase().includes(search);
+  const filteredIdeas = libIdeas.filter(
+    (i) => matchesQuery(i.title) || matchesQuery(i.body) || matchesQuery(i.rationale),
+  );
+  const filteredSources = libSources.filter((s) => {
+    if (matchesQuery(s.filename) || matchesQuery(s.kind)) return true;
+    return libIdeas.some((i) => i.sourceId === s.id && (matchesQuery(i.title) || matchesQuery(i.body)));
+  });
+  const sortedIdeas = sortIdeas(filteredIdeas, contentState.sort);
+  const body = root.querySelector("[data-content-body]");
+  if (body) {
+    body.innerHTML =
+      view === "sources"
+        ? renderBySourceBody(filteredSources, libIdeas, search)
+        : renderAllIdeasBody(sortedIdeas, libSources, search);
+  }
+  // Update counter pills in the view tabs in place (don't rebuild the tabs)
+  const tabs = root.querySelectorAll("[data-content-view]");
+  tabs.forEach((t) => {
+    const which = t.dataset.contentView;
+    const counter = t.querySelector(".ap-counter");
+    if (counter) counter.textContent = which === "sources" ? filteredSources.length : filteredIdeas.length;
+  });
 }
 
 function renderEmptyState({ icon, title, body }) {
@@ -990,23 +1124,22 @@ function bindSession(root, session) {
       if (focusBtn) {
         event.preventDefault();
         const id = focusBtn.dataset.focusIdea;
-        if (id) setQuery({ tab: "ideas", focusIdea: id });
+        if (id) setQuery({ tab: "content", view: "ideas", focusIdea: id });
         return;
       }
 
-      // Embedded idea preview inside a source card → same as focus-idea.
-      const sourceIdeaBtn = event.target.closest("[data-source-idea]");
-      if (sourceIdeaBtn) {
-        event.preventDefault();
-        const id = sourceIdeaBtn.dataset.sourceIdea;
-        if (id) setQuery({ tab: "ideas", focusIdea: id });
-        return;
-      }
-
-      // "View all N ideas" inside a source card → jump to Content ideas tab.
+      // "View all N ideas" inside a source card → switch to All ideas view.
       if (event.target.closest("[data-source-view]")) {
         event.preventDefault();
-        setQuery({ tab: "ideas", focusIdea: "" });
+        setQuery({ tab: "content", view: "ideas", focusIdea: "" });
+        return;
+      }
+
+      // Content workspace view switch — By source / All ideas.
+      const contentViewBtn = event.target.closest("[data-content-view]");
+      if (contentViewBtn) {
+        event.preventDefault();
+        setQuery({ tab: "content", view: contentViewBtn.dataset.contentView, focusIdea: "" });
         return;
       }
 
@@ -1023,21 +1156,15 @@ function bindSession(root, session) {
         return;
       }
 
-      // "Extract more" → no-op for the prototype, swallow the click.
-      if (event.target.closest("[data-source-extract]")) {
-        event.preventDefault();
-        return;
-      }
-
       // Source overflow menu → no-op for the prototype.
       if (event.target.closest("[data-source-more]")) {
         event.preventDefault();
         return;
       }
 
-      // Idea card actions — "Open idea" gives a visual pulse on the card
-      // (dossier view is future work), pin toggles the on-card state, the
-      // others no-op.
+      // Idea-card source link doubles as "Open idea" — give the card a
+      // visual pulse (dossier view is future work). Pin + more-menu behavior
+      // is encapsulated inside src/components/idea-card.js.
       const openBtn = event.target.closest("[data-idea-open]");
       if (openBtn) {
         event.preventDefault();
@@ -1050,17 +1177,7 @@ function bindSession(root, session) {
         return;
       }
 
-      const pinBtn = event.target.closest("[data-idea-pin]");
-      if (pinBtn) {
-        event.preventDefault();
-        const wasActive = pinBtn.classList.contains("is-active");
-        pinBtn.classList.toggle("is-active", !wasActive);
-        pinBtn.setAttribute("aria-pressed", wasActive ? "false" : "true");
-        pinBtn.setAttribute("aria-label", wasActive ? "Pin idea" : "Unpin idea");
-        return;
-      }
-
-      if (event.target.closest("[data-idea-generate]") || event.target.closest("[data-idea-more]")) {
+      if (event.target.closest("[data-idea-generate]")) {
         event.preventDefault();
         return;
       }
@@ -1086,6 +1203,14 @@ function bindSession(root, session) {
 
       if (event.target.closest("[data-posts-clear]")) {
         setQuery({ postsFilter: "all", postsNetwork: "all" });
+        return;
+      }
+
+      // Post card "Generate an image" placeholder → open the modal.
+      const genImageBtn = event.target.closest("[data-generate-image]");
+      if (genImageBtn) {
+        event.preventDefault();
+        openGenerateImageModal(genImageBtn.dataset.generateImage);
         return;
       }
 
@@ -1160,4 +1285,28 @@ function bindSession(root, session) {
       { signal },
     );
   }
+
+  // Content workspace: live search input + sort dropdown. These update the
+  // module-level contentState and re-render just the list body so the input
+  // cursor and focus are preserved.
+  root.addEventListener(
+    "input",
+    (event) => {
+      if (event.target.matches("[data-content-search]")) {
+        contentState.q = event.target.value;
+        rerenderContentWorkspace(root, session);
+      }
+    },
+    { signal },
+  );
+  root.addEventListener(
+    "change",
+    (event) => {
+      if (event.target.matches("[data-content-sort]")) {
+        contentState.sort = event.target.value;
+        rerenderContentWorkspace(root, session);
+      }
+    },
+    { signal },
+  );
 }

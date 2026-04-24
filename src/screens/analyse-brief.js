@@ -1,6 +1,6 @@
-import { navigate } from "../router.js?v=17";
-import { renderTopbar } from "../components/topbar.js?v=17";
-import { strategyBrief } from "../mocks.js?v=17";
+import { navigate } from "../router.js?v=20";
+import { renderTopbar } from "../components/topbar.js?v=20";
+import { strategyBrief } from "../mocks.js?v=20";
 import {
   wizardChrome,
   chatTurn,
@@ -11,7 +11,8 @@ import {
   advanceContextStage,
   bindWizardKeyboard,
   unbindWizardKeyboard,
-} from "./_analyse-common.js?v=17";
+  scrollChatToLatest,
+} from "./_analyse-common.js?v=20";
 
 // Strategy brief wizard — one step per section + summary.
 
@@ -42,6 +43,7 @@ export function renderAnalyseBrief(_params, target) {
   const { body, picker } = renderStep(step);
 
   target.innerHTML = wizardChrome({ body, picker });
+  scrollChatToLatest(target);
 
   target.addEventListener("click", (event) => {
     const answer = event.target.closest("[data-brief-answer]");
@@ -67,11 +69,34 @@ export function renderAnalyseBrief(_params, target) {
   });
 }
 
+function sectionTurn(i) {
+  const section = SECTIONS[i];
+  const aiText =
+    i === 0
+      ? `Let's shape the ${section.title.toLowerCase()}. Section 1 of ${SECTIONS.length}. Does this fit?`
+      : `Next up — ${section.title.toLowerCase()} (${i + 1} of ${SECTIONS.length}). Does this fit?`;
+  return chatTurn({ role: "ai", text: aiText, contentHtml: fieldsBlock(section.fields) });
+}
+
+// Each step returns the FULL accumulated conversation so prior answers stay
+// visible as the user advances. Past user turns use the canonical "Looks
+// good, continue." label because that's the only value that advances.
 function renderStep(step) {
-  if (step === "summary") {
+  const isSummary = step === "summary";
+  const idx = Number(step);
+  const currentIdx = isSummary ? SECTIONS.length : Number.isNaN(idx) ? 0 : idx;
+
+  // Replay every prior section Q + answer the user has already cleared.
+  let history = "";
+  for (let i = 0; i < currentIdx; i++) {
+    history += sectionTurn(i);
+    history += chatTurn({ role: "user", text: "Looks good, continue." });
+  }
+
+  if (isSummary) {
     return {
       body:
-        chatTurn({ role: "user", text: "Looks good, continue." }) +
+        history +
         chatTurn({
           role: "ai",
           text: "Here's your full strategy brief. Keep it, or start over.",
@@ -93,25 +118,8 @@ function renderStep(step) {
     };
   }
 
-  const idx = Number(step);
-  const section = SECTIONS[idx] || SECTIONS[0];
-  const currentIdx = Number.isNaN(idx) ? 0 : idx;
-
-  const aiText =
-    currentIdx === 0
-      ? `Let's shape the ${section.title.toLowerCase()}. Section 1 of ${SECTIONS.length}. Does this fit?`
-      : `Next up — ${section.title.toLowerCase()} (${currentIdx + 1} of ${SECTIONS.length}). Does this fit?`;
-
-  const lastUser = currentIdx === 0 ? "" : chatTurn({ role: "user", text: "Looks good, continue." });
-
   return {
-    body:
-      lastUser +
-      chatTurn({
-        role: "ai",
-        text: aiText,
-        contentHtml: fieldsBlock(section.fields),
-      }),
+    body: history + sectionTurn(currentIdx),
     picker: SECTION_PICKER,
   };
 }

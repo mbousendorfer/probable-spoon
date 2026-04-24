@@ -75,7 +75,14 @@
   background: var(--app-bg);
 }
 
+/* Column flex + `margin: auto auto 0` on the inner anchors a short
+   conversation to the bottom (right above the sticky answer bar) instead
+   of letting it float at the top of the scroll container. Once the thread
+   grows past the viewport the auto margin collapses and normal scrolling
+   resumes. */
 .analyse__chat {
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   padding: var(--ref-spacing-lg) var(--ref-spacing-md);
 }
@@ -83,19 +90,18 @@
 .analyse__chat-inner {
   width: 100%;
   max-width: 720px;
-  margin: 0 auto;
+  margin: auto auto 0;
   display: flex;
   flex-direction: column;
   gap: var(--ref-spacing-sm);
 }
 
-/* Sticky bar — lives in the auto row of the grid so it's always pinned to
-   the bottom of the viewport above the app topbar. */
+/* Sticky bar — still pinned to the bottom of the viewport by the outer
+   grid (.analyse--wizard), but no full-width surface band any more: the
+   inner (max-width 720px) just floats above the same --app-bg as the chat
+   area so the sticky-bar merges visually with the conversation column. */
 
 .analyse__sticky-bar {
-  background: var(--app-surface);
-  border-top: 1px solid var(--app-border-soft);
-  box-shadow: 0 -4px 16px rgba(33, 46, 68, 0.06);
   padding: var(--ref-spacing-sm) var(--ref-spacing-md);
 }
 

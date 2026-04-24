@@ -146,236 +146,282 @@
   font-size: var(--ref-font-size-xs);
 }
 
-/* Source card (library) — primary content is the embedded idea previews,
-   not the file metadata. Used by the dashboard Library list and the session
-   Library tab. */
+/* ---- Unified Content workspace — shared by session + dashboard ------- */
 
-.source-card {
+.content-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-sm);
+}
+
+.content-workspace__header {
   display: flex;
   flex-direction: column;
   gap: var(--ref-spacing-xs);
 }
 
-.source-card__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--ref-spacing-xs);
-}
-
-.source-card__title-row {
+.content-workspace__toolbar {
   display: flex;
   align-items: center;
   gap: var(--ref-spacing-xs);
-  min-width: 0;
-  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.content-workspace__search {
+  flex: 1 1 240px;
+  max-width: 420px;
+}
+
+.content-workspace__search .ap-icon-search {
+  color: var(--ref-color-grey-60);
+}
+
+.content-workspace__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+}
+
+.content-workspace__sort-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  font-size: var(--ref-font-size-xs);
+}
+
+.content-workspace__view-tabs .ap-tabs-nav {
+  border-bottom: 1px solid var(--app-border-soft);
+}
+
+.content-workspace__body {
+  display: block;
+}
+
+/* Secondary "top potential" chip shown inside the source card sub line. */
+.source-card__top-potential {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  margin-left: var(--ref-spacing-xxs);
+}
+
+/* ---- Channel fit chips -------------------------------------------------
+   Compact icon-only row used inside source-card idea previews, and a richer
+   icon+label pill used on idea-card headers. Reuses DS social icons. */
+
+.channel-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+}
+
+.channel-chips--compact {
+  gap: var(--ref-spacing-xxxs);
+}
+
+.channel-chips--compact .channel-chips__icon {
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-grey-80);
+}
+
+.channel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+  padding: 2px var(--ref-spacing-xxs);
+  border-radius: var(--app-radius-sm);
+  background: var(--ref-color-grey-05);
+  color: var(--ref-color-grey-100);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+}
+
+.channel-chip i {
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-grey-80);
+}
+
+/* Source card — Figma 42:5197. Compact one-row listing:
+     [ kind-box ]  filename             [Ask] [View all N] [⋯]
+                   N ideas · status · added
+   Processing variant: icon box turns electric-blue, icon becomes a spinner,
+   filename + sub go grey-60, Ask is muted, View-all collapses to a
+   "Processing" disabled pill. */
+
+.source-card {
+  display: flex;
+  /* .ap-card defaults to flex-direction: column — source-card is a horizontal
+     row, so explicitly override. */
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-xs);
+  border: 1px solid var(--ref-color-grey-10);
+  border-radius: var(--ref-border-radius-md);
+  background: var(--ref-color-white);
+}
+
+/* Tinted square container for the kind icon / spinner. Orange for documents,
+   electric-blue while processing. */
+.source-card__kind-box {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ref-spacing-xxs);
+  background: var(--ref-color-orange-10);
+  border-radius: var(--ref-border-radius-sm);
+}
+
+.source-card--processing .source-card__kind-box {
+  background: var(--ref-color-electric-blue-10);
 }
 
 .source-card__kind-icon {
-  font-size: var(--sys-icon-css-md);
-  color: var(--ref-color-grey-80);
-  flex-shrink: 0;
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-orange-100);
+  line-height: 1;
+}
+
+/* Spinner used in place of the file icon while the source is still being
+   analysed. 16×16 ring with an electric-blue arc rotating once a second —
+   matches the Figma "Prototype Animated Loader" component visually. */
+.source-card__spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--ref-color-electric-blue-20, #cce4ff);
+  border-top-color: var(--ref-color-electric-blue-100);
+  animation: source-card-spin 1s linear infinite;
+}
+
+@keyframes source-card-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Info column — filename + sub. Takes the free space between the icon and
+   the actions cluster; truncates if the filename is long. */
+.source-card__info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxxs);
 }
 
 .source-card__name {
   margin: 0;
-  font-size: var(--ref-font-size-md);
+  font-size: var(--ref-font-size-sm);
   font-weight: var(--ref-font-weight-bold);
+  line-height: var(--ref-font-line-height-sm);
   color: var(--ref-color-grey-150);
-  line-height: var(--ref-font-line-height-md);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
 }
 
-.source-card__more {
-  flex-shrink: 0;
+.source-card--processing .source-card__name {
+  color: var(--ref-color-grey-60);
 }
 
 .source-card__sub {
   margin: 0;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--ref-spacing-xxs);
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-xs);
   color: var(--ref-color-grey-80);
-}
-
-/* Idea previews — vertical list with subtle dividers, no nested cards. */
-
-.source-card__ideas {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--ref-color-grey-10);
-  border-radius: var(--app-radius-md);
-  background: var(--ref-color-grey-05);
-  overflow: hidden;
-}
-
-.source-card__idea + .source-card__idea {
-  border-top: 1px solid var(--ref-color-grey-10);
-}
-
-.source-card__idea-button {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: var(--ref-spacing-sm);
-  width: 100%;
-  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
-  border: 0;
-  background: transparent;
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-  color: var(--ref-color-grey-150);
-}
-
-.source-card__idea-button:hover,
-.source-card__idea-button:focus-visible {
-  background: var(--ref-color-electric-blue-05);
-  outline: none;
-}
-
-.source-card__idea-title {
-  font-size: var(--ref-font-size-sm);
-  line-height: var(--ref-font-line-height-sm);
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-150);
-  min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.source-card__idea-meta {
-  display: inline-flex;
+.source-card--processing .source-card__sub {
+  color: var(--ref-color-grey-60);
+}
+
+/* Right-side action cluster — Ask + primary CTA + more overflow. */
+.source-card__actions {
+  flex-shrink: 0;
+  display: flex;
   align-items: center;
   gap: var(--ref-spacing-xxs);
-  font-size: var(--ref-font-size-xs);
-  line-height: var(--ref-font-line-height-xs);
-  color: var(--ref-color-grey-80);
-  white-space: nowrap;
 }
 
-.source-card__idea-score {
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-150);
-  font-variant-numeric: tabular-nums;
+.source-card__primary {
+  text-decoration: none;
 }
 
-.source-card__idea-sep {
-  color: var(--ref-color-grey-60);
+/* Processing-variant CTA — rendered as a disabled-looking pill instead of a
+   real link. We're using a <span> with aria-disabled so nothing dispatches. */
+.source-card__primary--processing {
+  opacity: 0.6;
+  pointer-events: none;
+  cursor: default;
 }
 
-.source-card__idea-chevron {
-  font-size: var(--sys-icon-css-sm);
-  color: var(--ref-color-grey-60);
+.source-card--processing .source-card__ask {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
-.source-card__idea-button:hover .source-card__idea-chevron,
-.source-card__idea-button:focus-visible .source-card__idea-chevron {
-  color: var(--ref-color-electric-blue-100);
-}
-
-/* Empty / processing state inside the card. */
-.source-card__ideas-empty {
-  display: flex;
-  align-items: center;
-  gap: var(--ref-spacing-xs);
-  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
-  border: 1px dashed var(--ref-color-grey-20);
-  border-radius: var(--app-radius-md);
-  font-size: var(--ref-font-size-xs);
-  line-height: var(--ref-font-line-height-xs);
-  color: var(--ref-color-grey-80);
-}
-
-/* Quiet footer — view-all on the left, secondary actions on the right. */
-.source-card__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ref-spacing-xs);
-  flex-wrap: wrap;
-}
-
-.source-card__footer-actions {
-  display: flex;
-  gap: var(--ref-spacing-xxxs);
-}
-
-.source-card__more-hint {
-  margin: 0;
-  font-size: var(--ref-font-size-xs);
-  line-height: var(--ref-font-line-height-xs);
-}
-
-/* Idea card — helps the user decide whether an idea is worth publishing
-   BEFORE generating a post. Engagement potential leads; AI confidence is
-   secondary; "Why this could work" frames the editorial pitch. */
+/* Idea card — Figma 42:4870. Four zones, stacked:
+     1. source-row   — PDF/video/URL icon + filename link + "· extracted X"
+     2. body         — grey-05 callout, mermaid-gradient left border, title + hook
+     3. actions      — potential pill (left), Create-post CTA + more-menu (right)
+   The card's "Open idea" trigger is the source link at the top. Pin moves
+   into the three-dots overflow menu. */
 
 .idea-card {
   display: flex;
   flex-direction: column;
-  gap: var(--ref-spacing-xs);
+  gap: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xs);
+  border: 1px solid var(--ref-color-grey-10);
+  border-radius: var(--ref-border-radius-md);
+  background: var(--ref-color-white);
 }
 
-.idea-card__head {
+/* Source info row — `.ap-link.standalone` is a DS variant that keeps the link
+   aligned with an inline icon. We add a muted meta span after it. */
+.idea-card__source-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--ref-spacing-xs);
   flex-wrap: wrap;
 }
 
-.idea-card__signals {
-  display: flex;
+.idea-card__source-link {
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: var(--ref-spacing-xxs);
 }
 
-/* Engagement potential — score + label in one pill so it reads as a single
-   unit ("82 · High potential"). Uses semantic .ap-status colors. */
-.idea-card__potential {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ref-spacing-xxxs);
-}
-
-.idea-card__potential strong {
-  font-weight: var(--ref-font-weight-bold);
-  font-variant-numeric: tabular-nums;
-}
-
-.idea-card__confidence {
+.idea-card__source-meta {
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-xs);
 }
 
-.idea-card__more {
-  flex-shrink: 0;
-}
-
-/* Body — title is the strongest element, hook follows, rationale closes. */
-
+/* Body callout — grey-05 with a 3px mermaid-gradient-from left stripe. We use
+   the solid start-color of the mermaid gradient (Figma does the same: a
+   border-l-3 at --ref-mermaid-gradient-from, not the full gradient). Right
+   corners are rounded; left edge is flush against the colored stripe. */
 .idea-card__body {
   display: flex;
   flex-direction: column;
-  gap: var(--ref-spacing-xxs);
+  gap: var(--ref-spacing-xxxs);
+  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
+  background: var(--ref-color-grey-05);
+  border-left: 3px solid var(--ref-color-mermaid-gradient-from);
+  border-top-right-radius: var(--ref-border-radius-md);
+  border-bottom-right-radius: var(--ref-border-radius-md);
 }
 
 .idea-card__title {
   margin: 0;
-  font-size: var(--ref-font-size-md);
-  line-height: var(--ref-font-line-height-md);
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
   font-weight: var(--ref-font-weight-bold);
   color: var(--ref-color-grey-150);
 }
@@ -384,44 +430,11 @@
   margin: 0;
   font-size: var(--ref-font-size-sm);
   line-height: var(--ref-font-line-height-sm);
-  color: var(--ref-color-grey-100);
+  color: var(--ref-color-grey-80);
 }
 
-.idea-card__rationale {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ref-spacing-xxxs);
-  padding: var(--ref-spacing-xs);
-  background: var(--ref-color-mermaid-10);
-  border-radius: var(--app-radius-md);
-  font-size: var(--ref-font-size-sm);
-  line-height: var(--ref-font-line-height-sm);
-  color: var(--ref-color-grey-100);
-}
-
-.idea-card__rationale-label {
-  font-size: var(--ref-font-size-xs);
-  line-height: var(--ref-font-line-height-xs);
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-150);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-/* Source provenance line — muted but visible. */
-.idea-card__source {
-  margin: 0;
-  font-size: var(--ref-font-size-xs);
-  line-height: var(--ref-font-line-height-xs);
-}
-
-.idea-card__source strong {
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-100);
-}
-
-/* Actions footer — primary "Open idea" left, quiet secondaries right. */
+/* Actions row — potential pill takes the free space on the left; the mermaid
+   CTA + more button anchor to the right. */
 
 .idea-card__actions {
   display: flex;
@@ -431,13 +444,64 @@
   flex-wrap: wrap;
 }
 
-.idea-card__secondary-actions {
-  display: flex;
+.idea-card__potential {
+  display: inline-flex;
   align-items: center;
   gap: var(--ref-spacing-xxxs);
 }
 
-.idea-card__pin.is-active {
+.idea-card__secondary-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+}
+
+/* More menu — a tiny overflow that only holds Pin / Unpin for now. Anchored
+   to the bottom-right of the more button. */
+
+.idea-card__more-wrap {
+  position: relative;
+}
+
+.idea-card__more-menu {
+  position: absolute;
+  top: calc(100% + var(--ref-spacing-xxxs));
+  right: 0;
+  min-width: 160px;
+  margin: 0;
+  padding: var(--ref-spacing-xxxs);
+  list-style: none;
+  background: var(--ref-color-white);
+  border: 1px solid var(--ref-color-grey-10);
+  border-radius: var(--ref-border-radius-md);
+  box-shadow: 0 8px 24px rgba(33, 46, 68, 0.12);
+  z-index: 5;
+}
+
+.idea-card__more-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  width: 100%;
+  padding: var(--ref-spacing-xxs) var(--ref-spacing-xs);
+  background: transparent;
+  border: 0;
+  border-radius: var(--ref-border-radius-sm);
+  color: var(--ref-color-grey-100);
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.idea-card__more-item:hover,
+.idea-card__more-item:focus-visible {
+  background: var(--ref-color-grey-05);
+  outline: none;
+}
+
+.idea-card__more-item[aria-pressed="true"] {
   color: var(--ref-color-electric-blue-100);
 }
 

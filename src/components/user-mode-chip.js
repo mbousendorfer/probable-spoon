@@ -1,4 +1,4 @@
-import { getUserMode, setUserMode } from "../user-mode.js?v=17";
+import { getUserMode, setUserMode } from "../user-mode.js?v=20";
 
 // Floating admin chip in the bottom-right. Toggles between first-time and
 // returning-user mocks. Reloads the page on click.

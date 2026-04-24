@@ -1,0 +1,147 @@
+// "Give feedback" dialog. Same module-level-state pattern as
+// bug-report-modal: init() injects the markup once, then open()/close()
+// toggle its visibility. No persistence — submitting shows a success flash
+// and resets on close.
+
+let backdrop, modal, textArea, featureArea, submitBtn;
+let initialized = false;
+
+const HTML = `
+<div class="app-modal-backdrop feedback-modal__backdrop" id="feedbackBackdrop" hidden></div>
+<aside
+  class="ap-dialog feedback-modal"
+  id="feedbackModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="feedbackTitle"
+  aria-hidden="true"
+>
+  <div class="ap-dialog-header">
+    <h2 class="ap-dialog-title" id="feedbackTitle">Give more feedback</h2>
+  </div>
+  <button class="ap-dialog-close" type="button" id="closeFeedbackBtn" aria-label="Close">
+    <i class="ap-icon-close"></i>
+  </button>
+  <div class="ap-dialog-content">
+    <p class="feedback-modal__intro">
+      We read every piece of feedback sent through this form. If you require a response or urgent support please
+      <a href="mailto:support@agorapulse.com">contact our support team</a> instead.
+    </p>
+
+    <div class="ap-form-field">
+      <label for="feedbackFeatureArea">Feature area</label>
+      <select id="feedbackFeatureArea" class="ap-native-select">
+        <option value="content-studio">Content Studio</option>
+        <option value="library">Library</option>
+        <option value="ideas">Content ideas</option>
+        <option value="posts">Posts</option>
+        <option value="brief">Strategy brief</option>
+        <option value="voice">Voice profile</option>
+        <option value="brand">Brand theme</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+
+    <div class="ap-form-field">
+      <label for="feedbackText">Write a feedback</label>
+      <textarea id="feedbackText" class="feedback-modal__textarea" rows="5" placeholder="Write your feedback here..."></textarea>
+    </div>
+
+    <p class="feedback-modal__thank-you">
+      Thank you so much for your feedback, we will take it into account in the continuous improvements of our product!
+    </p>
+  </div>
+  <div class="ap-dialog-footer">
+    <div class="ap-dialog-footer-right">
+      <button type="button" class="ap-button transparent grey" id="cancelFeedbackBtn">Cancel</button>
+      <button type="button" class="ap-button primary orange" id="submitFeedbackBtn">Send feedback</button>
+    </div>
+  </div>
+  <div class="feedback-modal__success">
+    <div class="feedback-modal__success-icon">
+      <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/>
+      </svg>
+    </div>
+    <h3>Thanks for your feedback!</h3>
+    <p>We read every message and use it to improve Archie.</p>
+  </div>
+</aside>`;
+
+function focusSafe(el) {
+  try {
+    el.focus({ preventScroll: true });
+  } catch {
+    el.focus();
+  }
+}
+
+function reset() {
+  modal.classList.remove("success");
+  textArea.value = "";
+  textArea.classList.remove("invalid");
+  featureArea.value = "content-studio";
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Send feedback";
+}
+
+function onKeydown(event) {
+  if (event.key === "Escape" && modal.classList.contains("open")) {
+    close();
+  }
+}
+
+export function open() {
+  if (!initialized) init();
+  backdrop.hidden = false;
+  backdrop.classList.add("open");
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("has-modal");
+  window.setTimeout(() => focusSafe(textArea), 50);
+}
+
+export function close() {
+  modal.classList.remove("open");
+  backdrop.classList.remove("open");
+  backdrop.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("has-modal");
+  reset();
+}
+
+export function init() {
+  if (initialized) return;
+  initialized = true;
+  document.body.insertAdjacentHTML("beforeend", HTML);
+
+  backdrop = document.getElementById("feedbackBackdrop");
+  modal = document.getElementById("feedbackModal");
+  textArea = document.getElementById("feedbackText");
+  featureArea = document.getElementById("feedbackFeatureArea");
+  submitBtn = document.getElementById("submitFeedbackBtn");
+
+  document.getElementById("closeFeedbackBtn").addEventListener("click", close);
+  document.getElementById("cancelFeedbackBtn").addEventListener("click", close);
+  backdrop.addEventListener("click", close);
+  document.addEventListener("keydown", onKeydown);
+
+  textArea.addEventListener("input", () => {
+    if (textArea.value.trim()) textArea.classList.remove("invalid");
+  });
+
+  submitBtn.addEventListener("click", async () => {
+    const text = textArea.value.trim();
+    if (!text) {
+      textArea.classList.add("invalid");
+      focusSafe(textArea);
+      return;
+    }
+    textArea.classList.remove("invalid");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending…";
+    await new Promise((r) => setTimeout(r, 1200));
+    modal.classList.add("success");
+    setTimeout(close, 2200);
+  });
+}

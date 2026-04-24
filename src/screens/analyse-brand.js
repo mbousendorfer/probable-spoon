@@ -1,6 +1,6 @@
-import { navigate } from "../router.js?v=17";
-import { renderTopbar } from "../components/topbar.js?v=17";
-import { brandTheme } from "../mocks.js?v=17";
+import { navigate } from "../router.js?v=20";
+import { renderTopbar } from "../components/topbar.js?v=20";
+import { brandTheme } from "../mocks.js?v=20";
 import {
   wizardChrome,
   chatTurn,
@@ -9,7 +9,8 @@ import {
   advanceContextStage,
   bindWizardKeyboard,
   unbindWizardKeyboard,
-} from "./_analyse-common.js?v=17";
+  scrollChatToLatest,
+} from "./_analyse-common.js?v=20";
 
 // Brand theme wizard.
 // Step 0        → URL input (custom sticky footer instead of a picker)
@@ -32,6 +33,7 @@ export function renderAnalyseBrand(_params, target) {
   const descriptor = renderStep(step);
 
   target.innerHTML = wizardChrome(descriptor);
+  scrollChatToLatest(target);
 
   target.addEventListener("click", (event) => {
     if (event.target.closest("[data-brand-analyze]")) {
@@ -98,15 +100,55 @@ export function renderAnalyseBrand(_params, target) {
 }
 
 function renderStep(step) {
+  // At step 0 the intake AI bubble holds an active URL input + "Analyze
+  // brand" button. Once the user has submitted, replay a stripped-down
+  // version of the intake turn (no input) so the prompt stays in the thread
+  // without offering a second editable copy.
+  const intakeQFull = chatTurn({
+    role: "ai",
+    text: "Where's your brand? I'll pull colors, imagery, buttons, and personality straight from your site.",
+    contentHtml: `
+        <div class="analyse__url-card">
+          <div class="ap-form-field analyse__url-field">
+            <label>Brand URL</label>
+            <div class="ap-input-group">
+              <i class="ap-icon-web"></i>
+              <input type="url" placeholder="https://yourbrand.com" value="${brandTheme.url}" data-brand-url />
+            </div>
+          </div>
+          <button type="button" class="ap-button primary orange" data-brand-analyze>
+            <i class="ap-icon-sparkles"></i>
+            <span>Analyze brand</span>
+          </button>
+        </div>
+      `,
+  });
+
+  if (step === "0") {
+    return {
+      body: intakeQFull,
+      stickyFooter: `
+        <p class="analyse__footer-hint muted">
+          Type your URL above and press <kbd>Enter</kbd>, or click <b>Analyze brand</b>.
+        </p>
+      `,
+    };
+  }
+
+  const intakeQHistory = chatTurn({
+    role: "ai",
+    text: "Where's your brand? I'll pull colors, imagery, buttons, and personality straight from your site.",
+  });
+  const urlAnswer = chatTurn({ role: "user", text: brandTheme.url });
+  const previewAi = chatTurn({
+    role: "ai",
+    text: "Here's your brand theme.",
+    contentHtml: renderThemePreview(),
+  });
+
   if (step === "1") {
     return {
-      body:
-        chatTurn({ role: "user", text: brandTheme.url }) +
-        chatTurn({
-          role: "ai",
-          text: "Here's your brand theme.",
-          contentHtml: renderThemePreview(),
-        }),
+      body: intakeQHistory + urlAnswer + previewAi,
       stickyFooter: `
         <div class="analyse__footer-actions">
           <button type="button" class="ap-button transparent grey" data-brand-restart>
@@ -125,43 +167,20 @@ function renderStep(step) {
   if (step === "summary") {
     return {
       body:
+        intakeQHistory +
+        urlAnswer +
+        previewAi +
         chatTurn({ role: "user", text: "Apply this theme." }) +
         chatTurn({
           role: "ai",
           text: "All good? I'll pin this brand theme to the session.",
-          contentHtml: renderThemePreview(),
         }),
       picker: SUMMARY_PICKER,
     };
   }
 
-  // Step 0 — URL intake.
-  return {
-    body: chatTurn({
-      role: "ai",
-      text: "Where's your brand? I'll pull colors, imagery, buttons, and personality straight from your site.",
-      contentHtml: `
-          <div class="analyse__url-card">
-            <div class="ap-form-field analyse__url-field">
-              <label>Brand URL</label>
-              <div class="ap-input-group">
-                <i class="ap-icon-web"></i>
-                <input type="url" placeholder="https://yourbrand.com" value="${brandTheme.url}" data-brand-url />
-              </div>
-            </div>
-            <button type="button" class="ap-button primary orange" data-brand-analyze>
-              <i class="ap-icon-sparkles"></i>
-              <span>Analyze brand</span>
-            </button>
-          </div>
-        `,
-    }),
-    stickyFooter: `
-      <p class="analyse__footer-hint muted">
-        Type your URL above and press <kbd>Enter</kbd>, or click <b>Analyze brand</b>.
-      </p>
-    `,
-  };
+  // Fallback — shouldn't hit.
+  return { body: intakeQFull };
 }
 
 function renderThemePreview() {
