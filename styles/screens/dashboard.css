@@ -468,6 +468,21 @@
   flex-direction: column;
   border-radius: var(--ref-border-radius-md);
   background: var(--ref-color-grey-05);
+  animation: app-card-entrance var(--ref-animation-normal) var(--app-ease-out) both;
+}
+
+/* Entrance for fresh idea cards — runs once when the card mounts (e.g. after
+   extraction completes or filters re-render). Uses transform+opacity only to
+   stay GPU-friendly. */
+@keyframes app-card-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* When sources are collapsed, no grey-05 wrapper is visible — the inner card
