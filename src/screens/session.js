@@ -1619,8 +1619,10 @@ function bindSession(root, session) {
 
       const tab = event.target.closest("[data-session-tab]");
       if (tab) {
-        // Clear focusIdea on any explicit tab switch.
-        setQuery({ tab: tab.dataset.sessionTab, focusIdea: "" });
+        // Clear focus markers on any explicit tab switch — they're scoped to
+        // the originating tab, leaving them set leaks pulse highlights when
+        // the user comes back.
+        setQuery({ tab: tab.dataset.sessionTab, focusIdea: "", focusPost: "", focusSource: "" });
         return;
       }
 
