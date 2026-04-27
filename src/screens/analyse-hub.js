@@ -3,6 +3,7 @@ import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=23";
 import { getContextById } from "../mocks.js?v=22";
 import { parseHashParams } from "../url-state.js?v=20";
+import { showToast } from "../components/toast.js?v=20";
 
 // Context intake — step 1 of the context wizard, chromeless.
 // The user names the context and picks which components to include (Voice,
@@ -108,7 +109,9 @@ export function renderAnalyseHub(_params, target) {
         (c) => c.key,
       );
       if (!stages.length) {
-        window.alert("Pick at least one component.");
+        showToast("Pick at least one component.", { variant: "error" });
+        // Focus the first checkbox so keyboard users land on the action target.
+        target.querySelector(`[data-component="${COMPONENTS[0].key}"]`)?.focus();
         return;
       }
       const name = target.querySelector("[data-context-name]")?.value.trim() || "New context";
