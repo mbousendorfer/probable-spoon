@@ -85,7 +85,7 @@
   gap: var(--ref-spacing-xxs);
   padding: 6px var(--ref-spacing-xs);
   border: 1px solid var(--app-border-soft);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   background: var(--app-surface);
   color: var(--ref-color-grey-100);
   font-family: inherit;
@@ -345,7 +345,7 @@
 }
 
 .session__composer-card {
-  border-radius: 12px;
+  border-radius: var(--app-radius-xl);
   display: flex;
   flex-direction: column;
 }
@@ -448,7 +448,7 @@
   padding: var(--ref-spacing-xs);
   background: transparent;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--app-radius-xl);
   font-family: inherit;
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-xs);

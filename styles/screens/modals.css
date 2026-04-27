@@ -134,7 +134,7 @@ body.has-modal {
   padding: 4px var(--ref-spacing-xs);
   height: 28px;
   border: 1px solid var(--ref-color-grey-20);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   background: var(--ref-color-white);
   font-size: var(--ref-font-size-xs);
   color: var(--sys-text-color-light);
@@ -494,7 +494,7 @@ body.has-modal {
   gap: var(--ref-spacing-xxxs);
   padding: 6px 14px;
   border: 1px solid var(--ref-color-grey-20);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   background: var(--ref-color-white);
   font-size: var(--ref-font-size-sm);
   font-weight: var(--ref-font-weight-bold);
@@ -604,7 +604,7 @@ body.has-modal {
   align-items: center;
   gap: var(--ref-spacing-xxxs);
   padding: 2px var(--ref-spacing-xs);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   background: var(--ref-color-grey-05);
   border: 1px solid var(--ref-color-grey-10);
   font-size: var(--ref-font-size-xs);

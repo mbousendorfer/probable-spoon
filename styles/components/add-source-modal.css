@@ -154,7 +154,7 @@
   width: 140px;
   height: 6px;
   background: var(--ref-color-grey-10);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   overflow: hidden;
 }
 

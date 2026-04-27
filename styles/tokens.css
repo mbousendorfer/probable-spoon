@@ -8,11 +8,13 @@
   --app-border: var(--ref-color-grey-20);
   --app-border-soft: var(--ref-color-grey-10);
 
-  /* Radius (DS only ships sm/md/lg — we keep one larger value for big cards) */
+  /* Radius (DS only ships sm/md/lg — we keep one larger value for big cards
+     and a pill value for status/chips). */
   --app-radius-sm: var(--sys-border-radius-sm);
   --app-radius-md: var(--sys-border-radius-md);
   --app-radius-lg: var(--sys-border-radius-lg);
   --app-radius-xl: 12px;
+  --app-radius-pill: 999px;
 
   /* App chrome sizing */
   --app-topbar-height: 56px;
