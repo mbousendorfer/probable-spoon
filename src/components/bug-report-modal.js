@@ -18,7 +18,7 @@ import { escapeHtml } from "../utils.js?v=20";
 
 let backdrop, modal, submitBtn, problemInput, actionInput;
 let categoriesEl, previewEl, dropzoneFallback, dropzone, fileInput;
-let previewImg, fileNameEl, autoBadge, capturingBadge, contextBar;
+let previewImg, fileNameEl, autoBadge, capturingBadge, captureFailedBadge, contextBar;
 let selectedCategory = null;
 let screenshotDataUrl = null;
 let initialized = false;
@@ -77,6 +77,7 @@ const HTML = `
           <label>Screenshot</label>
           <span class="ap-status green" id="bugAutoBadge" hidden>Auto-captured</span>
           <span class="ap-status grey" id="bugCapturingBadge" hidden>Capturing…</span>
+          <span class="ap-status grey" id="bugCaptureFailedBadge" hidden>Capture unavailable — upload one manually</span>
         </div>
         <div class="bug-report-dropzone has-file" id="bugScreenshotPreview" hidden>
           <div class="bug-report-preview">
@@ -129,6 +130,7 @@ function setScreenshot(dataUrl) {
   previewEl.hidden = false;
   dropzoneFallback.hidden = true;
   capturingBadge.hidden = true;
+  captureFailedBadge.hidden = true;
   autoBadge.hidden = false;
 }
 
@@ -140,6 +142,7 @@ function clearScreenshot() {
   dropzoneFallback.hidden = false;
   autoBadge.hidden = true;
   capturingBadge.hidden = true;
+  captureFailedBadge.hidden = true;
   fileInput.value = "";
 }
 
@@ -242,9 +245,14 @@ export function open() {
   window.setTimeout(() => focusSafe(problemInput), 50);
   // Kick off auto-screenshot — shows the "Capturing…" badge until resolved.
   capturingBadge.hidden = false;
+  captureFailedBadge.hidden = true;
   capturePageScreenshot().then((dataUrl) => {
-    if (dataUrl) setScreenshot(dataUrl);
-    else capturingBadge.hidden = true;
+    if (dataUrl) {
+      setScreenshot(dataUrl);
+    } else {
+      capturingBadge.hidden = true;
+      captureFailedBadge.hidden = false;
+    }
   });
 }
 
@@ -276,6 +284,7 @@ export function init() {
   fileNameEl = document.getElementById("bugFileName");
   autoBadge = document.getElementById("bugAutoBadge");
   capturingBadge = document.getElementById("bugCapturingBadge");
+  captureFailedBadge = document.getElementById("bugCaptureFailedBadge");
   contextBar = document.getElementById("bugContextBar");
 
   // Close / dismiss
