@@ -1,0 +1,354 @@
+/* Add source modal — drop zone + file rows + URL form + connector
+ * browse sub-screen. The modal shell + backdrop + close button live in
+ * styles/screens/modals.css; this file only owns the inner layout.
+ *
+ * All visuals reuse DS tokens (--ref-*, --sys-*); no hardcoded values.
+ */
+
+/* ── Tabs nav inside the modal ────────────────────────────────────────── */
+
+.add-source-modal__tabs {
+  padding: 0 var(--ref-spacing-lg);
+  border-bottom: 1px solid var(--ref-color-grey-10);
+}
+
+.add-source-modal__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-md);
+}
+
+.add-source-modal__footer {
+  border-top: 1px solid var(--ref-color-grey-10);
+}
+
+/* ── Drop zone ────────────────────────────────────────────────────────── */
+
+.add-source__dropzone {
+  border: 1.5px dashed var(--ref-color-grey-20);
+  border-radius: var(--ref-border-radius-md);
+  padding: var(--ref-spacing-xl) var(--ref-spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  background: var(--ref-color-white);
+}
+
+.add-source__dropzone:hover,
+.add-source__dropzone:focus-visible {
+  outline: none;
+  border-color: var(--ref-color-grey-60);
+  background: var(--ref-color-grey-05);
+}
+
+.add-source__dropzone.drag-over {
+  border-color: var(--ref-color-electric-blue-100);
+  background: var(--ref-color-electric-blue-05);
+}
+
+.add-source__dropzone-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--ref-border-radius-md);
+  background: var(--ref-color-electric-blue-10);
+  color: var(--ref-color-electric-blue-100);
+  font-size: var(--ref-font-size-xl);
+}
+
+.add-source__dropzone-primary {
+  margin: 0;
+  font-size: var(--ref-font-size-md);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.add-source__dropzone-sub {
+  margin: 0;
+  font-size: var(--ref-font-size-xs);
+}
+
+.add-source__error {
+  margin: 0;
+}
+
+/* ── File list ────────────────────────────────────────────────────────── */
+
+.add-source__file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.add-source__file-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+  padding: var(--ref-spacing-sm);
+  border: 1px solid var(--ref-color-grey-10);
+  border-radius: var(--ref-border-radius-md);
+  background: var(--ref-color-white);
+}
+
+.add-source__file-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--ref-border-radius-sm);
+  background: var(--ref-color-grey-05);
+  color: var(--ref-color-grey-100);
+  flex-shrink: 0;
+}
+
+.add-source__file-icon > i {
+  font-size: var(--ref-font-size-md);
+}
+
+.add-source__file-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.add-source__file-name {
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.add-source__file-meta {
+  font-size: var(--ref-font-size-xs);
+}
+
+.add-source__file-right {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+  flex-shrink: 0;
+}
+
+.add-source__file-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+}
+
+.add-source__progress {
+  width: 140px;
+  height: 6px;
+  background: var(--ref-color-grey-10);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.add-source__progress-bar {
+  height: 100%;
+  background: var(--ref-color-electric-blue-100);
+  transition: width 0.1s linear;
+}
+
+.add-source__file-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.add-source__file-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--ref-color-electric-blue-20);
+  border-top-color: var(--ref-color-electric-blue-100);
+  border-radius: 50%;
+  animation: add-source-spin 0.7s linear infinite;
+}
+
+@keyframes add-source-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── URL tab ──────────────────────────────────────────────────────────── */
+
+.add-source__url {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-md);
+}
+
+.add-source__url-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+}
+
+.add-source__url-row .ap-input-group {
+  flex: 1;
+}
+
+.add-source__url-row input[type="url"] {
+  width: 100%;
+  border: 1px solid var(--ref-color-grey-20);
+  border-radius: var(--ref-border-radius-md);
+  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
+  font-family: inherit;
+  font-size: var(--ref-font-size-sm);
+  color: var(--ref-color-grey-150);
+  background: var(--ref-color-white);
+  box-sizing: border-box;
+}
+
+.add-source__url-row input[type="url"]:focus {
+  outline: none;
+  border-color: var(--ref-color-orange-100);
+  box-shadow: 0 0 0 3px var(--ref-color-orange-10);
+}
+
+.add-source__sub {
+  font-size: var(--ref-font-size-xs);
+  margin: 0;
+}
+
+.add-source__url-history-title {
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-100);
+  margin: 0 0 var(--ref-spacing-xs);
+}
+
+/* ── Connectors tab ──────────────────────────────────────────────────── */
+
+.add-source__connectors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.add-source__connector-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+  padding: var(--ref-spacing-sm);
+}
+
+.add-source__connector-logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--ref-border-radius-sm);
+  object-fit: contain;
+}
+
+.add-source__connector-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.add-source__connector-title {
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.add-source__connector-action {
+  flex-shrink: 0;
+}
+
+/* ── Connector browse sub-screen ─────────────────────────────────────── */
+
+.add-source__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+  font-size: var(--ref-font-size-sm);
+  color: var(--ref-color-grey-60);
+}
+
+.add-source__breadcrumb-back {
+  padding-left: var(--ref-spacing-xxs);
+  padding-right: var(--ref-spacing-xs);
+}
+
+.add-source__breadcrumb-sep {
+  color: var(--ref-color-grey-40);
+}
+
+.add-source__breadcrumb-current {
+  color: var(--ref-color-grey-150);
+  font-weight: var(--ref-font-weight-bold);
+}
+
+.add-source__doc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.add-source__doc-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+  padding: var(--ref-spacing-xs) 0;
+  border-top: 1px solid var(--ref-color-grey-10);
+}
+
+.add-source__doc-row:first-child {
+  border-top: 0;
+}
+
+.add-source__doc-row.selected {
+  background: var(--ref-color-electric-blue-05);
+}
+
+.add-source__doc-check {
+  flex-shrink: 0;
+}
+
+.add-source__doc-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--ref-border-radius-sm);
+  background: var(--ref-color-grey-05);
+  color: var(--ref-color-grey-100);
+  flex-shrink: 0;
+}
+
+.add-source__doc-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.add-source__doc-title {
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}

@@ -31,7 +31,9 @@ body.has-modal {
 
 .bug-report-modal,
 .feedback-modal,
-.generate-image-modal {
+.generate-image-modal,
+.chat-picker-modal,
+.add-source-modal {
   position: fixed;
   top: 50vh;
   left: 50vw;
@@ -51,16 +53,33 @@ body.has-modal {
   width: min(calc(100% - 32px), 640px);
 }
 
+.chat-picker-modal {
+  width: min(calc(100% - 32px), 560px);
+}
+
+.add-source-modal {
+  width: min(calc(100% - 32px), 640px);
+}
+
 .bug-report-modal.open,
 .feedback-modal.open,
-.generate-image-modal.open {
+.generate-image-modal.open,
+.chat-picker-modal.open,
+.add-source-modal.open {
   display: flex;
 }
 
 .bug-report-modal .ap-dialog-content,
-.feedback-modal .ap-dialog-content {
+.feedback-modal .ap-dialog-content,
+.chat-picker-modal .ap-dialog-content,
+.add-source-modal .ap-dialog-content {
   flex: 1;
   overflow-y: auto;
+}
+
+/* Picker fills the modal content; no extra padding around the option rows. */
+.chat-picker-modal .analyse__options {
+  margin: 0;
 }
 
 /* While in the success state, hide the form + footer. */

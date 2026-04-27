@@ -7,6 +7,7 @@ import {
   contextComponentsFor,
   contexts as allContexts,
   socialAccounts,
+  recentSessions,
 } from "../mocks.js?v=22";
 import { isNewUser } from "../user-mode.js?v=20";
 import {
@@ -24,10 +25,17 @@ import { startContextBuildFlow, startActionPickerFlow, handleActionPick } from "
 import * as sidebarWizard from "../sidebar-wizard.js?v=29";
 import * as inlineQuestion from "../inline-question.js?v=20";
 import { renderPicker, bindWizardKeyboard, unbindWizardKeyboard } from "./_analyse-common.js?v=24";
-import { renderSourceCard } from "../components/source-card.js?v=21";
+import { renderSourceCard } from "../components/source-card.js?v=22";
 import { renderIdeaCard } from "../components/idea-card.js?v=23";
+import {
+  contentState,
+  renderContentWorkspace as renderSharedContentWorkspace,
+  rerenderContentWorkspaceBody,
+  renderContentEmptyState,
+} from "../components/content-workspace.js?v=20";
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
+import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
 
 // Session screen — persistent assistant panel on the left, workspace with
 // tabs on the right.
@@ -67,10 +75,8 @@ function readQuery() {
   };
 }
 
-// Per-tab ephemeral state — search query + sort — scoped to the Content tab.
-// Not URL-persisted so typing in the search input doesn't reset cursor on
-// every keystroke and doesn't pollute the shareable URL.
-const contentState = { q: "", sort: "potential" };
+// Search query + sort live in the shared content-workspace module — same
+// state in the dashboard's start screen and the in-session Content tab.
 
 function setQuery(next) {
   const current = readQuery();
@@ -284,6 +290,63 @@ function renderAssistantPanelQuestion(session) {
       </div>
     </aside>
   `;
+}
+
+// Build + show the "What would you like to know about this source?" inline
+// question. Triggered after the user clicks "Ask" on a source card and
+// picks the chat to ask in. Suggested prompts + a free-text custom row.
+function askWhatToKnow(sessionId, filename) {
+  inlineQuestion.ask(sessionId, {
+    intro: `What would you like to know about ${filename}?`,
+    title: filename || "About this source",
+    stepLabel: "Source",
+    items: [
+      { value: "What's the main takeaway?", label: "What's the main takeaway?", icon: "ap-icon-sparkles" },
+      { value: "Summarize this in 3 bullet points.", label: "Summarize in 3 bullets", icon: "ap-icon-numbered-list" },
+      { value: "Find a contrarian angle worth posting.", label: "Find a contrarian angle", icon: "ap-icon-bolden" },
+    ],
+    customPlaceholder: "Type your own question…",
+    onPick: (text) => sendMessage(sessionId, text),
+    onCustom: (text) => sendMessage(sessionId, text),
+    onSkip: () => {},
+  });
+}
+
+// Triggered from a source card's "Ask" button — routes through the chat
+// picker the same way "Draft Post" does, then the chosen session shows
+// the askWhatToKnow inline question.
+function startAskFlowFromSession(sessionId, sourceId, filename) {
+  const handoff = (choice) => {
+    if (choice.kind === "existing" && choice.session.id === sessionId) {
+      // Already in the picked chat — skip the navigation and ask now.
+      askWhatToKnow(sessionId, filename);
+      return;
+    }
+    sessionStorage.setItem("pendingAskSource", JSON.stringify({ sourceId, filename }));
+    if (choice.kind === "new") {
+      const qs = new URLSearchParams({ tab: "posts", title: defaultChatNameLocal() });
+      navigate(`/session/new?${qs.toString()}`);
+    } else {
+      navigate(`/session/${choice.session.id}?tab=posts`);
+    }
+  };
+  if (recentSessions.length === 0) {
+    handoff({ kind: "new" });
+  } else {
+    openChatPickerModal({ onPick: handoff });
+  }
+}
+
+// Local copy of dashboard's defaultChatName — keeps session.js standalone
+// without a circular import for a 5-line helper.
+function defaultChatNameLocal() {
+  const fmt = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `Chat · ${fmt.format(new Date())}`;
 }
 
 // Build + show the "Which profile?" question. Used both from the in-session
@@ -619,6 +682,20 @@ function wireAssistantPanel(root, session, attachedContext) {
     setTimeout(() => askProfileQuestion(session.id, pendingIdeaId), 100);
   }
 
+  // Hand-off from a source card's "Ask" button on the dashboard or another
+  // session — open the askWhatToKnow inline question in this freshly mounted
+  // chat.
+  const pendingAskRaw = sessionStorage.getItem("pendingAskSource");
+  if (pendingAskRaw) {
+    sessionStorage.removeItem("pendingAskSource");
+    try {
+      const { filename } = JSON.parse(pendingAskRaw);
+      setTimeout(() => askWhatToKnow(session.id, filename), 150);
+    } catch {
+      // Malformed JSON — silently skip.
+    }
+  }
+
   // Pending start flow set by the dashboard's New chat button. Same handoff
   // pattern as pendingDraftIdeaId — read, clear, dispatch with a tiny delay
   // so the assistant subscriber is wired up before turns get pushed.
@@ -765,13 +842,13 @@ function renderTab(q, attachedContext, isRealSession, session) {
     const libSources = getSources(session.id);
     const libIdeas = getIdeas(session.id);
     if (libSources.length === 0 && libIdeas.length === 0) {
-      return renderEmptyState({
-        icon: "ap-icon-feature-library",
-        title: "No content yet",
-        body: "Add a PDF, a video, or a URL on the left. Archie processes it and surfaces ideas you can publish.",
-      });
+      return renderContentEmptyState();
     }
-    return renderContentWorkspace(libSources, libIdeas, q);
+    return renderSharedContentWorkspace({
+      sources: libSources,
+      ideas: libIdeas,
+      view: q.view === "ideas" ? "ideas" : "sources",
+    });
   }
 
   return renderEmptyState({
@@ -781,167 +858,16 @@ function renderTab(q, attachedContext, isRealSession, session) {
   });
 }
 
-// Unified Content workspace — "By source" vs "All ideas" view switch,
-// plus a compact toolbar (search + sort).
-function renderContentWorkspace(libSources, libIdeas, q) {
-  const view = q.view === "ideas" ? "ideas" : "sources";
-  const search = contentState.q.toLowerCase();
-  const sort = contentState.sort;
-
-  // Apply filters
-  const matchesQuery = (text) => !search || (text || "").toLowerCase().includes(search);
-  const filteredIdeas = libIdeas.filter(
-    (i) => matchesQuery(i.title) || matchesQuery(i.body) || matchesQuery(i.rationale),
-  );
-  const filteredSources = libSources.filter((s) => {
-    if (matchesQuery(s.filename) || matchesQuery(s.kind)) return true;
-    // Also surface a source if any of its ideas match.
-    return libIdeas.some((i) => (i.sourceIds || []).includes(s.id) && (matchesQuery(i.title) || matchesQuery(i.body)));
-  });
-
-  const sortedIdeas = sortIdeas(filteredIdeas, sort);
-
-  const body =
-    view === "sources"
-      ? renderBySourceBody(filteredSources, libIdeas, search)
-      : renderAllIdeasBody(sortedIdeas, libSources, search);
-
-  return html`
-    <section class="content-workspace">
-      <header class="content-workspace__header">
-        <div class="row-between">
-          <h2 class="text-section">Content</h2>
-          <span class="muted">
-            ${libSources.length} source${libSources.length === 1 ? "" : "s"} · ${libIdeas.length}
-            idea${libIdeas.length === 1 ? "" : "s"}
-          </span>
-        </div>
-        ${raw(renderContentToolbar(view, filteredSources.length, filteredIdeas.length))}
-      </header>
-      <div class="content-workspace__body" data-content-body>${raw(body)}</div>
-    </section>
-  `;
-}
-
-function renderContentToolbar(view, sourcesCount, ideasCount) {
-  const sort = contentState.sort;
-  const q = contentState.q;
-  return `
-    <div class="content-workspace__toolbar">
-      <div class="ap-input-group content-workspace__search">
-        <i class="ap-icon-search"></i>
-        <input
-          type="text"
-          placeholder="Search sources and ideas…"
-          value="${q.replace(/"/g, "&quot;")}"
-          data-content-search
-          aria-label="Search content"
-        />
-      </div>
-      <div class="content-workspace__toolbar-right">
-        <label class="content-workspace__sort-label">
-          <span class="muted">Sort</span>
-          <select class="ap-native-select" data-content-sort aria-label="Sort ideas">
-            <option value="potential" ${sort === "potential" ? "selected" : ""}>Highest potential</option>
-            <option value="newest" ${sort === "newest" ? "selected" : ""}>Newest</option>
-            <option value="source" ${sort === "source" ? "selected" : ""}>Source</option>
-            <option value="state" ${sort === "state" ? "selected" : ""}>Workflow state</option>
-          </select>
-        </label>
-      </div>
-    </div>
-    <div class="ap-tabs content-workspace__view-tabs">
-      <div class="ap-tabs-nav">
-        <button type="button" class="ap-tabs-tab ${view === "sources" ? "active" : ""}" data-content-view="sources">
-          <i class="ap-icon-feature-library"></i>
-          <span>By source</span>
-          <span class="ap-counter normal ${view === "sources" ? "blue" : "grey"}">${sourcesCount}</span>
-        </button>
-        <button type="button" class="ap-tabs-tab ${view === "ideas" ? "active" : ""}" data-content-view="ideas">
-          <i class="ap-icon-sparkles"></i>
-          <span>All ideas</span>
-          <span class="ap-counter normal ${view === "ideas" ? "blue" : "grey"}">${ideasCount}</span>
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-function sortIdeas(ideas, sort) {
-  const copy = ideas.slice();
-  if (sort === "newest") {
-    // Preserve insertion order for extracted ideas (newest-first is already
-    // how library.js unshifts them). Use the original libIdeas order proxy.
-    return copy;
-  }
-  if (sort === "source") {
-    return copy.sort((a, b) =>
-      String((a.sourceIds || [])[0] || "").localeCompare(String((b.sourceIds || [])[0] || "")),
-    );
-  }
-  if (sort === "state") {
-    const rank = { Pinned: 0, Reviewed: 1, Generated: 2, New: 3 };
-    return copy.sort((a, b) => (rank[a.state] ?? 99) - (rank[b.state] ?? 99));
-  }
-  // default: potential
-  return copy.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
-}
-
-function renderBySourceBody(sources, allIdeas, search) {
-  if (sources.length === 0) {
-    return renderEmptyState({
-      icon: "ap-icon-feature-library",
-      title: "No sources match",
-      body: search ? `No source matches "${search}". Try a different term.` : "No sources yet.",
-    });
-  }
-  return `<div class="stack-sm">${sources.map((s) => renderSourceCard(s, allIdeas)).join("")}</div>`;
-}
-
-function renderAllIdeasBody(ideas, allSources, search) {
-  if (ideas.length === 0) {
-    return renderEmptyState({
-      icon: "ap-icon-sparkles",
-      title: "No ideas match",
-      body: search ? `No idea matches "${search}". Try a different term.` : "No ideas yet.",
-    });
-  }
-  // Flat 2-column auto-fill grid — sources are now surfaced inside each card,
-  // so the previous group-by-source separators are redundant.
-  return `<div class="dashboard__ideas-grid">${ideas.map((i) => renderIdeaCard(i, allSources)).join("")}</div>`;
-}
-
-// Called from bindSession to re-render only the content workspace body (not
-// the whole tab), preserving the focus of the search input.
+// Thin wrapper around the shared rerenderContentWorkspaceBody — keeps the
+// session.js call sites unchanged while the actual rendering lives in the
+// shared module.
 function rerenderContentWorkspace(root, session) {
   const q = readQuery();
   if (q.tab !== "content") return;
-  const libSources = getSources(session.id);
-  const libIdeas = getIdeas(session.id);
-  const view = q.view === "ideas" ? "ideas" : "sources";
-  const search = contentState.q.toLowerCase();
-  const matchesQuery = (text) => !search || (text || "").toLowerCase().includes(search);
-  const filteredIdeas = libIdeas.filter(
-    (i) => matchesQuery(i.title) || matchesQuery(i.body) || matchesQuery(i.rationale),
-  );
-  const filteredSources = libSources.filter((s) => {
-    if (matchesQuery(s.filename) || matchesQuery(s.kind)) return true;
-    return libIdeas.some((i) => (i.sourceIds || []).includes(s.id) && (matchesQuery(i.title) || matchesQuery(i.body)));
-  });
-  const sortedIdeas = sortIdeas(filteredIdeas, contentState.sort);
-  const body = root.querySelector("[data-content-body]");
-  if (body) {
-    body.innerHTML =
-      view === "sources"
-        ? renderBySourceBody(filteredSources, libIdeas, search)
-        : renderAllIdeasBody(sortedIdeas, libSources, search);
-  }
-  // Update counter pills in the view tabs in place (don't rebuild the tabs)
-  const tabs = root.querySelectorAll("[data-content-view]");
-  tabs.forEach((t) => {
-    const which = t.dataset.contentView;
-    const counter = t.querySelector(".ap-counter");
-    if (counter) counter.textContent = which === "sources" ? filteredSources.length : filteredIdeas.length;
+  rerenderContentWorkspaceBody(root, {
+    sources: getSources(session.id),
+    ideas: getIdeas(session.id),
+    view: q.view === "ideas" ? "ideas" : "sources",
   });
 }
 
@@ -1482,10 +1408,17 @@ function bindSession(root, session) {
   const { signal } = currentListenerController;
 
   const input = root.querySelector("#assistantInput");
-  const attachMenu = root.querySelector("[data-assistant-attach-menu]");
+
+  // The assistant aside (and its attach menu) gets replaced wholesale on
+  // sidebarWizard / inlineQuestion / library subscribe callbacks. Holding a
+  // reference here would bind to a detached node — query lazily instead.
+  function getAttachMenu() {
+    return root.querySelector("[data-assistant-attach-menu]");
+  }
 
   function closeAttachMenu() {
-    if (attachMenu) attachMenu.hidden = true;
+    const menu = getAttachMenu();
+    if (menu) menu.hidden = true;
   }
 
   function submitInput() {
@@ -1655,16 +1588,16 @@ function bindSession(root, session) {
         return;
       }
 
-      // "Ask" inside a source card → focus the composer with a primed prompt.
+      // "Ask" inside a source card → open the chat picker (same UX as
+      // Draft Post), then show the askWhatToKnow inline question in the
+      // chosen chat.
       const askBtn = event.target.closest("[data-source-ask]");
       if (askBtn) {
         event.preventDefault();
         const sourceId = askBtn.dataset.sourceAsk;
         const src = getSources(session.id).find((s) => s.id === sourceId);
-        if (input) {
-          input.value = `Tell me what stands out in ${src ? src.filename : "this source"}`;
-          input.focus();
-        }
+        if (!src) return;
+        startAskFlowFromSession(session.id, sourceId, src.filename);
         return;
       }
 
@@ -1791,7 +1724,8 @@ function bindSession(root, session) {
       }
 
       if (event.target.closest("[data-assistant-attach-toggle]")) {
-        if (attachMenu) attachMenu.hidden = !attachMenu.hidden;
+        const menu = getAttachMenu();
+        if (menu) menu.hidden = !menu.hidden;
         return;
       }
 

@@ -15,6 +15,10 @@ const KIND_ICON = {
   pdf: "ap-icon-file--pdf",
   video: "ap-icon-file--video",
   url: "ap-icon-link",
+  word: "ap-icon-file--text",
+  text: "ap-icon-file--text",
+  image: "ap-icon-file--image",
+  audio: "ap-icon-file",
 };
 
 function iconFor(kind) {

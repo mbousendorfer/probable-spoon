@@ -1,0 +1,276 @@
+// Global sources + uploads store. The dashboard's Content panel renders
+// from here. The Add source modal pushes through this module's state
+// machine: file uploads, URL imports, connector imports all funnel into
+// the same { Processing → Processed } pipeline.
+//
+// State machine timers live here (not inside the modal) so uploads
+// continue in background after the user closes the modal.
+
+import { sources as seedSources } from "./mocks.js?v=22";
+
+// ─── State ───────────────────────────────────────────────────────────────
+
+// The live source list — seeded from mocks.sources, then mutated as
+// uploads come in. Newest at the head.
+const sources = seedSources.map((s) => ({ ...s }));
+
+// Uploads currently being processed. Visible in the modal's upload list.
+// { id, name, size, kind, status: 'uploading'|'processing'|'done'|'cancelled', progress, sourceId? }
+const uploads = [];
+
+const sourceSubs = new Set();
+const uploadSubs = new Set();
+
+let counter = 0;
+function newId(prefix) {
+  counter += 1;
+  return `${prefix}-${Date.now().toString(36)}-${counter}`;
+}
+
+function notifySources() {
+  for (const fn of sourceSubs) fn(sources);
+}
+function notifyUploads() {
+  for (const fn of uploadSubs) fn(uploads);
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────
+
+export function getSources() {
+  return sources;
+}
+
+export function getUploads() {
+  return uploads;
+}
+
+export function subscribeSources(fn) {
+  sourceSubs.add(fn);
+  return () => sourceSubs.delete(fn);
+}
+
+export function subscribeUploads(fn) {
+  uploadSubs.add(fn);
+  return () => uploadSubs.delete(fn);
+}
+
+// File extensions → ({ kind, iconKey }). The iconKey is the lowercase
+// value source-card.js uses for KIND_ICON lookup.
+const EXT_MAP = {
+  pdf: { kind: "PDF", iconKey: "pdf" },
+  doc: { kind: "Word", iconKey: "word" },
+  docx: { kind: "Word", iconKey: "word" },
+  txt: { kind: "Text", iconKey: "text" },
+  md: { kind: "Text", iconKey: "text" },
+  mp4: { kind: "Video", iconKey: "video" },
+  mov: { kind: "Video", iconKey: "video" },
+  mp3: { kind: "Audio", iconKey: "audio" },
+  wav: { kind: "Audio", iconKey: "audio" },
+  m4a: { kind: "Audio", iconKey: "audio" },
+  png: { kind: "Image", iconKey: "image" },
+  jpg: { kind: "Image", iconKey: "image" },
+  jpeg: { kind: "Image", iconKey: "image" },
+};
+
+const MAX_FILE_BYTES = 100 * 1024 * 1024;
+
+export function classifyFile(file) {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  const map = EXT_MAP[ext];
+  if (!map) return { ok: false, reason: `Unsupported file type: ${file.name}` };
+  if (file.size > MAX_FILE_BYTES) return { ok: false, reason: `File too large: ${file.name} (max 100MB)` };
+  return { ok: true, kind: map.kind, iconKey: map.iconKey };
+}
+
+export function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// ─── State machine ───────────────────────────────────────────────────────
+
+const SIGNALS = [
+  { signal: "High signal", signalColor: "orange" },
+  { signal: "Medium signal", signalColor: "tagOrange" },
+  { signal: "Low signal", signalColor: "grey" },
+];
+
+function randomSignal() {
+  // Skew toward Medium — feels more honest for a fresh upload.
+  const r = Math.random();
+  if (r < 0.25) return SIGNALS[0];
+  if (r < 0.85) return SIGNALS[1];
+  return SIGNALS[2];
+}
+
+function randomIdeas() {
+  return 2 + Math.floor(Math.random() * 5); // 2..6
+}
+
+function randomProcessingMs() {
+  return 3000 + Math.floor(Math.random() * 2000); // 3-5s
+}
+
+// ─── Pipelines ───────────────────────────────────────────────────────────
+
+// Kicks off the file upload pipeline:
+//   1. Upload progress 0→100% over ~2s (modal-only state).
+//   2. Push a Processing source to getSources() (visible in dashboard).
+//   3. After 3-5s, flip source to Processed with random signal/ideaCount.
+export function startFileUpload(file, classification) {
+  const upload = {
+    id: newId("up"),
+    name: file.name,
+    size: formatSize(file.size),
+    kind: classification.kind,
+    iconKey: classification.iconKey,
+    status: "uploading",
+    progress: 0,
+    sourceId: null,
+  };
+  uploads.unshift(upload);
+  notifyUploads();
+
+  // Tween progress 0 → 100% over ~2s, ticking every 100ms.
+  const startedAt = Date.now();
+  const totalMs = 2000;
+  const interval = setInterval(() => {
+    if (upload.status === "cancelled") {
+      clearInterval(interval);
+      return;
+    }
+    const elapsed = Date.now() - startedAt;
+    upload.progress = Math.min(100, Math.round((elapsed / totalMs) * 100));
+    notifyUploads();
+    if (elapsed >= totalMs) {
+      clearInterval(interval);
+      transitionToProcessing(upload);
+    }
+  }, 100);
+
+  return upload.id;
+}
+
+function transitionToProcessing(upload) {
+  if (upload.status === "cancelled") return;
+  upload.status = "processing";
+  upload.progress = 100;
+
+  const sourceId = newId("src");
+  upload.sourceId = sourceId;
+  sources.unshift({
+    id: sourceId,
+    filename: upload.name,
+    kind: upload.kind,
+    status: "Processing",
+    signal: "Pending",
+    signalColor: "grey",
+    ideaCount: 0,
+    addedAt: "just now",
+  });
+  notifySources();
+  notifyUploads();
+
+  setTimeout(() => transitionToDone(upload), randomProcessingMs());
+}
+
+function transitionToDone(upload) {
+  if (upload.status === "cancelled") return;
+  upload.status = "done";
+  const src = sources.find((s) => s.id === upload.sourceId);
+  if (src) {
+    const sig = randomSignal();
+    src.status = "Processed";
+    src.signal = sig.signal;
+    src.signalColor = sig.signalColor;
+    src.ideaCount = randomIdeas();
+    notifySources();
+  }
+  notifyUploads();
+}
+
+// URL import skips the upload phase — straight into Processing.
+export function startUrlImport(url) {
+  const filename = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const upload = {
+    id: newId("up"),
+    name: filename,
+    size: "URL",
+    kind: "URL",
+    iconKey: "url",
+    status: "processing",
+    progress: 100,
+    sourceId: null,
+  };
+  uploads.unshift(upload);
+
+  const sourceId = newId("src");
+  upload.sourceId = sourceId;
+  sources.unshift({
+    id: sourceId,
+    filename,
+    kind: "URL",
+    status: "Processing",
+    signal: "Pending",
+    signalColor: "grey",
+    ideaCount: 0,
+    addedAt: "just now",
+  });
+  notifySources();
+  notifyUploads();
+
+  setTimeout(() => transitionToDone(upload), 4000 + Math.floor(Math.random() * 2000));
+  return upload.id;
+}
+
+// Connector import — same shape as URL: skip uploading, straight to processing.
+// The "doc" object is the mock from mocks.connectorDocs.
+export function startConnectorImport(connector, doc) {
+  const upload = {
+    id: newId("up"),
+    name: doc.title,
+    size: doc.size || connector.name,
+    kind: doc.kind || connector.name,
+    iconKey: (doc.iconKey || "file").toLowerCase(),
+    status: "processing",
+    progress: 100,
+    sourceId: null,
+  };
+  uploads.unshift(upload);
+
+  const sourceId = newId("src");
+  upload.sourceId = sourceId;
+  sources.unshift({
+    id: sourceId,
+    filename: doc.title,
+    kind: doc.kind || connector.name,
+    status: "Processing",
+    signal: "Pending",
+    signalColor: "grey",
+    ideaCount: 0,
+    addedAt: "just now",
+  });
+  notifySources();
+  notifyUploads();
+
+  setTimeout(() => transitionToDone(upload), randomProcessingMs());
+  return upload.id;
+}
+
+// Cancel an in-flight upload. After Done it's a no-op — by then the
+// "remove" affordance is gone in the modal anyway.
+export function cancelUpload(uploadId) {
+  const idx = uploads.findIndex((u) => u.id === uploadId);
+  if (idx < 0) return;
+  const u = uploads[idx];
+  if (u.status === "done") return;
+  u.status = "cancelled";
+  uploads.splice(idx, 1);
+  if (u.sourceId) {
+    const sIdx = sources.findIndex((s) => s.id === u.sourceId);
+    if (sIdx >= 0) sources.splice(sIdx, 1);
+    notifySources();
+  }
+  notifyUploads();
+}

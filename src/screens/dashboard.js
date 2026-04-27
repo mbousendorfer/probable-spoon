@@ -2,10 +2,19 @@ import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=21";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
-import { recentSessions, templateStarters, sources, ideas } from "../mocks.js?v=22";
+import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
+import { open as openAddSourceModal } from "../components/add-source-modal.js?v=20";
+import { recentSessions, templateStarters, ideas } from "../mocks.js?v=22";
+import { getSources, subscribeSources } from "../sources-stream.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
-import { renderSourceCard } from "../components/source-card.js?v=21";
+import { renderSourceCard } from "../components/source-card.js?v=22";
 import { renderIdeaCard } from "../components/idea-card.js?v=23";
+import {
+  contentState,
+  renderContentWorkspace as renderSharedContentWorkspace,
+  rerenderContentWorkspaceBody,
+  renderContentEmptyState,
+} from "../components/content-workspace.js?v=20";
 
 // Dashboard — one URL (#/), state variants encoded in URL params so URLs
 // like "Projects · Ideas" stay shareable.
@@ -39,9 +48,18 @@ function setQuery(next) {
   window.location.hash = `#/?${qs}`;
 }
 
+// Cleared and reset on every renderDashboard so subscriptions don't pile up
+// across navigations.
+let unsubscribeSources = null;
+
 export function renderDashboard(_params, target) {
   renderTopbar();
   const q = readQuery();
+
+  if (unsubscribeSources) {
+    unsubscribeSources();
+    unsubscribeSources = null;
+  }
 
   target.innerHTML = html`
     <section class="screen screen--split dashboard">
@@ -54,6 +72,14 @@ export function renderDashboard(_params, target) {
   `;
 
   bindDashboard(target);
+
+  // Re-render only the Content panel when the sources stream changes — keeps
+  // the sidebar and the workspace tabs steady while uploads progress.
+  unsubscribeSources = subscribeSources(() => {
+    if (isNewUser()) return;
+    const main = target.querySelector(".dashboard__main");
+    if (main) main.innerHTML = renderProjectsPanel(readQuery());
+  });
 }
 
 function renderNewProjectCard(q) {
@@ -68,7 +94,9 @@ function renderNewProjectCard(q) {
         <div class="ap-input-group">
           <input placeholder="e.g. Q2 launch drumbeat" data-new-project-name value="${q.title}" />
         </div>
-        <p class="dashboard__form-error" data-new-project-error hidden>Give this chat a name before creating it.</p>
+        <p class="dashboard__form-hint muted">
+          Archie will name it from the conversation, or fall back to the date and time.
+        </p>
       </div>
       <div class="ap-form-field">
         <label>Context</label>
@@ -171,48 +199,21 @@ function renderProjectsPanel(q) {
 }
 
 function renderContentSection(q) {
+  const sources = getSources();
+  if (sources.length === 0 && ideas.length === 0) {
+    return renderContentEmptyState();
+  }
   const view = q.view === "ideas" ? "ideas" : "sources";
-  // Ideas view: flat 2-column auto-fill grid. Sources are surfaced inside
-  // each idea card now (the multi-source design), so the previous group-by-
-  // source separators are redundant.
-  const body =
-    view === "ideas"
-      ? ideas.length
-        ? `<div class="dashboard__ideas-grid">${ideas.map((i) => renderIdeaCard(i, sources)).join("")}</div>`
-        : `<p class="muted">No ideas yet.</p>`
-      : `<div class="stack-sm">${sources.map((s) => renderSourceCard(s, ideas)).join("")}</div>`;
-  return html`
-    <section class="dashboard__section">
-      <div class="row-between">
-        <h2 class="text-section">Content</h2>
-        <button type="button" class="ap-button stroked blue" data-dashboard-add-source>
-          <i class="ap-icon-plus"></i>
-          <span>Add source</span>
-        </button>
-      </div>
-      ${raw(renderContentViewTabs(q))} ${raw(body)}
-    </section>
+  // Same Content workspace as the in-session Content tab: header with count
+  // meta + the dashboard-only "+ Add source" button, search + sort toolbar,
+  // By source / All ideas tabs, body of cards.
+  const headerActions = `
+    <button type="button" class="ap-button stroked blue" data-dashboard-add-source>
+      <i class="ap-icon-plus"></i>
+      <span>Add source</span>
+    </button>
   `;
-}
-
-function renderContentViewTabs(q) {
-  const view = q.view === "ideas" ? "ideas" : "sources";
-  return html`
-    <div class="ap-tabs dashboard__subtabs">
-      <div class="ap-tabs-nav">
-        <button type="button" class="ap-tabs-tab ${view === "sources" ? "active" : ""}" data-content-view="sources">
-          <i class="ap-icon-feature-library"></i>
-          <span>By source</span>
-          <span class="ap-counter normal ${view === "sources" ? "blue" : "grey"}">${sources.length}</span>
-        </button>
-        <button type="button" class="ap-tabs-tab ${view === "ideas" ? "active" : ""}" data-content-view="ideas">
-          <i class="ap-icon-sparkles"></i>
-          <span>All ideas</span>
-          <span class="ap-counter normal ${view === "ideas" ? "blue" : "grey"}">${ideas.length}</span>
-        </button>
-      </div>
-    </div>
-  `;
+  return renderSharedContentWorkspace({ sources, ideas, view, headerActions });
 }
 
 // ---- Wiring -------------------------------------------------------------------
@@ -256,14 +257,11 @@ function bindDashboard(root) {
     if (event.target.closest("[data-new-project-create]")) {
       const nameInput = root.querySelector("[data-new-project-name]");
       const contextSelect = root.querySelector("[data-new-project-context]");
-      const error = root.querySelector("[data-new-project-error]");
-      const title = nameInput?.value.trim() || "";
-      if (!title) {
-        if (error) error.hidden = false;
-        nameInput?.focus();
-        return;
-      }
-      if (error) error.hidden = true;
+      // Name is optional. When the user leaves it blank we fall back to a
+      // date+time stamp; the eventual product behavior will rename the chat
+      // from the conversation content once it has enough material.
+      const typed = nameInput?.value.trim() || "";
+      const title = typed || defaultChatName();
       const contextValue = contextSelect?.value || "none";
       const contextId = contextIdForNewProject(contextValue);
       const qs = new URLSearchParams({ tab: "posts", title });
@@ -282,7 +280,7 @@ function bindDashboard(root) {
     }
 
     if (event.target.closest("[data-dashboard-add-source]")) {
-      navigate(`/session/${recentSessions[0]?.id || "new"}?tab=content&view=sources`);
+      openAddSourceModal();
       return;
     }
 
@@ -303,9 +301,26 @@ function bindDashboard(root) {
       navigate(`/session/${defaultSessionId}?tab=content&view=ideas`);
       return;
     }
-    if (event.target.closest("[data-source-ask]")) {
+    const askBtn = event.target.closest("[data-source-ask]");
+    if (askBtn) {
       event.preventDefault();
-      navigate(`/session/${defaultSessionId}?tab=posts`);
+      const sourceId = askBtn.dataset.sourceAsk;
+      const source = getSources().find((s) => s.id === sourceId);
+      if (!source) return;
+      const handoff = (choice) => {
+        sessionStorage.setItem("pendingAskSource", JSON.stringify({ sourceId, filename: source.filename }));
+        if (choice.kind === "new") {
+          const qs = new URLSearchParams({ tab: "posts", title: defaultChatName() });
+          navigate(`/session/new?${qs.toString()}`);
+        } else {
+          navigate(`/session/${choice.session.id}?tab=posts`);
+        }
+      };
+      if (recentSessions.length === 0) {
+        handoff({ kind: "new" });
+      } else {
+        openChatPickerModal({ onPick: handoff });
+      }
       return;
     }
     if (event.target.closest("[data-source-more]")) {
@@ -325,12 +340,29 @@ function bindDashboard(root) {
     if (event.target.closest("[data-idea-generate]")) {
       event.preventDefault();
       const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
-      if (ideaId) {
-        // Hand off to the session — it consumes the flag on mount and shows
-        // the inline "Which profile?" question before starting the draft.
-        sessionStorage.setItem("pendingDraftIdeaId", ideaId);
-        navigate(`/session/${defaultSessionId}?tab=content&view=ideas`);
+      if (!ideaId) return;
+      // The session screen consumes pendingDraftIdeaId on mount and triggers
+      // the inline "Which profile?" question before starting the draft. Same
+      // hand-off shape regardless of whether we land in a fresh chat or an
+      // existing one.
+      sessionStorage.setItem("pendingDraftIdeaId", ideaId);
+      // Zero existing chats — skip the picker, go straight to a new one.
+      if (recentSessions.length === 0) {
+        const qs = new URLSearchParams({ tab: "content", view: "ideas", title: defaultChatName() });
+        navigate(`/session/new?${qs.toString()}`);
+        return;
       }
+      // Otherwise ask explicitly where the draft should land.
+      openChatPickerModal({
+        onPick: (choice) => {
+          if (choice.kind === "new") {
+            const qs = new URLSearchParams({ tab: "content", view: "ideas", title: defaultChatName() });
+            navigate(`/session/new?${qs.toString()}`);
+          } else {
+            navigate(`/session/${choice.session.id}?tab=content&view=ideas`);
+          }
+        },
+      });
       return;
     }
   });
@@ -338,6 +370,15 @@ function bindDashboard(root) {
   root.addEventListener("change", (event) => {
     if (event.target.matches("[data-new-project-context]")) {
       setQuery({ ctx: event.target.value || "none" });
+      return;
+    }
+    if (event.target.matches("[data-content-sort]")) {
+      contentState.sort = event.target.value;
+      rerenderContentWorkspaceBody(root, {
+        sources: getSources(),
+        ideas,
+        view: readQuery().view === "ideas" ? "ideas" : "sources",
+      });
     }
   });
 
@@ -345,6 +386,15 @@ function bindDashboard(root) {
     if (event.target.matches("[data-new-project-name]")) {
       const error = root.querySelector("[data-new-project-error]");
       if (error && event.target.value.trim()) error.hidden = true;
+      return;
+    }
+    if (event.target.matches("[data-content-search]")) {
+      contentState.q = event.target.value;
+      rerenderContentWorkspaceBody(root, {
+        sources: getSources(),
+        ideas,
+        view: readQuery().view === "ideas" ? "ideas" : "sources",
+      });
     }
   });
 }
@@ -360,4 +410,19 @@ function contextNameFor(value) {
   if (value === "brief") return "My strategy brief";
   if (value === "brand") return "My brand theme";
   return "Your context";
+}
+
+// Fallback chat name when the user submits with no title typed in. Eventually
+// this stamp gets replaced by an AI-derived title once there's enough
+// material in the thread; for now the date+time is good enough to scan in
+// the recent-chats list.
+function defaultChatName() {
+  const now = new Date();
+  const fmt = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `Chat · ${fmt.format(now)}`;
 }
