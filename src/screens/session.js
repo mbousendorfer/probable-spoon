@@ -357,10 +357,7 @@ function askProfileQuestion(sessionId, ideaId) {
       caption: a.handle ? (a.kind ? `${a.kind} · ${a.handle}` : a.handle) : a.kind || "",
       imgSrc: a.logo,
     })),
-    onPick: (_accountId) => {
-      // pendingDraftAccountId was set here for a downstream consumer that
-      // never landed; startDraftFlow doesn't read it. Drop the orphan write
-      // and just kick off the flow.
+    onPick: () => {
       startDraftFlow(sessionId, ideaId);
     },
     onSkip: () => {
@@ -1581,12 +1578,6 @@ function bindSession(root, session) {
         const src = getSources(session.id).find((s) => s.id === sourceId);
         if (!src) return;
         startAskFlowFromSession(session.id, sourceId, src.filename);
-        return;
-      }
-
-      // Source overflow menu → no-op for the prototype.
-      if (event.target.closest("[data-source-more]")) {
-        event.preventDefault();
         return;
       }
 

@@ -313,11 +313,6 @@ function bindDashboard(root) {
       }
       return;
     }
-    if (event.target.closest("[data-source-more]")) {
-      event.preventDefault();
-      return;
-    }
-
     // Idea-card source link doubles as "Open idea" — jump to the default
     // session's All ideas view with focus on that idea. Pin + more-menu
     // behavior is encapsulated inside src/components/idea-card.js.
