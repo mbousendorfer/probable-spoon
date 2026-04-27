@@ -243,7 +243,7 @@
   top: 8px;
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-circle);
   background: var(--ref-color-grey-60);
 }
 

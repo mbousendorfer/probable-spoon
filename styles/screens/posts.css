@@ -161,7 +161,7 @@
 .posts__card-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-circle);
   display: grid;
   place-items: center;
   background: var(--ref-color-green-10, var(--ref-color-electric-blue-10));

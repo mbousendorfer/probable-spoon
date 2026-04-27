@@ -185,7 +185,7 @@
 .extracting-notice__spinner {
   width: 16px;
   height: 16px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-circle);
   border: 2px solid var(--ref-color-electric-blue-20);
   border-top-color: var(--ref-color-electric-blue-100);
   animation: app-spin 0.9s linear infinite;
@@ -418,7 +418,7 @@
 .session__composer-thinking-spinner {
   width: 12px;
   height: 12px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-circle);
   border: 1.5px solid var(--ref-color-mermaid-20);
   border-top-color: var(--ref-color-mermaid-gradient-from);
   animation: app-spin 0.9s linear infinite;
@@ -657,7 +657,7 @@
   top: 8px;
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-circle);
   background: var(--ref-color-grey-60);
 }
 

@@ -364,7 +364,7 @@
   display: inline-block;
   width: 16px;
   height: 16px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-circle);
   border: 2px solid var(--ref-color-electric-blue-20, #cce4ff);
   border-top-color: var(--ref-color-electric-blue-100);
   animation: app-spin 1s linear infinite;

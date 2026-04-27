@@ -136,7 +136,7 @@
   place-items: center;
   background: var(--ref-color-electric-blue-10);
   color: var(--ref-color-electric-blue-150);
-  border-radius: 50%;
+  border-radius: var(--app-radius-circle);
   margin: 0 auto;
   font-size: var(--sys-icon-css-md);
 }

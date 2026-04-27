@@ -176,7 +176,7 @@
   height: 10px;
   border: 1.5px solid var(--ref-color-electric-blue-20);
   border-top-color: var(--ref-color-electric-blue-100);
-  border-radius: 50%;
+  border-radius: var(--app-radius-circle);
   animation: app-spin 0.7s linear infinite;
 }
 
