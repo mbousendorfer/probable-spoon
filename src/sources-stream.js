@@ -265,6 +265,36 @@ export function startConnectorImport(connector, doc) {
   return upload.id;
 }
 
+// Scripted-source pipeline used by the session composer's inline `+` menu
+// (Add PDF / Add video / Add URL). The caller controls timing — push the
+// source as Processing, then flip it Processed in lockstep with the thread's
+// extraction turn so the user sees source state and ideas land together.
+export function pushScriptedSource({ filename, kind }) {
+  const sourceId = newId("src");
+  sources.unshift({
+    id: sourceId,
+    filename,
+    kind,
+    status: "Processing",
+    signal: "Pending",
+    signalColor: "grey",
+    ideaCount: 0,
+    addedAt: "just now",
+  });
+  notifySources();
+  return sourceId;
+}
+
+export function completeScriptedSource(sourceId, { signal, signalColor, ideaCount }) {
+  const src = sources.find((s) => s.id === sourceId);
+  if (!src) return;
+  src.status = "Processed";
+  src.signal = signal;
+  src.signalColor = signalColor;
+  src.ideaCount = ideaCount;
+  notifySources();
+}
+
 // Cancel an in-flight upload. After Done it's a no-op — by then the
 // "remove" affordance is gone in the modal anyway.
 export function cancelUpload(uploadId) {

@@ -1,13 +1,16 @@
-// Per-session Library + Content Ideas state.
-// Mirrors the subscribe/notify pattern used by src/assistant.js.
+// Per-session ideas state + the scripted "Add PDF / video / URL" flow
+// behind the session composer's inline `+` menu. Sources live in the
+// global sources-stream store (so a source added from any session also
+// shows up on the dashboard and in every other session); ideas stay
+// per-session here.
 //
 // Public API:
-//   getSources(sessionId)  → Source[]  (seeds from mocks on first access)
-//   getIdeas(sessionId)    → Idea[]    (ditto)
-//   subscribe(sessionId, fn) → unsubscribe
+//   getSources(_sessionId) → Source[]   (delegates to sources-stream)
+//   getIdeas(sessionId)    → Idea[]
+//   subscribe(sessionId, fn) → unsubscribe   payload: { sources, ideas }
 //   addSource(sessionId, kind)  kicks off the mocked add → extract flow
 
-import { sources as seedSources, ideas as seedIdeas } from "./mocks.js?v=22";
+import { ideas as seedIdeas } from "./mocks.js?v=22";
 import { isNewUser } from "./user-mode.js?v=20";
 import {
   postAssistantMessage,
@@ -15,13 +18,24 @@ import {
   postSourceIntake,
   startPending,
   finishPending,
-} from "./assistant.js?v=20";
+} from "./assistant.js?v=21";
+import {
+  getSources as streamGetSources,
+  subscribeSources,
+  pushScriptedSource,
+  completeScriptedSource,
+} from "./sources-stream.js?v=20";
 
 // --- Module state -------------------------------------------------------
 
-const sources = new Map(); // sessionId → Source[]
-const ideas = new Map(); // sessionId → Idea[]
+const ideasMap = new Map(); // sessionId → Idea[]
 const subscribers = new Map(); // sessionId → Set<fn>
+
+// Stream sources are global — re-emit any change to every session that's
+// currently subscribing so their Content tab repaints.
+subscribeSources(() => {
+  for (const sessionId of subscribers.keys()) notify(sessionId);
+});
 
 let idCounter = 0;
 function newId(prefix) {
@@ -31,14 +45,13 @@ function newId(prefix) {
 
 // --- Public API ---------------------------------------------------------
 
-export function getSources(sessionId) {
-  if (!sources.has(sessionId)) seed(sessionId);
-  return sources.get(sessionId);
+export function getSources(_sessionId) {
+  return streamGetSources();
 }
 
 export function getIdeas(sessionId) {
-  if (!ideas.has(sessionId)) seed(sessionId);
-  return ideas.get(sessionId);
+  if (!ideasMap.has(sessionId)) seed(sessionId);
+  return ideasMap.get(sessionId);
 }
 
 export function subscribe(sessionId, fn) {
@@ -54,24 +67,14 @@ export function addSource(sessionId, kind) {
   const script = SCRIPTS[kind];
   if (!script) return;
 
-  // Make sure state is seeded.
-  getSources(sessionId);
+  // Make sure ideas are seeded before we prepend to them.
   getIdeas(sessionId);
 
-  // 1. Add the source in "Processing" state, prepended to the list.
-  const sourceId = newId("src");
-  const source = {
-    id: sourceId,
+  // 1. Push the source through the global store in "Processing" state.
+  const sourceId = pushScriptedSource({
     filename: script.filename,
     kind: script.kindLabel,
-    status: "Processing",
-    signal: "Pending",
-    signalColor: "grey",
-    ideaCount: 0,
-    addedAt: "just now",
-  };
-  sources.get(sessionId).unshift(source);
-  notify(sessionId);
+  });
 
   // 2. Right-aligned "Source intake" turn with file icon + filename · size.
   postSourceIntake(sessionId, {
@@ -88,16 +91,15 @@ export function addSource(sessionId, kind) {
   // through the "Xs · N credits" live counter.
   const delay = 14500 + Math.round(Math.random() * 1000);
   setTimeout(() => {
-    // Update the source card.
-    const found = sources.get(sessionId).find((s) => s.id === sourceId);
-    if (found) {
-      found.status = "Processed";
-      found.signal = script.signal;
-      found.signalColor = script.signalColor;
-      found.ideaCount = script.ideas.length;
-    }
+    // Flip the source to Processed in the global store. notifySources()
+    // inside completeScriptedSource fans out to every session subscriber.
+    completeScriptedSource(sourceId, {
+      signal: script.signal,
+      signalColor: script.signalColor,
+      ideaCount: script.ideas.length,
+    });
 
-    // Prepend the extracted ideas.
+    // Prepend the extracted ideas (per-session).
     const extracted = script.ideas.map((seed) => ({
       id: newId("idea"),
       title: seed.title,
@@ -112,7 +114,7 @@ export function addSource(sessionId, kind) {
       sourceIds: [sourceId],
       extractedAt: "just now",
     }));
-    ideas.get(sessionId).unshift(...extracted);
+    ideasMap.get(sessionId).unshift(...extracted);
 
     // Structured extraction turn — Drafting pill ("Extracted N ideas") +
     // "Analyzed <filename>" + one idea card per extracted idea.
@@ -134,16 +136,15 @@ export function addSource(sessionId, kind) {
 
 function seed(sessionId) {
   const fresh = isNewUser();
-  sources.set(sessionId, fresh ? [] : seedSources.map((s) => ({ ...s })));
-  ideas.set(sessionId, fresh ? [] : seedIdeas.map((i) => ({ ...i })));
+  ideasMap.set(sessionId, fresh ? [] : seedIdeas.map((i) => ({ ...i })));
 }
 
 function notify(sessionId) {
   const set = subscribers.get(sessionId);
   if (!set) return;
   const payload = {
-    sources: (sources.get(sessionId) || []).slice(),
-    ideas: (ideas.get(sessionId) || []).slice(),
+    sources: streamGetSources().slice(),
+    ideas: (ideasMap.get(sessionId) || []).slice(),
   };
   set.forEach((fn) => fn(payload));
 }
