@@ -16,6 +16,12 @@
   --app-radius-xl: 12px;
   --app-radius-pill: 999px;
 
+  /* Elevation — popover/modal shadows. The DS doesn't expose these as
+     reference tokens; we keep them here so cards/popovers/modals can
+     share a consistent depth language. */
+  --app-shadow-popover-md: 0 8px 24px rgba(33, 46, 68, 0.12);
+  --app-shadow-popover-lg: 0 12px 32px rgba(33, 46, 68, 0.12);
+
   /* App chrome sizing */
   --app-topbar-height: 56px;
 }
