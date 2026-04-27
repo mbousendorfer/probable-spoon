@@ -123,7 +123,7 @@ function renderUploadRow(u) {
     u.status === "uploading"
       ? `
         <div class="add-source__file-progress">
-          <div class="add-source__progress"><div class="add-source__progress-bar" style="width: ${u.progress}%"></div></div>
+          <div class="add-source__progress"><div class="add-source__progress-bar" style="transform: scaleX(${u.progress / 100})"></div></div>
           <span class="add-source__file-meta muted">Uploading ${u.progress}%</span>
         </div>
       `

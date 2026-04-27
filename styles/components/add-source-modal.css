@@ -159,9 +159,11 @@
 }
 
 .add-source__progress-bar {
+  width: 100%;
   height: 100%;
   background: var(--ref-color-electric-blue-100);
-  transition: width 0.1s linear;
+  transform-origin: left center;
+  transition: transform 0.1s linear;
 }
 
 .add-source__file-status {
