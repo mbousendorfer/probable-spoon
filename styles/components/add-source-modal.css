@@ -36,7 +36,9 @@
   cursor: pointer;
   transition:
     border-color var(--ref-animation-short),
-    background var(--ref-animation-short);
+    background var(--ref-animation-short),
+    transform var(--ref-animation-short) var(--app-ease-out),
+    box-shadow var(--ref-animation-short) var(--app-ease-out);
   background: var(--ref-color-white);
 }
 
@@ -50,6 +52,8 @@
 .add-source__dropzone.drag-over {
   border-color: var(--ref-color-electric-blue-100);
   background: var(--ref-color-electric-blue-05);
+  transform: scale(1.01);
+  box-shadow: var(--app-shadow-popover-md);
 }
 
 .add-source__dropzone-icon {

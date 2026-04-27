@@ -247,7 +247,9 @@ body.has-modal {
   line-height: var(--ref-font-line-height-md);
   transition:
     border-color var(--ref-animation-short),
-    background var(--ref-animation-short);
+    background var(--ref-animation-short),
+    transform var(--ref-animation-short) var(--app-ease-out),
+    box-shadow var(--ref-animation-short) var(--app-ease-out);
   user-select: none;
 }
 
@@ -259,6 +261,8 @@ body.has-modal {
 .bug-report-dropzone.drag-over {
   border-color: var(--ref-color-orange-100);
   background: var(--ref-color-orange-10);
+  transform: scale(1.01);
+  box-shadow: var(--app-shadow-popover-md);
 }
 
 .bug-report-dropzone.has-file {
