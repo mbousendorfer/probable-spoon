@@ -5,6 +5,7 @@ import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=2
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=20";
 import { recentSessions, templateStarters, ideas, contextIdForNewProject, contextNameFor } from "../mocks.js?v=22";
+import { setHandoff } from "../handoff.js?v=20";
 import { getSources, subscribeSources } from "../sources-stream.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=22";
@@ -263,13 +264,10 @@ function bindDashboard(root) {
       if (contextId) qs.set("contextId", contextId);
       // Hand-off pattern (mirrors pendingDraftIdeaId): the session screen
       // reads + clears this flag on mount and triggers the right start flow.
-      sessionStorage.setItem(
-        "pendingStartFlow",
-        JSON.stringify({
-          hasContext: !!contextId,
-          contextName: contextNameFor(contextValue),
-        }),
-      );
+      setHandoff("pendingStartFlow", {
+        hasContext: !!contextId,
+        contextName: contextNameFor(contextValue),
+      });
       navigate(`/session/new?${qs.toString()}`);
       return;
     }
@@ -303,7 +301,7 @@ function bindDashboard(root) {
       const source = getSources().find((s) => s.id === sourceId);
       if (!source) return;
       const handoff = (choice) => {
-        sessionStorage.setItem("pendingAskSource", JSON.stringify({ sourceId, filename: source.filename }));
+        setHandoff("pendingAskSource", { sourceId, filename: source.filename });
         if (choice.kind === "new") {
           const qs = new URLSearchParams({ tab: "posts", title: defaultChatName() });
           navigate(`/session/new?${qs.toString()}`);
@@ -340,7 +338,7 @@ function bindDashboard(root) {
       // the inline "Which profile?" question before starting the draft. Same
       // hand-off shape regardless of whether we land in a fresh chat or an
       // existing one.
-      sessionStorage.setItem("pendingDraftIdeaId", ideaId);
+      setHandoff("pendingDraftIdeaId", ideaId);
       // Zero existing chats — skip the picker, go straight to a new one.
       if (recentSessions.length === 0) {
         const qs = new URLSearchParams({ tab: "content", view: "ideas", title: defaultChatName() });

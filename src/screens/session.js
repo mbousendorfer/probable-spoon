@@ -36,6 +36,7 @@ import {
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
+import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
 
 // Session screen — persistent assistant panel on the left, workspace with
 // tabs on the right.
@@ -139,7 +140,7 @@ function renderAssistantPanel(session, attachedContext) {
   // Skip the default greeting if a start flow is queued — its first AI bubble
   // will introduce the conversation instead. (Read-only: don't consume the
   // flag here; the bindSession handoff below clears it after dispatching.)
-  const hasPendingStartFlow = !!sessionStorage.getItem("pendingStartFlow");
+  const hasPendingStartFlow = hasHandoff("pendingStartFlow");
   const thread = getThread(session.id, {
     hasContext: !!attachedContext,
     skipGreeting: hasPendingStartFlow,
@@ -310,7 +311,7 @@ function startAskFlowFromSession(sessionId, sourceId, filename) {
       askWhatToKnow(sessionId, filename);
       return;
     }
-    sessionStorage.setItem("pendingAskSource", JSON.stringify({ sourceId, filename }));
+    setHandoff("pendingAskSource", { sourceId, filename });
     if (choice.kind === "new") {
       const qs = new URLSearchParams({ tab: "posts", title: defaultChatNameLocal() });
       navigate(`/session/new?${qs.toString()}`);
@@ -339,7 +340,7 @@ function defaultChatNameLocal() {
 
 // Build + show the "Which profile?" question. Used both from the in-session
 // Draft Post button and from the dashboard's Draft Post handler (via the
-// pendingDraftIdeaId hand-off in sessionStorage).
+// pendingDraftIdeaId hand-off in handoff.js).
 function askProfileQuestion(sessionId, ideaId) {
   const connected = socialAccounts.filter((a) => a.status === "connected");
   if (connected.length === 0) {
@@ -359,8 +360,10 @@ function askProfileQuestion(sessionId, ideaId) {
       caption: a.handle ? (a.kind ? `${a.kind} · ${a.handle}` : a.handle) : a.kind || "",
       imgSrc: a.logo,
     })),
-    onPick: (accountId) => {
-      sessionStorage.setItem("pendingDraftAccountId", accountId);
+    onPick: (_accountId) => {
+      // pendingDraftAccountId was set here for a downstream consumer that
+      // never landed; startDraftFlow doesn't read it. Drop the orphan write
+      // and just kick off the flow.
       startDraftFlow(sessionId, ideaId);
     },
     onSkip: () => {
@@ -672,44 +675,31 @@ function wireAssistantPanel(root, session, attachedContext) {
 
   // Check for a pending draft intent set by the dashboard handler — start the
   // conversational flow after subscriptions are active so thread updates show.
-  const pendingIdeaId = sessionStorage.getItem("pendingDraftIdeaId");
+  const pendingIdeaId = consumeHandoff("pendingDraftIdeaId");
   if (pendingIdeaId) {
-    sessionStorage.removeItem("pendingDraftIdeaId");
     setTimeout(() => askProfileQuestion(session.id, pendingIdeaId), 100);
   }
 
   // Hand-off from a source card's "Ask" button on the dashboard or another
   // session — open the askWhatToKnow inline question in this freshly mounted
   // chat.
-  const pendingAskRaw = sessionStorage.getItem("pendingAskSource");
-  if (pendingAskRaw) {
-    sessionStorage.removeItem("pendingAskSource");
-    try {
-      const { filename } = JSON.parse(pendingAskRaw);
-      setTimeout(() => askWhatToKnow(session.id, filename), 150);
-    } catch {
-      // Malformed JSON — silently skip.
-    }
+  const pendingAsk = consumeHandoff("pendingAskSource");
+  if (pendingAsk?.filename) {
+    setTimeout(() => askWhatToKnow(session.id, pendingAsk.filename), 150);
   }
 
   // Pending start flow set by the dashboard's New chat button. Same handoff
   // pattern as pendingDraftIdeaId — read, clear, dispatch with a tiny delay
   // so the assistant subscriber is wired up before turns get pushed.
-  const pendingStartRaw = sessionStorage.getItem("pendingStartFlow");
-  if (pendingStartRaw) {
-    sessionStorage.removeItem("pendingStartFlow");
-    try {
-      const pendingStart = JSON.parse(pendingStartRaw);
-      setTimeout(() => {
-        if (pendingStart.hasContext) {
-          startActionPickerFlow(session.id, { contextName: pendingStart.contextName });
-        } else {
-          startContextBuildFlow(session.id);
-        }
-      }, 200);
-    } catch {
-      // Malformed JSON — silently skip; no harm done.
-    }
+  const pendingStart = consumeHandoff("pendingStartFlow");
+  if (pendingStart) {
+    setTimeout(() => {
+      if (pendingStart.hasContext) {
+        startActionPickerFlow(session.id, { contextName: pendingStart.contextName });
+      } else {
+        startContextBuildFlow(session.id);
+      }
+    }, 200);
   }
 
   currentUnsubscribe = () => {
