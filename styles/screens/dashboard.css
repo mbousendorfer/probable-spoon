@@ -155,7 +155,7 @@
   justify-content: space-between;
   gap: var(--ref-spacing-xs);
   width: 100%;
-  min-height: 62px;
+  min-height: 72px;
   padding: var(--ref-spacing-xs);
   background: var(--ref-color-mermaid-10);
   border: 1px solid var(--ref-color-mermaid-10);
