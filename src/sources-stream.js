@@ -178,6 +178,7 @@ function transitionToProcessing(upload) {
 function transitionToDone(upload) {
   if (upload.status === "cancelled") return;
   upload.status = "done";
+  let ideaCount = 0;
   const src = sources.find((s) => s.id === upload.sourceId);
   if (src) {
     const sig = randomSignal();
@@ -185,9 +186,15 @@ function transitionToDone(upload) {
     src.signal = sig.signal;
     src.signalColor = sig.signalColor;
     src.ideaCount = randomIdeas();
+    ideaCount = src.ideaCount;
     notifySources();
   }
   notifyUploads();
+
+  import("./components/toast.js").then(({ showToast }) => {
+    const ideas = ideaCount === 1 ? "1 idea" : `${ideaCount} ideas`;
+    showToast(`${upload.name} ready · ${ideas} extracted`);
+  });
 }
 
 // URL import skips the upload phase — straight into Processing.

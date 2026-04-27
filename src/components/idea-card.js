@@ -56,12 +56,24 @@ function toggleIdeaMoreMenu(triggerBtn) {
   triggerBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
 }
 
-function togglePinMenuItem(pinBtn) {
+async function togglePinMenuItem(pinBtn) {
   const wasPressed = pinBtn.getAttribute("aria-pressed") === "true";
-  pinBtn.setAttribute("aria-pressed", wasPressed ? "false" : "true");
-  const labelEl = pinBtn.querySelector("span");
-  if (labelEl) labelEl.textContent = wasPressed ? "Pin idea" : "Unpin idea";
+  setPinned(pinBtn, !wasPressed);
   closeAllIdeaMoreMenus();
+
+  const { showToast } = await import("./toast.js");
+  showToast(wasPressed ? "Idea unpinned" : "Idea pinned", {
+    action: {
+      label: "Undo",
+      onClick: () => setPinned(pinBtn, wasPressed),
+    },
+  });
+}
+
+function setPinned(pinBtn, pinned) {
+  pinBtn.setAttribute("aria-pressed", pinned ? "true" : "false");
+  const labelEl = pinBtn.querySelector("span");
+  if (labelEl) labelEl.textContent = pinned ? "Unpin idea" : "Pin idea";
 }
 
 document.addEventListener("click", (event) => {
