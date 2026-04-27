@@ -7,7 +7,7 @@
 //   subscribe(sessionId, fn) → unsubscribe
 //   addSource(sessionId, kind)  kicks off the mocked add → extract flow
 
-import { sources as seedSources, ideas as seedIdeas } from "./mocks.js?v=20";
+import { sources as seedSources, ideas as seedIdeas } from "./mocks.js?v=22";
 import { isNewUser } from "./user-mode.js?v=20";
 import {
   postAssistantMessage,

@@ -1,7 +1,7 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=20";
-import { getContextById } from "../mocks.js?v=20";
+import { renderTopbar } from "../components/topbar.js?v=21";
+import { getContextById } from "../mocks.js?v=22";
 
 // Context intake — step 1 of the context wizard, chromeless.
 // The user names the context and picks which components to include (Voice,

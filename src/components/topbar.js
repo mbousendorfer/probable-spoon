@@ -2,6 +2,7 @@ import { html } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { open as openBugReportModal } from "./bug-report-modal.js?v=20";
 import { open as openFeedbackModal } from "./feedback-modal.js?v=20";
+import { open as openSettingsDrawer } from "./settings-drawer.js?v=21";
 
 // Persistent top bar. The wireframe shows it on every screen (dashboard, session,
 // wizards), so it lives in index.html and is re-rendered on each route change.
@@ -54,7 +55,7 @@ export function initTopbar() {
       return;
     }
     if (event.target.closest("[data-topbar-settings]")) {
-      navigate("/?tab=contexts");
+      openSettingsDrawer();
     }
   });
 }

@@ -31,7 +31,8 @@ body.has-modal {
 
 .bug-report-modal,
 .feedback-modal,
-.generate-image-modal {
+.generate-image-modal,
+.social-picker-modal {
   position: fixed;
   top: 50vh;
   left: 50vw;
@@ -51,16 +52,107 @@ body.has-modal {
   width: min(calc(100% - 32px), 640px);
 }
 
+.social-picker-modal {
+  width: min(calc(100% - 32px), 480px);
+}
+
 .bug-report-modal.open,
 .feedback-modal.open,
-.generate-image-modal.open {
+.generate-image-modal.open,
+.social-picker-modal.open {
   display: flex;
 }
 
 .bug-report-modal .ap-dialog-content,
-.feedback-modal .ap-dialog-content {
+.feedback-modal .ap-dialog-content,
+.social-picker-modal .ap-dialog-content {
   flex: 1;
   overflow-y: auto;
+}
+
+/* ── Social picker modal ─────────────────────────────────────── */
+
+.social-picker-modal__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.social-picker-modal__option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+  width: 100%;
+  padding: var(--ref-spacing-sm);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
+}
+
+.social-picker-modal__option:hover {
+  border-color: var(--ref-color-orange-100);
+  background: var(--ref-color-orange-10);
+}
+
+.social-picker-modal__logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--ref-border-radius-sm);
+  object-fit: contain;
+}
+
+.social-picker-modal__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ref-spacing-sm);
+  padding: var(--ref-spacing-lg) var(--ref-spacing-md);
+  text-align: center;
+  color: var(--ref-color-grey-60);
+  font-size: var(--ref-font-size-sm);
+}
+
+.social-picker-modal__empty p {
+  margin: 0;
+}
+
+.social-picker-modal__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.social-picker-modal__title-line {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+}
+
+.social-picker-modal__title {
+  font-size: var(--ref-font-size-md);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.social-picker-modal__sub {
+  font-size: var(--ref-font-size-sm);
+  color: var(--ref-color-grey-60);
+  line-height: var(--ref-font-line-height-md);
+}
+
+.social-picker-modal__arrow {
+  color: var(--ref-color-grey-60);
+  flex-shrink: 0;
 }
 
 /* While in the success state, hide the form + footer. */

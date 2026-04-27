@@ -1,7 +1,9 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=20";
-import { recentSessions, templateStarters, sources, ideas } from "../mocks.js?v=20";
+import { renderTopbar } from "../components/topbar.js?v=21";
+import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
+import { open as openSocialPickerModal } from "../components/social-picker-modal.js?v=20";
+import { recentSessions, templateStarters, sources, ideas } from "../mocks.js?v=22";
 import { isNewUser } from "../user-mode.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=21";
 import { renderIdeaCard } from "../components/idea-card.js?v=23";
@@ -231,8 +233,7 @@ function bindDashboard(root) {
     }
 
     if (event.target.closest("[data-open-settings]")) {
-      // Settings screen is a follow-up — no-op for now so the wireframe is
-      // visually complete without dead-ending the user.
+      openSettingsDrawer();
       return;
     }
 
@@ -326,10 +327,13 @@ function bindDashboard(root) {
       event.preventDefault();
       const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
       if (ideaId) {
-        // Store the intent; session.js reads + clears it on mount and starts
-        // the conversational draft flow without a second navigation hop.
-        sessionStorage.setItem("pendingDraftIdeaId", ideaId);
-        navigate(`/session/${defaultSessionId}?tab=content&view=ideas`);
+        openSocialPickerModal({
+          onPick: (account) => {
+            sessionStorage.setItem("pendingDraftIdeaId", ideaId);
+            sessionStorage.setItem("pendingDraftAccountId", account.id);
+            navigate(`/session/${defaultSessionId}?tab=content&view=ideas`);
+          },
+        });
       }
       return;
     }

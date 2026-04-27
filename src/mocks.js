@@ -491,3 +491,144 @@ export function postCountsByNetwork() {
     twitter: posts.filter((p) => p.network === "twitter").length,
   };
 }
+
+// ── Settings drawer mocks ─────────────────────────────────────────────────
+// All settings sections are mocked in-memory. Connect/disconnect, save, etc.
+// flip these objects locally — no persistence.
+
+export const connectors = [
+  {
+    id: "slite",
+    name: "Slite",
+    desc: "Import docs from your Slite workspace",
+    logo: "assets/logos/slite.svg",
+    status: "connected",
+    account: "matt@archie.io",
+    lastSync: "just now",
+  },
+  {
+    id: "notion",
+    name: "Notion",
+    desc: "Import pages from your Notion workspace",
+    logo: "assets/logos/notion.svg",
+    status: "connected",
+    account: "matthieu@archie.io",
+    lastSync: "5 minutes ago",
+  },
+  {
+    id: "gdrive",
+    name: "Google Drive",
+    desc: "Import docs from Google Drive folders",
+    logo: "assets/logos/gdrive.svg",
+    status: "disconnected",
+  },
+  {
+    id: "slack",
+    name: "Slack",
+    desc: "Pull recent threads from a channel",
+    logo: "assets/logos/slack.svg",
+    status: "disconnected",
+  },
+];
+
+export const socialAccounts = [
+  {
+    id: "fb-page",
+    platform: "facebook",
+    platformLabel: "Facebook",
+    kind: "Page",
+    handle: "Agorapulse",
+    logo: "assets/logos/social/facebook.svg",
+    status: "connected",
+  },
+  {
+    id: "ig",
+    platform: "instagram",
+    platformLabel: "Instagram",
+    kind: "Profile",
+    handle: "@agorapulse",
+    logo: "assets/logos/social/instagram.svg",
+    status: "connected",
+  },
+  {
+    id: "li",
+    platform: "linkedin",
+    platformLabel: "LinkedIn",
+    kind: "Page",
+    handle: "Agorapulse",
+    logo: "assets/logos/social/linkedin.svg",
+    status: "connected",
+  },
+  {
+    id: "x",
+    platform: "x",
+    platformLabel: "X (Twitter)",
+    kind: "Profile",
+    handle: "@agorapulse",
+    logo: "assets/logos/social/x.svg",
+    status: "connected",
+  },
+  {
+    id: "tt",
+    platform: "tiktok",
+    platformLabel: "TikTok",
+    logo: "assets/logos/social/tiktok.svg",
+    status: "disconnected",
+  },
+  {
+    id: "yt",
+    platform: "youtube",
+    platformLabel: "YouTube",
+    logo: "assets/logos/social/youtube.svg",
+    status: "disconnected",
+  },
+  {
+    id: "pin",
+    platform: "pinterest",
+    platformLabel: "Pinterest",
+    logo: "assets/logos/social/pinterest.svg",
+    status: "disconnected",
+  },
+  {
+    id: "th",
+    platform: "threads",
+    platformLabel: "Threads",
+    logo: "assets/logos/social/threads.svg",
+    status: "disconnected",
+  },
+  {
+    id: "bs",
+    platform: "bluesky",
+    platformLabel: "Bluesky",
+    logo: "assets/logos/social/bluesky.svg",
+    status: "disconnected",
+  },
+];
+
+export const generationPrefs = {
+  tone: "friendly",
+  language: "en",
+  length: "medium",
+  autoHashtags: false,
+  autoEmojis: true,
+  emojiFreq: "balanced",
+  ctaStyle: "soft",
+};
+
+export const notificationPrefs = {
+  email: {
+    weeklyRecap: true,
+    approvals: true,
+    failures: true,
+    productUpdates: false,
+  },
+  inApp: {
+    mentions: true,
+    voiceReady: true,
+    syncIssues: true,
+  },
+  push: {
+    mentions: false,
+    approvals: false,
+  },
+};

@@ -1,7 +1,7 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=20";
-import { getSessionById, getContextById, contextComponentsFor, contexts as allContexts } from "../mocks.js?v=20";
+import { renderTopbar } from "../components/topbar.js?v=21";
+import { getSessionById, getContextById, contextComponentsFor, contexts as allContexts } from "../mocks.js?v=22";
 import { isNewUser } from "../user-mode.js?v=20";
 import {
   getThread,
@@ -20,6 +20,8 @@ import { renderPicker, bindWizardKeyboard, unbindWizardKeyboard } from "./_analy
 import { renderSourceCard } from "../components/source-card.js?v=21";
 import { renderIdeaCard } from "../components/idea-card.js?v=23";
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
+import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
+import { open as openSocialPickerModal } from "../components/social-picker-modal.js?v=20";
 
 // Session screen — persistent assistant panel on the left, workspace with
 // tabs on the right.
@@ -1260,6 +1262,7 @@ function renderNoContext() {
               .join(""),
           )}
         </div>
+        <a class="ap-link small" href="#" data-manage-contexts>Manage all contexts in Settings →</a>
       </div>
     </div>
   `;
@@ -1595,7 +1598,14 @@ function bindSession(root, session) {
       if (event.target.closest("[data-idea-generate]")) {
         event.preventDefault();
         const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
-        if (ideaId) startDraftFlow(session.id, ideaId);
+        if (ideaId) {
+          openSocialPickerModal({
+            onPick: (account) => {
+              sessionStorage.setItem("pendingDraftAccountId", account.id);
+              startDraftFlow(session.id, ideaId);
+            },
+          });
+        }
         return;
       }
 
@@ -1638,6 +1648,11 @@ function bindSession(root, session) {
       // --- Context tab ---
       if (event.target.closest("[data-create-context]")) {
         navigate("/analyse");
+        return;
+      }
+      if (event.target.closest("[data-manage-contexts]")) {
+        event.preventDefault();
+        openSettingsDrawer({ section: "contexts" });
         return;
       }
       const attachContext = event.target.closest("[data-attach-context]");
