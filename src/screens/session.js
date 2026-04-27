@@ -37,6 +37,7 @@ import { open as openGenerateImageModal } from "../components/generate-image-mod
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
 import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
+import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 
 // Session screen — persistent assistant panel on the left, workspace with
 // tabs on the right.
@@ -47,8 +48,7 @@ import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
 // tabs render populated views; otherwise they render empty states.
 
 function readQuery() {
-  const raw = window.location.hash.split("?")[1] || "";
-  const params = new URLSearchParams(raw);
+  const params = parseHashParams();
   return {
     tab: params.get("tab") || "posts",
     populated: params.get("populated") === "1" || params.get("populated") === "true",
@@ -68,14 +68,11 @@ function readQuery() {
 // state in the dashboard's start screen and the in-session Content tab.
 
 function setQuery(next) {
-  const current = readQuery();
-  const merged = { ...current, ...next };
+  const merged = { ...readQuery(), ...next };
   Object.keys(merged).forEach((key) => {
     if (merged[key] == null || merged[key] === "" || merged[key] === false) delete merged[key];
   });
-  const qs = new URLSearchParams(merged).toString();
-  const sessionId = getActiveSessionIdFromHash();
-  navigate(`/session/${sessionId}?${qs}`);
+  setHashQuery(`/session/${getActiveSessionIdFromHash()}`, merged);
 }
 
 function getActiveSessionIdFromHash() {

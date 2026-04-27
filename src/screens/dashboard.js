@@ -6,6 +6,7 @@ import { open as openChatPickerModal } from "../components/chat-picker-modal.js?
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=20";
 import { recentSessions, templateStarters, ideas, contextIdForNewProject, contextNameFor } from "../mocks.js?v=22";
 import { setHandoff } from "../handoff.js?v=20";
+import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 import { getSources, subscribeSources } from "../sources-stream.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=22";
@@ -28,8 +29,7 @@ import {
 // live behind the Settings entry in the sidebar.)
 
 function readQuery() {
-  const raw = window.location.hash.split("?")[1] || "";
-  const params = new URLSearchParams(raw);
+  const params = parseHashParams();
   return {
     ctx: params.get("ctx") || "none",
     title: params.get("title") || "",
@@ -38,10 +38,7 @@ function readQuery() {
 }
 
 function setQuery(next) {
-  const current = readQuery();
-  const merged = { ...current, ...next };
-  const qs = new URLSearchParams(merged).toString();
-  navigate(`/?${qs}`);
+  setHashQuery("/", { ...readQuery(), ...next });
 }
 
 // Cleared and reset on every renderDashboard so subscriptions don't pile up
