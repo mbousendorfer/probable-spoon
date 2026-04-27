@@ -13,6 +13,16 @@
 }
 .app-modal-backdrop.open {
   display: block;
+  animation: app-modal-backdrop-fade var(--ref-animation-normal) ease;
+}
+
+@keyframes app-modal-backdrop-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* `.ap-status { display: flex }` wins over the browser's default
@@ -67,6 +77,21 @@ body.has-modal {
 .chat-picker-modal.open,
 .add-source-modal.open {
   display: flex;
+  animation: app-modal-fade-in var(--ref-animation-normal) ease;
+}
+
+/* CSS animation, not transition: re-runs every time .open is added so the
+   fade-in is reliable even when the modal's [hidden] backdrop attr is
+   toggled in the same JS frame. */
+@keyframes app-modal-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 4px)) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .bug-report-modal .ap-dialog-content,

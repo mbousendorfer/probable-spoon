@@ -20,6 +20,18 @@
 }
 .settings-drawer.open {
   display: flex;
+  animation: app-drawer-slide-in var(--ref-animation-normal) ease;
+}
+
+@keyframes app-drawer-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .settings-drawer .ap-dialog-header {
@@ -435,6 +447,7 @@
 
 .settings-confirm.open {
   display: flex;
+  animation: app-modal-fade-in var(--ref-animation-normal) ease;
 }
 
 .settings-confirm__backdrop {
