@@ -100,7 +100,7 @@ const HTML = `
   <div class="ap-dialog-footer">
     <div class="ap-dialog-footer-right">
       <button type="button" class="ap-button transparent grey" id="cancelBugReportBtn">Cancel</button>
-      <button type="button" class="ap-button primary orange" id="submitBugReportBtn">Submit Bug Report</button>
+      <button type="button" class="ap-button primary orange" id="submitBugReportBtn">Submit bug report</button>
     </div>
   </div>
   <div class="bug-report-modal__success">
@@ -151,7 +151,7 @@ function reset() {
   problemInput.value = "";
   problemInput.classList.remove("invalid");
   submitBtn.disabled = false;
-  submitBtn.textContent = "Submit Bug Report";
+  submitBtn.textContent = "Submit bug report";
   clearScreenshot();
   contextBar.innerHTML = "";
 }

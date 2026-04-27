@@ -416,7 +416,7 @@ function footerForSection() {
       visible: true,
       html: `
         <div class="ap-dialog-footer-right">
-          <button type="button" class="ap-button primary orange" data-prefs-save ${state.dirty ? "" : "disabled"}>Save preferences</button>
+          <button type="button" class="ap-button primary orange" data-prefs-save ${state.dirty ? "" : "disabled"}>Save</button>
         </div>
       `,
     };
@@ -426,7 +426,7 @@ function footerForSection() {
       visible: true,
       html: `
         <div class="ap-dialog-footer-right">
-          <button type="button" class="ap-button primary orange" data-notif-save ${state.dirty ? "" : "disabled"}>Save notification settings</button>
+          <button type="button" class="ap-button primary orange" data-notif-save ${state.dirty ? "" : "disabled"}>Save</button>
         </div>
       `,
     };

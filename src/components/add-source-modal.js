@@ -317,7 +317,7 @@ function footerForState() {
         visible: true,
         html: `
           <div class="ap-dialog-footer-right">
-            <button type="button" class="ap-button primary orange" data-modal-close>Close</button>
+            <button type="button" class="ap-button primary orange" data-modal-close>Done</button>
           </div>
         `,
       };
