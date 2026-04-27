@@ -29,15 +29,10 @@ import {
 function readQuery() {
   const raw = window.location.hash.split("?")[1] || "";
   const params = new URLSearchParams(raw);
-  // Back-compat: `subtab=library` or `subtab=ideas` → merged `content`
-  // tab with the corresponding inner view.
-  let view = params.get("view") || "sources";
-  const subtab = params.get("subtab");
-  if (subtab === "ideas") view = "ideas";
   return {
     ctx: params.get("ctx") || "none",
     title: params.get("title") || "",
-    view,
+    view: params.get("view") || "sources",
   };
 }
 

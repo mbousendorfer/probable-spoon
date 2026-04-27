@@ -48,19 +48,8 @@ import { open as openChatPickerModal } from "../components/chat-picker-modal.js?
 function readQuery() {
   const raw = window.location.hash.split("?")[1] || "";
   const params = new URLSearchParams(raw);
-  // Back-compat: old `?tab=library` / `?tab=ideas` now map to the merged
-  // Content tab.
-  let tab = params.get("tab") || "posts";
-  let viewFromOldTab = null;
-  if (tab === "library") {
-    tab = "content";
-    viewFromOldTab = "sources";
-  } else if (tab === "ideas") {
-    tab = "content";
-    viewFromOldTab = "ideas";
-  }
   return {
-    tab,
+    tab: params.get("tab") || "posts",
     populated: params.get("populated") === "1" || params.get("populated") === "true",
     title: params.get("title") || "",
     contextId: params.get("contextId") || "",
@@ -70,8 +59,7 @@ function readQuery() {
     focusIdea: params.get("focusIdea") || "",
     focusPost: params.get("focusPost") || "",
     focusSource: params.get("focusSource") || "",
-    // Content tab state
-    view: params.get("view") || viewFromOldTab || "sources",
+    view: params.get("view") || "sources",
   };
 }
 
