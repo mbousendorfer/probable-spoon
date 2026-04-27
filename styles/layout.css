@@ -46,10 +46,18 @@
   color: var(--ref-color-grey-150);
 }
 
+.app-brand {
+  transition: color var(--ref-animation-short) var(--app-ease-out);
+}
+
 .app-brand:hover,
 .app-brand:focus-visible {
   color: var(--ref-color-electric-blue-100);
   outline: none;
+}
+
+.app-brand:active {
+  color: var(--ref-color-electric-blue-150);
 }
 
 .app-topbar__feedback {
@@ -67,8 +75,19 @@
   cursor: pointer;
 }
 
+.app-topbar__feedback {
+  transition:
+    color var(--ref-animation-short) var(--app-ease-out),
+    background-color var(--ref-animation-short) var(--app-ease-out);
+}
+
 .app-topbar__feedback:hover {
+  background: var(--ref-color-electric-blue-05);
   color: var(--ref-color-electric-blue-150);
+}
+
+.app-topbar__feedback:active {
+  background: var(--ref-color-electric-blue-10);
 }
 
 /* ---------- Generic screen scaffolding ---------- */

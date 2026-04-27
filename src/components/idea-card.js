@@ -27,38 +27,7 @@ function potentialFor(confidence) {
   return { label: "Low potential", color: "grey" };
 }
 
-// Source-card keeps its own copy for Library; idea-card keeps a tiny local
-// copy to stay self-contained. Four entries — no value in sharing.
-const KIND_ICON = {
-  pdf: "ap-icon-file--pdf",
-  video: "ap-icon-file--video",
-  url: "ap-icon-link",
-};
-function iconFor(kind) {
-  return KIND_ICON[(kind || "").toLowerCase()] || "ap-icon-file";
-}
-
-const CHANNEL_META = {
-  linkedin: { icon: "ap-icon-linkedin", label: "LinkedIn" },
-  x: { icon: "ap-icon-twitter-official", label: "X" },
-  twitter: { icon: "ap-icon-twitter-official", label: "X" },
-  instagram: { icon: "ap-icon-instagram", label: "Instagram" },
-};
-
-// Still exported — source-card.js (Library view) uses it in compact mode
-// to show tiny channel icons on each idea preview row.
-export function renderChannelChips(channels = [], { compact = false } = {}) {
-  if (!channels || channels.length === 0) return "";
-  return `<span class="channel-chips${compact ? " channel-chips--compact" : ""}" aria-label="Channel fit">${channels
-    .map((c) => {
-      const meta = CHANNEL_META[c.toLowerCase()];
-      if (!meta) return "";
-      return compact
-        ? `<i class="${meta.icon} channel-chips__icon" title="${meta.label}" aria-label="${meta.label}"></i>`
-        : `<span class="channel-chip"><i class="${meta.icon}"></i><span>${meta.label}</span></span>`;
-    })
-    .join("")}</span>`;
-}
+import { iconFor } from "../file-kinds.js?v=20";
 
 // ── Overflow menu — one open at a time ─────────────────────────────────
 //
@@ -87,12 +56,24 @@ function toggleIdeaMoreMenu(triggerBtn) {
   triggerBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
 }
 
-function togglePinMenuItem(pinBtn) {
+async function togglePinMenuItem(pinBtn) {
   const wasPressed = pinBtn.getAttribute("aria-pressed") === "true";
-  pinBtn.setAttribute("aria-pressed", wasPressed ? "false" : "true");
-  const labelEl = pinBtn.querySelector("span");
-  if (labelEl) labelEl.textContent = wasPressed ? "Pin idea" : "Unpin idea";
+  setPinned(pinBtn, !wasPressed);
   closeAllIdeaMoreMenus();
+
+  const { showToast } = await import("./toast.js");
+  showToast(wasPressed ? "Idea unpinned" : "Idea pinned", {
+    action: {
+      label: "Undo",
+      onClick: () => setPinned(pinBtn, wasPressed),
+    },
+  });
+}
+
+function setPinned(pinBtn, pinned) {
+  pinBtn.setAttribute("aria-pressed", pinned ? "true" : "false");
+  const labelEl = pinBtn.querySelector("span");
+  if (labelEl) labelEl.textContent = pinned ? "Unpin idea" : "Pin idea";
 }
 
 document.addEventListener("click", (event) => {

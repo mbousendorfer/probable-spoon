@@ -1,7 +1,8 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=21";
+import { renderTopbar } from "../components/topbar.js?v=23";
 import { getContextById } from "../mocks.js?v=22";
+import { parseHashParams } from "../url-state.js?v=20";
 
 // Context intake — step 1 of the context wizard, chromeless.
 // The user names the context and picks which components to include (Voice,
@@ -30,13 +31,8 @@ const COMPONENTS = [
   },
 ];
 
-function readQuery() {
-  const raw = window.location.hash.split("?")[1] || "";
-  return new URLSearchParams(raw);
-}
-
 export function renderAnalyseHub(_params, target) {
-  const params = readQuery();
+  const params = parseHashParams();
   const editingId = params.get("contextId");
   const editingContext = editingId ? getContextById(editingId) : null;
   const crumb = editingId ? "Edit context" : "Create context";
@@ -122,7 +118,7 @@ export function renderAnalyseHub(_params, target) {
       });
       if (editingId) qs.set("contextId", editingId);
       // Navigate into the first selected stage.
-      window.location.hash = `#/analyse/${stages[0]}?${qs.toString()}`;
+      navigate(`/analyse/${stages[0]}?${qs.toString()}`);
     }
   });
 }

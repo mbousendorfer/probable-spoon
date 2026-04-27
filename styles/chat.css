@@ -92,7 +92,7 @@
   color: var(--ref-color-white);
   padding: var(--ref-spacing-xxs);
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--app-radius-xl);
   border-top-right-radius: 0;
 }
 
@@ -103,7 +103,7 @@
   color: var(--ref-color-electric-blue-150);
   padding: var(--ref-spacing-xxs);
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--app-radius-xl);
   border-top-right-radius: 0;
   flex-direction: row;
   align-items: center;
@@ -243,7 +243,7 @@
   top: 8px;
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-circle);
   background: var(--ref-color-grey-60);
 }
 
@@ -265,7 +265,7 @@
   gap: var(--ref-spacing-xxxs);
   padding: 6px 14px;
   border: 1px solid var(--ref-color-grey-20);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   background: var(--ref-color-white);
   font-size: var(--ref-font-size-sm);
   font-weight: var(--ref-font-weight-bold);
@@ -274,13 +274,18 @@
   line-height: 1.2;
   cursor: pointer;
   transition:
-    border-color 0.12s,
-    background 0.12s,
-    color 0.12s;
+    border-color var(--ref-animation-short),
+    background var(--ref-animation-short),
+    color var(--ref-animation-short);
 }
 
 button.chat-bubble-choice-chip:hover {
   border-color: var(--ref-color-grey-60);
+}
+
+button.chat-bubble-choice-chip:active {
+  background: var(--ref-color-grey-05);
+  border-color: var(--ref-color-orange-100);
 }
 
 button.chat-bubble-choice-chip.is-selected,

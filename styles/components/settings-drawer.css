@@ -13,13 +13,25 @@
   height: 100vh;
   width: min(100%, 720px);
   display: none;
-  z-index: 60;
+  z-index: var(--app-z-modal);
   border-radius: 0;
   border-left: 1px solid var(--ref-color-grey-10);
-  box-shadow: -8px 0 32px rgba(33, 46, 68, 0.12);
+  box-shadow: var(--app-shadow-drawer-left);
 }
 .settings-drawer.open {
   display: flex;
+  animation: app-drawer-slide-in var(--ref-animation-normal) ease;
+}
+
+@keyframes app-drawer-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .settings-drawer .ap-dialog-header {
@@ -126,12 +138,38 @@
 }
 
 .settings-drawer__empty {
-  padding: var(--ref-spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-xl) var(--ref-spacing-md);
   background: var(--ref-color-grey-05);
   border-radius: var(--ref-border-radius-md);
   color: var(--ref-color-grey-60);
   font-size: var(--ref-font-size-sm);
   text-align: center;
+}
+
+.settings-drawer__empty-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  background: var(--ref-color-electric-blue-05);
+  color: var(--ref-color-electric-blue-100);
+  border-radius: var(--app-radius-lg);
+}
+
+.settings-drawer__empty-title {
+  margin: 0;
+  font-size: var(--ref-font-size-md);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-100);
+}
+
+.settings-drawer__empty-body {
+  margin: 0;
+  max-width: 36ch;
 }
 
 /* ── Settings row (chained on .ap-card) ───────────────────────────────── */
@@ -256,12 +294,17 @@
   cursor: pointer;
   background: var(--ref-color-white);
   transition:
-    border-color 0.15s,
-    background 0.15s;
+    border-color var(--ref-animation-short),
+    background var(--ref-animation-short);
 }
 
 .settings-drawer__radio-card:hover {
   border-color: var(--ref-color-grey-60);
+}
+
+.settings-drawer__radio-card:active {
+  background: var(--ref-color-grey-05);
+  border-color: var(--ref-color-orange-100);
 }
 
 .settings-drawer__radio-card.selected {
@@ -336,13 +379,16 @@
 /* ── Notifications groups ─────────────────────────────────────────────── */
 
 .settings-drawer__notif-group {
-  border: 1px solid var(--ref-color-grey-10);
-  border-radius: var(--ref-border-radius-md);
-  background: var(--ref-color-white);
-  padding: var(--ref-spacing-md);
+  border-top: 1px solid var(--ref-color-grey-10);
+  padding: var(--ref-spacing-md) 0 0;
   display: flex;
   flex-direction: column;
   gap: var(--ref-spacing-sm);
+}
+
+.settings-drawer__notif-group:first-of-type {
+  border-top: 0;
+  padding-top: 0;
 }
 
 .settings-drawer__notif-group-header {
@@ -401,7 +447,7 @@
   left: 50vw;
   transform: translate(-50%, -50%);
   display: none;
-  z-index: 71;
+  z-index: var(--app-z-modal-stacked);
   width: min(calc(100% - 32px), 440px);
   border: 1px solid var(--ref-color-grey-10);
   box-shadow: 0 12px 32px rgba(33, 46, 68, 0.18);
@@ -409,11 +455,12 @@
 
 .settings-confirm.open {
   display: flex;
+  animation: app-modal-fade-in var(--ref-animation-normal) ease;
 }
 
 .settings-confirm__backdrop {
   background: rgba(33, 46, 68, 0.32);
-  z-index: 70;
+  z-index: var(--app-z-modal-stacked-backdrop);
 }
 
 .settings-confirm__text {

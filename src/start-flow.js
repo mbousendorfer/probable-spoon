@@ -1,7 +1,7 @@
 // Conversational onboarding flows that play inside the assistant sidebar.
 //
 // Two entry points dispatched from session.js when a `pendingStartFlow` flag
-// is set in sessionStorage by the dashboard's New chat handler:
+// is set via handoff.js by the dashboard's New chat handler:
 //
 //   startContextBuildFlow(sessionId)
 //     Flow A — no context attached. Hands off to sidebar-wizard.js which

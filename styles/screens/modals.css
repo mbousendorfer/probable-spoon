@@ -13,6 +13,16 @@
 }
 .app-modal-backdrop.open {
   display: block;
+  animation: app-modal-backdrop-fade var(--ref-animation-normal) ease;
+}
+
+@keyframes app-modal-backdrop-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* `.ap-status { display: flex }` wins over the browser's default
@@ -33,16 +43,17 @@ body.has-modal {
 .feedback-modal,
 .generate-image-modal,
 .chat-picker-modal,
-.add-source-modal {
+.add-source-modal,
+.shortcut-legend {
   position: fixed;
   top: 50vh;
   left: 50vw;
   transform: translate(-50%, -50%);
   display: none;
-  z-index: 60;
+  z-index: var(--app-z-modal);
   max-height: calc(100vh - 48px);
   border: 1px solid var(--sys-border-color-default);
-  box-shadow: 0 12px 32px rgba(33, 46, 68, 0.12);
+  box-shadow: var(--app-shadow-popover-lg);
 }
 
 .bug-report-modal {
@@ -61,12 +72,32 @@ body.has-modal {
   width: min(calc(100% - 32px), 640px);
 }
 
+.shortcut-legend {
+  width: min(calc(100% - 32px), 480px);
+}
+
 .bug-report-modal.open,
 .feedback-modal.open,
 .generate-image-modal.open,
 .chat-picker-modal.open,
-.add-source-modal.open {
+.add-source-modal.open,
+.shortcut-legend.open {
   display: flex;
+  animation: app-modal-fade-in var(--ref-animation-normal) ease;
+}
+
+/* CSS animation, not transition: re-runs every time .open is added so the
+   fade-in is reliable even when the modal's [hidden] backdrop attr is
+   toggled in the same JS frame. */
+@keyframes app-modal-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 4px)) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .bug-report-modal .ap-dialog-content,
@@ -99,7 +130,7 @@ body.has-modal {
 
 .bug-field {
   display: grid;
-  gap: 6px;
+  gap: var(--ref-spacing-xxs);
   font-size: var(--ref-font-size-xs);
   color: var(--sys-text-color-light);
 }
@@ -134,21 +165,26 @@ body.has-modal {
   padding: 4px var(--ref-spacing-xs);
   height: 28px;
   border: 1px solid var(--ref-color-grey-20);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   background: var(--ref-color-white);
   font-size: var(--ref-font-size-xs);
   color: var(--sys-text-color-light);
   cursor: pointer;
   font-family: inherit;
   transition:
-    border-color 0.15s,
-    background 0.15s,
-    color 0.15s;
+    border-color var(--ref-animation-short),
+    background var(--ref-animation-short),
+    color var(--ref-animation-short);
 }
 
 .bug-category-chip:hover {
   border-color: var(--ref-color-orange-40);
   color: var(--ref-color-grey-150);
+}
+
+.bug-category-chip:active {
+  background: var(--ref-color-grey-05);
+  border-color: var(--ref-color-orange-100);
 }
 
 .bug-category-chip.selected {
@@ -172,8 +208,8 @@ body.has-modal {
   color: var(--ref-color-grey-150);
   background: var(--ref-color-white);
   transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+    border-color var(--ref-animation-short),
+    box-shadow var(--ref-animation-short);
   box-sizing: border-box;
 }
 
@@ -216,8 +252,10 @@ body.has-modal {
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-md);
   transition:
-    border-color 0.15s,
-    background 0.15s;
+    border-color var(--ref-animation-short),
+    background var(--ref-animation-short),
+    transform var(--ref-animation-short) var(--app-ease-out),
+    box-shadow var(--ref-animation-short) var(--app-ease-out);
   user-select: none;
 }
 
@@ -229,6 +267,8 @@ body.has-modal {
 .bug-report-dropzone.drag-over {
   border-color: var(--ref-color-orange-100);
   background: var(--ref-color-orange-10);
+  transform: scale(1.01);
+  box-shadow: var(--app-shadow-popover-md);
 }
 
 .bug-report-dropzone.has-file {
@@ -253,7 +293,7 @@ body.has-modal {
 
 .bug-report-dropzone__hint {
   color: var(--ref-color-grey-40);
-  font-size: 11px;
+  font-size: var(--ref-font-size-xs);
 }
 
 .bug-report-preview {
@@ -297,7 +337,7 @@ body.has-modal {
 }
 
 .bug-context__label {
-  font-size: 10px;
+  font-size: var(--ref-font-size-xs);
   font-weight: var(--ref-font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -308,7 +348,7 @@ body.has-modal {
 .bug-context__pill {
   display: inline-flex;
   align-items: center;
-  padding: 2px 6px;
+  padding: var(--ref-spacing-xxxs) var(--ref-spacing-xxs);
   border-radius: var(--ref-border-radius-sm);
   background: var(--ref-color-white);
   border: 1px solid var(--sys-border-color-default);
@@ -358,12 +398,40 @@ body.has-modal {
 .feedback-modal__success-icon {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-circle);
   background: var(--ref-color-green-10);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--ref-color-green-100);
+  animation: app-success-pop 360ms var(--app-ease-bounce) both;
+}
+
+@keyframes app-success-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── Modal submit-button spinner ─────────────────────────── */
+
+.bug-report-modal__submit-spinner,
+.feedback-modal__submit-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: var(--ref-spacing-xxs);
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--app-radius-circle);
+  vertical-align: -2px;
+  animation: app-spin 0.9s linear infinite;
+  opacity: 0.85;
 }
 
 .bug-report-modal__success h3,
@@ -427,15 +495,15 @@ body.has-modal {
   resize: vertical;
   border: 1px solid var(--ref-color-grey-20);
   border-radius: var(--ref-border-radius-md);
-  padding: 10px 12px;
+  padding: var(--ref-spacing-xxs) var(--ref-spacing-xs);
   font-size: var(--ref-font-size-sm);
   line-height: var(--ref-font-line-height-md);
   font-family: inherit;
   color: var(--ref-color-grey-150);
   background: var(--ref-color-white);
   transition:
-    border-color 0.12s,
-    box-shadow 0.12s;
+    border-color var(--ref-animation-short),
+    box-shadow var(--ref-animation-short);
   box-sizing: border-box;
 }
 
@@ -478,7 +546,7 @@ body.has-modal {
 }
 
 .gen-derive-btn i {
-  font-size: 14px;
+  font-size: var(--ref-font-size-sm);
 }
 
 /* Chip selectors — single-select with toggle-off. */
@@ -494,7 +562,7 @@ body.has-modal {
   gap: var(--ref-spacing-xxxs);
   padding: 6px 14px;
   border: 1px solid var(--ref-color-grey-20);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   background: var(--ref-color-white);
   font-size: var(--ref-font-size-sm);
   font-weight: var(--ref-font-weight-bold);
@@ -503,13 +571,18 @@ body.has-modal {
   font-family: inherit;
   line-height: 1.2;
   transition:
-    border-color 0.12s,
-    background 0.12s,
-    color 0.12s;
+    border-color var(--ref-animation-short),
+    background var(--ref-animation-short),
+    color var(--ref-animation-short);
 }
 
 .gen-chip:hover {
   border-color: var(--ref-color-grey-60);
+}
+
+.gen-chip:active {
+  background: var(--ref-color-grey-05);
+  border-color: var(--ref-color-orange-100);
 }
 
 .gen-chip.selected {
@@ -519,7 +592,7 @@ body.has-modal {
 }
 
 .gen-chip-icon {
-  font-size: 14px;
+  font-size: var(--ref-font-size-sm);
   line-height: 1;
 }
 
@@ -558,15 +631,9 @@ body.has-modal {
   height: 14px;
   border: 1.5px solid var(--ref-color-grey-20);
   border-top-color: var(--ref-color-grey-100);
-  border-radius: 50%;
-  animation: gen-image-spin 0.7s linear infinite;
+  border-radius: var(--app-radius-circle);
+  animation: app-spin 0.7s linear infinite;
   flex-shrink: 0;
-}
-
-@keyframes gen-image-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* Result state — preview + Regenerate / Edit options / Use-this-image. */
@@ -604,9 +671,65 @@ body.has-modal {
   align-items: center;
   gap: var(--ref-spacing-xxxs);
   padding: 2px var(--ref-spacing-xs);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   background: var(--ref-color-grey-05);
   border: 1px solid var(--ref-color-grey-10);
   font-size: var(--ref-font-size-xs);
   color: var(--ref-color-grey-80);
+}
+
+/* ── Shortcut legend ────────────────────────────────────── */
+
+.shortcut-legend__content {
+  padding-bottom: var(--ref-spacing-md);
+}
+
+.shortcut-legend__list {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shortcut-legend__row {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-md);
+  padding: var(--ref-spacing-xs) 0;
+  border-top: 1px solid var(--app-border-soft);
+}
+
+.shortcut-legend__row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.shortcut-legend__row dt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxxs);
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 120px;
+}
+
+.shortcut-legend__row dd {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  color: var(--sys-text-color-default);
+}
+
+.shortcut-legend__row kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ref-spacing-xxxs) var(--ref-spacing-xxs);
+  background: var(--ref-color-white);
+  border: 1px solid var(--app-border-soft);
+  border-bottom-width: 2px;
+  border-radius: var(--app-radius-sm);
+  font-family: inherit;
+  font-size: var(--ref-font-size-xs);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  line-height: 1;
 }

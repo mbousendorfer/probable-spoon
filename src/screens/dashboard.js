@@ -1,10 +1,12 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=21";
+import { renderTopbar } from "../components/topbar.js?v=23";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=20";
-import { recentSessions, templateStarters, ideas } from "../mocks.js?v=22";
+import { recentSessions, templateStarters, ideas, contextIdForNewProject, contextNameFor } from "../mocks.js?v=22";
+import { setHandoff } from "../handoff.js?v=20";
+import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 import { getSources, subscribeSources } from "../sources-stream.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=22";
@@ -27,25 +29,16 @@ import {
 // live behind the Settings entry in the sidebar.)
 
 function readQuery() {
-  const raw = window.location.hash.split("?")[1] || "";
-  const params = new URLSearchParams(raw);
-  // Back-compat: `subtab=library` or `subtab=ideas` → merged `content`
-  // tab with the corresponding inner view.
-  let view = params.get("view") || "sources";
-  const subtab = params.get("subtab");
-  if (subtab === "ideas") view = "ideas";
+  const params = parseHashParams();
   return {
     ctx: params.get("ctx") || "none",
     title: params.get("title") || "",
-    view,
+    view: params.get("view") || "sources",
   };
 }
 
 function setQuery(next) {
-  const current = readQuery();
-  const merged = { ...current, ...next };
-  const qs = new URLSearchParams(merged).toString();
-  window.location.hash = `#/?${qs}`;
+  setHashQuery("/", { ...readQuery(), ...next });
 }
 
 // Cleared and reset on every renderDashboard so subscriptions don't pile up
@@ -200,20 +193,20 @@ function renderProjectsPanel(q) {
 
 function renderContentSection(q) {
   const sources = getSources();
-  if (sources.length === 0 && ideas.length === 0) {
-    return renderContentEmptyState();
-  }
-  const view = q.view === "ideas" ? "ideas" : "sources";
   // Same Content workspace as the in-session Content tab: header with count
   // meta + the dashboard-only "+ Add source" button, search + sort toolbar,
   // By source / All ideas tabs, body of cards.
-  const headerActions = `
+  const addSourceButton = `
     <button type="button" class="ap-button stroked blue" data-dashboard-add-source>
       <i class="ap-icon-plus"></i>
       <span>Add source</span>
     </button>
   `;
-  return renderSharedContentWorkspace({ sources, ideas, view, headerActions });
+  if (sources.length === 0 && ideas.length === 0) {
+    return renderContentEmptyState({ actionHtml: addSourceButton });
+  }
+  const view = q.view === "ideas" ? "ideas" : "sources";
+  return renderSharedContentWorkspace({ sources, ideas, view, headerActions: addSourceButton });
 }
 
 // ---- Wiring -------------------------------------------------------------------
@@ -268,13 +261,10 @@ function bindDashboard(root) {
       if (contextId) qs.set("contextId", contextId);
       // Hand-off pattern (mirrors pendingDraftIdeaId): the session screen
       // reads + clears this flag on mount and triggers the right start flow.
-      sessionStorage.setItem(
-        "pendingStartFlow",
-        JSON.stringify({
-          hasContext: !!contextId,
-          contextName: contextNameFor(contextValue),
-        }),
-      );
+      setHandoff("pendingStartFlow", {
+        hasContext: !!contextId,
+        contextName: contextNameFor(contextValue),
+      });
       navigate(`/session/new?${qs.toString()}`);
       return;
     }
@@ -308,7 +298,7 @@ function bindDashboard(root) {
       const source = getSources().find((s) => s.id === sourceId);
       if (!source) return;
       const handoff = (choice) => {
-        sessionStorage.setItem("pendingAskSource", JSON.stringify({ sourceId, filename: source.filename }));
+        setHandoff("pendingAskSource", { sourceId, filename: source.filename });
         if (choice.kind === "new") {
           const qs = new URLSearchParams({ tab: "posts", title: defaultChatName() });
           navigate(`/session/new?${qs.toString()}`);
@@ -345,7 +335,7 @@ function bindDashboard(root) {
       // the inline "Which profile?" question before starting the draft. Same
       // hand-off shape regardless of whether we land in a fresh chat or an
       // existing one.
-      sessionStorage.setItem("pendingDraftIdeaId", ideaId);
+      setHandoff("pendingDraftIdeaId", ideaId);
       // Zero existing chats — skip the picker, go straight to a new one.
       if (recentSessions.length === 0) {
         const qs = new URLSearchParams({ tab: "content", view: "ideas", title: defaultChatName() });
@@ -397,19 +387,6 @@ function bindDashboard(root) {
       });
     }
   });
-}
-
-function contextIdForNewProject(value) {
-  if (value === "voice") return "ctx-founder-voice";
-  if (value === "brief" || value === "brand") return "ctx-acme";
-  return "";
-}
-
-function contextNameFor(value) {
-  if (value === "voice") return "My voice profile";
-  if (value === "brief") return "My strategy brief";
-  if (value === "brand") return "My brand theme";
-  return "Your context";
 }
 
 // Fallback chat name when the user submits with no title typed in. Eventually

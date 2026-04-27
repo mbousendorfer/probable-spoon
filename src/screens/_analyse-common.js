@@ -1,4 +1,6 @@
 import { html, raw } from "../utils.js?v=20";
+import { navigate } from "../router.js?v=20";
+import { parseHashParams } from "../url-state.js?v=20";
 
 // Shared pieces for all three Analyse wizards.
 //
@@ -27,8 +29,7 @@ import { html, raw } from "../utils.js?v=20";
 // to the context summary if this was the last.
 
 export function advanceContextStage(currentStage) {
-  const rawQs = window.location.hash.split("?")[1] || "";
-  const params = new URLSearchParams(rawQs);
+  const params = parseHashParams();
   const stages = (params.get("stages") || "").split(",").filter(Boolean);
   const idx = stages.indexOf(currentStage);
   const nextStage = idx >= 0 ? stages[idx + 1] : null;
@@ -37,26 +38,23 @@ export function advanceContextStage(currentStage) {
   params.delete("step");
 
   if (nextStage) {
-    window.location.hash = `#/analyse/${nextStage}?${params.toString()}`;
+    navigate(`/analyse/${nextStage}?${params.toString()}`);
   } else {
-    window.location.hash = `#/analyse/summary?${params.toString()}`;
+    navigate(`/analyse/summary?${params.toString()}`);
   }
 }
 
 // -- Step param in the URL --------------------------------------------------
 
 export function getStep(defaultStep) {
-  const raw = window.location.hash.split("?")[1] || "";
-  const params = new URLSearchParams(raw);
-  return params.get("step") || defaultStep;
+  return parseHashParams().get("step") || defaultStep;
 }
 
 export function setStep(step) {
-  const path = window.location.hash.split("?")[0];
-  const raw = window.location.hash.split("?")[1] || "";
-  const params = new URLSearchParams(raw);
+  const path = window.location.hash.split("?")[0].replace(/^#/, "") || "/";
+  const params = parseHashParams();
   params.set("step", step);
-  window.location.hash = `${path}?${params.toString()}`;
+  navigate(`${path}?${params.toString()}`);
 }
 
 // -- Wizard shell (conversational layout) -----------------------------------

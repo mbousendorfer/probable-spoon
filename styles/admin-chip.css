@@ -5,12 +5,12 @@
   position: fixed;
   right: var(--ref-spacing-sm);
   bottom: var(--ref-spacing-sm);
-  z-index: 100;
+  z-index: var(--app-z-admin);
   display: inline-flex;
   align-items: center;
   gap: var(--ref-spacing-xxs);
   padding: var(--ref-spacing-xxxs) var(--ref-spacing-xs);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   background: var(--ref-color-grey-150);
   color: var(--ref-color-white);
   border: 1px solid rgba(255, 255, 255, 0.12);

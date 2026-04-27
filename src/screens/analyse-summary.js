@@ -1,18 +1,14 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=21";
+import { renderTopbar } from "../components/topbar.js?v=23";
+import { parseHashParams } from "../url-state.js?v=20";
 
 // Context summary — last screen of the context wizard.
 // Reads ?stages=voice,brief,brand&name=… to show which components were built.
 
-function readQuery() {
-  const raw = window.location.hash.split("?")[1] || "";
-  return new URLSearchParams(raw);
-}
-
 export function renderAnalyseSummary(_params, target) {
   renderTopbar({ crumb: "Context ready" });
-  const q = readQuery();
+  const q = parseHashParams();
   const name = q.get("name") || "New context";
   const stages = (q.get("stages") || "").split(",").filter(Boolean);
 
@@ -76,7 +72,7 @@ export function renderAnalyseSummary(_params, target) {
         title: `${name} session`,
         contextId: q.get("contextId") || "ctx-acme",
       });
-      window.location.hash = `#/session/new?${qs.toString()}`;
+      navigate(`/session/new?${qs.toString()}`);
     }
   });
 }

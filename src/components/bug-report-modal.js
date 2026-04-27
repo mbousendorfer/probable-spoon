@@ -14,9 +14,11 @@
 // On submit we simulate a ~1.4s round-trip and flash a success state; the
 // modal then closes itself. Nothing is actually posted.
 
+import { escapeHtml } from "../utils.js?v=20";
+
 let backdrop, modal, submitBtn, problemInput, actionInput;
 let categoriesEl, previewEl, dropzoneFallback, dropzone, fileInput;
-let previewImg, fileNameEl, autoBadge, capturingBadge, contextBar;
+let previewImg, fileNameEl, autoBadge, capturingBadge, captureFailedBadge, contextBar;
 let selectedCategory = null;
 let screenshotDataUrl = null;
 let initialized = false;
@@ -75,6 +77,7 @@ const HTML = `
           <label>Screenshot</label>
           <span class="ap-status green" id="bugAutoBadge" hidden>Auto-captured</span>
           <span class="ap-status grey" id="bugCapturingBadge" hidden>Capturing…</span>
+          <span class="ap-status grey" id="bugCaptureFailedBadge" hidden>Capture unavailable — upload one manually</span>
         </div>
         <div class="bug-report-dropzone has-file" id="bugScreenshotPreview" hidden>
           <div class="bug-report-preview">
@@ -98,7 +101,7 @@ const HTML = `
   <div class="ap-dialog-footer">
     <div class="ap-dialog-footer-right">
       <button type="button" class="ap-button transparent grey" id="cancelBugReportBtn">Cancel</button>
-      <button type="button" class="ap-button primary orange" id="submitBugReportBtn">Submit Bug Report</button>
+      <button type="button" class="ap-button primary orange" id="submitBugReportBtn">Submit bug report</button>
     </div>
   </div>
   <div class="bug-report-modal__success">
@@ -111,10 +114,6 @@ const HTML = `
     <p>Thanks for helping improve Archie.<br/>We read every report.</p>
   </div>
 </aside>`;
-
-function escapeHtml(v = "") {
-  return String(v).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-}
 
 function focusSafe(el) {
   try {
@@ -131,6 +130,7 @@ function setScreenshot(dataUrl) {
   previewEl.hidden = false;
   dropzoneFallback.hidden = true;
   capturingBadge.hidden = true;
+  captureFailedBadge.hidden = true;
   autoBadge.hidden = false;
 }
 
@@ -142,6 +142,7 @@ function clearScreenshot() {
   dropzoneFallback.hidden = false;
   autoBadge.hidden = true;
   capturingBadge.hidden = true;
+  captureFailedBadge.hidden = true;
   fileInput.value = "";
 }
 
@@ -153,7 +154,7 @@ function reset() {
   problemInput.value = "";
   problemInput.classList.remove("invalid");
   submitBtn.disabled = false;
-  submitBtn.textContent = "Submit Bug Report";
+  submitBtn.textContent = "Submit bug report";
   clearScreenshot();
   contextBar.innerHTML = "";
 }
@@ -244,9 +245,14 @@ export function open() {
   window.setTimeout(() => focusSafe(problemInput), 50);
   // Kick off auto-screenshot — shows the "Capturing…" badge until resolved.
   capturingBadge.hidden = false;
+  captureFailedBadge.hidden = true;
   capturePageScreenshot().then((dataUrl) => {
-    if (dataUrl) setScreenshot(dataUrl);
-    else capturingBadge.hidden = true;
+    if (dataUrl) {
+      setScreenshot(dataUrl);
+    } else {
+      capturingBadge.hidden = true;
+      captureFailedBadge.hidden = false;
+    }
   });
 }
 
@@ -278,6 +284,7 @@ export function init() {
   fileNameEl = document.getElementById("bugFileName");
   autoBadge = document.getElementById("bugAutoBadge");
   capturingBadge = document.getElementById("bugCapturingBadge");
+  captureFailedBadge = document.getElementById("bugCaptureFailedBadge");
   contextBar = document.getElementById("bugContextBar");
 
   // Close / dismiss
@@ -349,7 +356,7 @@ export function init() {
     }
     problemInput.classList.remove("invalid");
     submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting…";
+    submitBtn.innerHTML = `<span class="bug-report-modal__submit-spinner" aria-hidden="true"></span>Submitting…`;
     // In a real app we'd post { category, action, problem, screenshot, context }.
     void {
       category: selectedCategory && CATEGORY_LABELS[selectedCategory],

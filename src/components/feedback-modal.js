@@ -139,7 +139,7 @@ export function init() {
     }
     textArea.classList.remove("invalid");
     submitBtn.disabled = true;
-    submitBtn.textContent = "Sending…";
+    submitBtn.innerHTML = `<span class="feedback-modal__submit-spinner" aria-hidden="true"></span>Sending…`;
     await new Promise((r) => setTimeout(r, 1200));
     modal.classList.add("success");
     setTimeout(close, 2200);

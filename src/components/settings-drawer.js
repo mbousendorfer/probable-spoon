@@ -152,7 +152,19 @@ function renderContextsSection() {
     </header>
     ${raw(
       all.length === 0
-        ? `<div class="settings-drawer__empty">No contexts yet. Create one to attach voice, brief, or brand details to a session.</div>`
+        ? `
+            <div class="settings-drawer__empty">
+              <div class="settings-drawer__empty-icon"><i class="ap-icon-headset lg"></i></div>
+              <h4 class="settings-drawer__empty-title">No contexts yet</h4>
+              <p class="settings-drawer__empty-body">
+                Create one to attach voice, brief, or brand details to a session.
+              </p>
+              <button type="button" class="ap-button primary orange" data-context-create>
+                <i class="ap-icon-plus"></i>
+                <span>New context</span>
+              </button>
+            </div>
+          `
         : `<ul class="settings-drawer__rows">${all.map(renderContextRow).join("")}</ul>`,
     )}
   `;
@@ -416,7 +428,7 @@ function footerForSection() {
       visible: true,
       html: `
         <div class="ap-dialog-footer-right">
-          <button type="button" class="ap-button primary orange" data-prefs-save ${state.dirty ? "" : "disabled"}>Save preferences</button>
+          <button type="button" class="ap-button primary orange" data-prefs-save ${state.dirty ? "" : "disabled"}>Save</button>
         </div>
       `,
     };
@@ -426,7 +438,7 @@ function footerForSection() {
       visible: true,
       html: `
         <div class="ap-dialog-footer-right">
-          <button type="button" class="ap-button primary orange" data-notif-save ${state.dirty ? "" : "disabled"}>Save notification settings</button>
+          <button type="button" class="ap-button primary orange" data-notif-save ${state.dirty ? "" : "disabled"}>Save</button>
         </div>
       `,
     };

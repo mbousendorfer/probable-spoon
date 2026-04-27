@@ -1,6 +1,6 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=21";
+import { renderTopbar } from "../components/topbar.js?v=23";
 import {
   getSessionById,
   getContextById,
@@ -36,6 +36,8 @@ import {
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
+import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
+import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 
 // Session screen — persistent assistant panel on the left, workspace with
 // tabs on the right.
@@ -46,21 +48,9 @@ import { open as openChatPickerModal } from "../components/chat-picker-modal.js?
 // tabs render populated views; otherwise they render empty states.
 
 function readQuery() {
-  const raw = window.location.hash.split("?")[1] || "";
-  const params = new URLSearchParams(raw);
-  // Back-compat: old `?tab=library` / `?tab=ideas` now map to the merged
-  // Content tab.
-  let tab = params.get("tab") || "posts";
-  let viewFromOldTab = null;
-  if (tab === "library") {
-    tab = "content";
-    viewFromOldTab = "sources";
-  } else if (tab === "ideas") {
-    tab = "content";
-    viewFromOldTab = "ideas";
-  }
+  const params = parseHashParams();
   return {
-    tab,
+    tab: params.get("tab") || "posts",
     populated: params.get("populated") === "1" || params.get("populated") === "true",
     title: params.get("title") || "",
     contextId: params.get("contextId") || "",
@@ -70,8 +60,7 @@ function readQuery() {
     focusIdea: params.get("focusIdea") || "",
     focusPost: params.get("focusPost") || "",
     focusSource: params.get("focusSource") || "",
-    // Content tab state
-    view: params.get("view") || viewFromOldTab || "sources",
+    view: params.get("view") || "sources",
   };
 }
 
@@ -79,14 +68,11 @@ function readQuery() {
 // state in the dashboard's start screen and the in-session Content tab.
 
 function setQuery(next) {
-  const current = readQuery();
-  const merged = { ...current, ...next };
+  const merged = { ...readQuery(), ...next };
   Object.keys(merged).forEach((key) => {
     if (merged[key] == null || merged[key] === "" || merged[key] === false) delete merged[key];
   });
-  const qs = new URLSearchParams(merged).toString();
-  const sessionId = getActiveSessionIdFromHash();
-  window.location.hash = `#/session/${sessionId}?${qs}`;
+  setHashQuery(`/session/${getActiveSessionIdFromHash()}`, merged);
 }
 
 function getActiveSessionIdFromHash() {
@@ -151,7 +137,7 @@ function renderAssistantPanel(session, attachedContext) {
   // Skip the default greeting if a start flow is queued — its first AI bubble
   // will introduce the conversation instead. (Read-only: don't consume the
   // flag here; the bindSession handoff below clears it after dispatching.)
-  const hasPendingStartFlow = !!sessionStorage.getItem("pendingStartFlow");
+  const hasPendingStartFlow = hasHandoff("pendingStartFlow");
   const thread = getThread(session.id, {
     hasContext: !!attachedContext,
     skipGreeting: hasPendingStartFlow,
@@ -322,7 +308,7 @@ function startAskFlowFromSession(sessionId, sourceId, filename) {
       askWhatToKnow(sessionId, filename);
       return;
     }
-    sessionStorage.setItem("pendingAskSource", JSON.stringify({ sourceId, filename }));
+    setHandoff("pendingAskSource", { sourceId, filename });
     if (choice.kind === "new") {
       const qs = new URLSearchParams({ tab: "posts", title: defaultChatNameLocal() });
       navigate(`/session/new?${qs.toString()}`);
@@ -351,7 +337,7 @@ function defaultChatNameLocal() {
 
 // Build + show the "Which profile?" question. Used both from the in-session
 // Draft Post button and from the dashboard's Draft Post handler (via the
-// pendingDraftIdeaId hand-off in sessionStorage).
+// pendingDraftIdeaId hand-off in handoff.js).
 function askProfileQuestion(sessionId, ideaId) {
   const connected = socialAccounts.filter((a) => a.status === "connected");
   if (connected.length === 0) {
@@ -371,8 +357,10 @@ function askProfileQuestion(sessionId, ideaId) {
       caption: a.handle ? (a.kind ? `${a.kind} · ${a.handle}` : a.handle) : a.kind || "",
       imgSrc: a.logo,
     })),
-    onPick: (accountId) => {
-      sessionStorage.setItem("pendingDraftAccountId", accountId);
+    onPick: (_accountId) => {
+      // pendingDraftAccountId was set here for a downstream consumer that
+      // never landed; startDraftFlow doesn't read it. Drop the orphan write
+      // and just kick off the flow.
       startDraftFlow(sessionId, ideaId);
     },
     onSkip: () => {
@@ -565,11 +553,18 @@ function wireAssistantPanel(root, session, attachedContext) {
   }
   stopThinkingTimer();
 
-  const thread = root.querySelector("[data-assistant-thread]");
-  if (thread) {
-    queueMicrotask(() => {
-      thread.scrollTop = thread.scrollHeight;
-    });
+  // The assistant aside (and thread inside it) gets replaced wholesale
+  // when sidebarWizard / inlineQuestion subscribers re-render the panel.
+  // Querying lazily inside the subscriber keeps writes hitting the live
+  // DOM node instead of an orphaned one.
+  const getThreadEl = () => root.querySelector("[data-assistant-thread]");
+  {
+    const thread = getThreadEl();
+    if (thread) {
+      queueMicrotask(() => {
+        thread.scrollTop = thread.scrollHeight;
+      });
+    }
   }
 
   // Initial chip sync (in case the thread already has a loading message
@@ -578,6 +573,7 @@ function wireAssistantPanel(root, session, attachedContext) {
 
   // Subscribe to the assistant thread.
   const offThread = subscribe(session.id, (messages) => {
+    const thread = getThreadEl();
     if (thread) {
       thread.innerHTML = renderThread(messages);
       thread.scrollTop = thread.scrollHeight;
@@ -676,44 +672,31 @@ function wireAssistantPanel(root, session, attachedContext) {
 
   // Check for a pending draft intent set by the dashboard handler — start the
   // conversational flow after subscriptions are active so thread updates show.
-  const pendingIdeaId = sessionStorage.getItem("pendingDraftIdeaId");
+  const pendingIdeaId = consumeHandoff("pendingDraftIdeaId");
   if (pendingIdeaId) {
-    sessionStorage.removeItem("pendingDraftIdeaId");
     setTimeout(() => askProfileQuestion(session.id, pendingIdeaId), 100);
   }
 
   // Hand-off from a source card's "Ask" button on the dashboard or another
   // session — open the askWhatToKnow inline question in this freshly mounted
   // chat.
-  const pendingAskRaw = sessionStorage.getItem("pendingAskSource");
-  if (pendingAskRaw) {
-    sessionStorage.removeItem("pendingAskSource");
-    try {
-      const { filename } = JSON.parse(pendingAskRaw);
-      setTimeout(() => askWhatToKnow(session.id, filename), 150);
-    } catch {
-      // Malformed JSON — silently skip.
-    }
+  const pendingAsk = consumeHandoff("pendingAskSource");
+  if (pendingAsk?.filename) {
+    setTimeout(() => askWhatToKnow(session.id, pendingAsk.filename), 150);
   }
 
   // Pending start flow set by the dashboard's New chat button. Same handoff
   // pattern as pendingDraftIdeaId — read, clear, dispatch with a tiny delay
   // so the assistant subscriber is wired up before turns get pushed.
-  const pendingStartRaw = sessionStorage.getItem("pendingStartFlow");
-  if (pendingStartRaw) {
-    sessionStorage.removeItem("pendingStartFlow");
-    try {
-      const pendingStart = JSON.parse(pendingStartRaw);
-      setTimeout(() => {
-        if (pendingStart.hasContext) {
-          startActionPickerFlow(session.id, { contextName: pendingStart.contextName });
-        } else {
-          startContextBuildFlow(session.id);
-        }
-      }, 200);
-    } catch {
-      // Malformed JSON — silently skip; no harm done.
-    }
+  const pendingStart = consumeHandoff("pendingStartFlow");
+  if (pendingStart) {
+    setTimeout(() => {
+      if (pendingStart.hasContext) {
+        startActionPickerFlow(session.id, { contextName: pendingStart.contextName });
+      } else {
+        startContextBuildFlow(session.id);
+      }
+    }, 200);
   }
 
   currentUnsubscribe = () => {
@@ -1632,8 +1615,14 @@ function bindSession(root, session) {
 
       if (event.target.closest("[data-idea-generate]")) {
         event.preventDefault();
-        const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
-        if (ideaId) askProfileQuestion(session.id, ideaId);
+        const btn = event.target.closest("[data-idea-generate]");
+        if (btn.disabled) return;
+        const ideaId = btn.dataset.ideaGenerate;
+        if (ideaId) {
+          btn.disabled = true;
+          btn.classList.add("is-pending");
+          askProfileQuestion(session.id, ideaId);
+        }
         return;
       }
 

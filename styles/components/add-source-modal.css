@@ -35,8 +35,10 @@
   gap: var(--ref-spacing-xs);
   cursor: pointer;
   transition:
-    border-color 0.15s,
-    background 0.15s;
+    border-color var(--ref-animation-short),
+    background var(--ref-animation-short),
+    transform var(--ref-animation-short) var(--app-ease-out),
+    box-shadow var(--ref-animation-short) var(--app-ease-out);
   background: var(--ref-color-white);
 }
 
@@ -50,6 +52,8 @@
 .add-source__dropzone.drag-over {
   border-color: var(--ref-color-electric-blue-100);
   background: var(--ref-color-electric-blue-05);
+  transform: scale(1.01);
+  box-shadow: var(--app-shadow-popover-md);
 }
 
 .add-source__dropzone-icon {
@@ -154,14 +158,16 @@
   width: 140px;
   height: 6px;
   background: var(--ref-color-grey-10);
-  border-radius: 999px;
+  border-radius: var(--app-radius-pill);
   overflow: hidden;
 }
 
 .add-source__progress-bar {
+  width: 100%;
   height: 100%;
   background: var(--ref-color-electric-blue-100);
-  transition: width 0.1s linear;
+  transform-origin: left center;
+  transition: transform 0.1s linear;
 }
 
 .add-source__file-status {
@@ -176,14 +182,8 @@
   height: 10px;
   border: 1.5px solid var(--ref-color-electric-blue-20);
   border-top-color: var(--ref-color-electric-blue-100);
-  border-radius: 50%;
-  animation: add-source-spin 0.7s linear infinite;
-}
-
-@keyframes add-source-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  border-radius: var(--app-radius-circle);
+  animation: app-spin 0.7s linear infinite;
 }
 
 /* ── URL tab ──────────────────────────────────────────────────────────── */

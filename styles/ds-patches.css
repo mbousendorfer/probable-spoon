@@ -8,7 +8,7 @@
   position: fixed;
   inset: 0;
   background: rgba(33, 46, 68, 0.26);
-  z-index: 50;
+  z-index: var(--app-z-modal-backdrop);
 }
 
 /* .ap-status ships blue/green/grey/orange/red/tagOrange — no mermaid variant
