@@ -4,7 +4,7 @@ import { renderTopbar } from "../components/topbar.js?v=21";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=20";
-import { recentSessions, templateStarters, ideas } from "../mocks.js?v=22";
+import { recentSessions, templateStarters, ideas, contextIdForNewProject, contextNameFor } from "../mocks.js?v=22";
 import { getSources, subscribeSources } from "../sources-stream.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=22";
@@ -392,19 +392,6 @@ function bindDashboard(root) {
       });
     }
   });
-}
-
-function contextIdForNewProject(value) {
-  if (value === "voice") return "ctx-founder-voice";
-  if (value === "brief" || value === "brand") return "ctx-acme";
-  return "";
-}
-
-function contextNameFor(value) {
-  if (value === "voice") return "My voice profile";
-  if (value === "brief") return "My strategy brief";
-  if (value === "brand") return "My brand theme";
-  return "Your context";
 }
 
 // Fallback chat name when the user submits with no title typed in. Eventually
