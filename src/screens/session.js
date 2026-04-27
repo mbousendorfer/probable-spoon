@@ -565,11 +565,18 @@ function wireAssistantPanel(root, session, attachedContext) {
   }
   stopThinkingTimer();
 
-  const thread = root.querySelector("[data-assistant-thread]");
-  if (thread) {
-    queueMicrotask(() => {
-      thread.scrollTop = thread.scrollHeight;
-    });
+  // The assistant aside (and thread inside it) gets replaced wholesale
+  // when sidebarWizard / inlineQuestion subscribers re-render the panel.
+  // Querying lazily inside the subscriber keeps writes hitting the live
+  // DOM node instead of an orphaned one.
+  const getThreadEl = () => root.querySelector("[data-assistant-thread]");
+  {
+    const thread = getThreadEl();
+    if (thread) {
+      queueMicrotask(() => {
+        thread.scrollTop = thread.scrollHeight;
+      });
+    }
   }
 
   // Initial chip sync (in case the thread already has a loading message
@@ -578,6 +585,7 @@ function wireAssistantPanel(root, session, attachedContext) {
 
   // Subscribe to the assistant thread.
   const offThread = subscribe(session.id, (messages) => {
+    const thread = getThreadEl();
     if (thread) {
       thread.innerHTML = renderThread(messages);
       thread.scrollTop = thread.scrollHeight;
