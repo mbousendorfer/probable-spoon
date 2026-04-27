@@ -56,7 +56,7 @@ function sortIdeas(ideas, sort) {
 
 // ─── Body renderers ───────────────────────────────────────────────────────
 
-function renderEmptyState({ icon, title, body }) {
+function renderEmptyState({ icon, title, body, actionHtml = "" }) {
   return `
     <div class="session__empty">
       <div class="session__empty-icon">
@@ -64,6 +64,7 @@ function renderEmptyState({ icon, title, body }) {
       </div>
       <h3 class="text-subtitle">${title}</h3>
       <p class="muted">${body}</p>
+      ${actionHtml ? `<div class="session__empty-action">${actionHtml}</div>` : ""}
     </div>
   `;
 }
@@ -194,11 +195,14 @@ export function rerenderContentWorkspaceBody(root, { sources, ideas, view }) {
 }
 
 // Default empty-state for "no sources, no ideas at all" — both screens
-// surface the same message before any content has been ingested.
-export function renderContentEmptyState() {
+// surface the same message before any content has been ingested. Pass
+// `actionHtml` to render a CTA underneath (e.g. "+ Add source"); callers
+// that don't have a primary action can omit it.
+export function renderContentEmptyState({ actionHtml = "" } = {}) {
   return renderEmptyState({
     icon: "ap-icon-feature-library",
     title: "No content yet",
     body: "Add a PDF, a video, or a URL to get started. Archie processes it and surfaces ideas you can publish.",
+    actionHtml,
   });
 }

@@ -200,20 +200,20 @@ function renderProjectsPanel(q) {
 
 function renderContentSection(q) {
   const sources = getSources();
-  if (sources.length === 0 && ideas.length === 0) {
-    return renderContentEmptyState();
-  }
-  const view = q.view === "ideas" ? "ideas" : "sources";
   // Same Content workspace as the in-session Content tab: header with count
   // meta + the dashboard-only "+ Add source" button, search + sort toolbar,
   // By source / All ideas tabs, body of cards.
-  const headerActions = `
+  const addSourceButton = `
     <button type="button" class="ap-button stroked blue" data-dashboard-add-source>
       <i class="ap-icon-plus"></i>
       <span>Add source</span>
     </button>
   `;
-  return renderSharedContentWorkspace({ sources, ideas, view, headerActions });
+  if (sources.length === 0 && ideas.length === 0) {
+    return renderContentEmptyState({ actionHtml: addSourceButton });
+  }
+  const view = q.view === "ideas" ? "ideas" : "sources";
+  return renderSharedContentWorkspace({ sources, ideas, view, headerActions: addSourceButton });
 }
 
 // ---- Wiring -------------------------------------------------------------------

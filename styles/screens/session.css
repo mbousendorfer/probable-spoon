@@ -541,6 +541,12 @@
   border-radius: var(--app-radius-lg);
 }
 
+/* Optional CTA underneath the body copy — used by the dashboard's empty
+   Content state to surface "+ Add source" inline. */
+.session__empty-action {
+  margin-top: var(--ref-spacing-xs);
+}
+
 /* ---------- Context tab (single-context view) ---------- */
 
 .session__context {
