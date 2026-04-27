@@ -24,4 +24,15 @@
 
   /* App chrome sizing */
   --app-topbar-height: 56px;
+
+  /* Stacking — kept centralized so adding a new layer doesn't silently
+     collide. admin-chip sits on top intentionally so the dev mode toggle
+     stays visible above any modal. */
+  --app-z-content: 5;
+  --app-z-overlay: 10;
+  --app-z-modal-backdrop: 50;
+  --app-z-modal: 60;
+  --app-z-modal-stacked-backdrop: 70;
+  --app-z-modal-stacked: 71;
+  --app-z-admin: 100;
 }

@@ -5,7 +5,7 @@
   position: fixed;
   right: var(--ref-spacing-sm);
   bottom: var(--ref-spacing-sm);
-  z-index: 100;
+  z-index: var(--app-z-admin);
   display: inline-flex;
   align-items: center;
   gap: var(--ref-spacing-xxs);

@@ -662,7 +662,7 @@
   border: 1px solid var(--ref-color-grey-10);
   border-radius: var(--ref-border-radius-md);
   box-shadow: var(--app-shadow-popover-md);
-  z-index: 5;
+  z-index: var(--app-z-content);
 }
 
 .idea-card__more-item {

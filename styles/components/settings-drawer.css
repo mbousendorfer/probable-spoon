@@ -13,7 +13,7 @@
   height: 100vh;
   width: min(100%, 720px);
   display: none;
-  z-index: 60;
+  z-index: var(--app-z-modal);
   border-radius: 0;
   border-left: 1px solid var(--ref-color-grey-10);
   box-shadow: -8px 0 32px rgba(33, 46, 68, 0.12);
@@ -427,7 +427,7 @@
   left: 50vw;
   transform: translate(-50%, -50%);
   display: none;
-  z-index: 71;
+  z-index: var(--app-z-modal-stacked);
   width: min(calc(100% - 32px), 440px);
   border: 1px solid var(--ref-color-grey-10);
   box-shadow: 0 12px 32px rgba(33, 46, 68, 0.18);
@@ -439,7 +439,7 @@
 
 .settings-confirm__backdrop {
   background: rgba(33, 46, 68, 0.32);
-  z-index: 70;
+  z-index: var(--app-z-modal-stacked-backdrop);
 }
 
 .settings-confirm__text {

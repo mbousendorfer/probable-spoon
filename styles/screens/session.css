@@ -468,7 +468,7 @@
   border: 1px solid var(--app-border-soft);
   border-radius: var(--app-radius-md);
   box-shadow: var(--app-shadow-popover-md);
-  z-index: 10;
+  z-index: var(--app-z-overlay);
   display: flex;
   flex-direction: column;
 }

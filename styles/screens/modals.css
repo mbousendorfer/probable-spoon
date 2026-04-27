@@ -39,7 +39,7 @@ body.has-modal {
   left: 50vw;
   transform: translate(-50%, -50%);
   display: none;
-  z-index: 60;
+  z-index: var(--app-z-modal);
   max-height: calc(100vh - 48px);
   border: 1px solid var(--sys-border-color-default);
   box-shadow: var(--app-shadow-popover-lg);
