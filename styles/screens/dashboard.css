@@ -5,6 +5,8 @@
 }
 
 .dashboard__sidebar {
+  flex: 0 0 400px;
+  width: 400px;
   border-right: 1px solid var(--app-border-soft);
   padding: var(--ref-spacing-md);
   display: flex;
@@ -12,6 +14,109 @@
   gap: var(--ref-spacing-md);
   overflow-y: auto;
   background: var(--app-surface);
+}
+
+/* Previous chats — flat list of past sessions in the sidebar. Hover lifts a
+   subtle grey background; no card chrome on each row. */
+
+.dashboard__chats-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.dashboard__chats-heading {
+  margin: 0;
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.dashboard__chats-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.dashboard__chat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ref-spacing-xxxs);
+  width: 100%;
+  padding: var(--ref-spacing-xxs) var(--ref-spacing-xxs);
+  background: transparent;
+  border: 0;
+  border-radius: var(--app-radius-md);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dashboard__chat:hover,
+.dashboard__chat:focus-visible {
+  background: var(--ref-color-grey-05);
+  outline: none;
+}
+
+.dashboard__chat-name {
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.dashboard__chat-meta {
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--ref-color-grey-80);
+}
+
+/* Workflow templates — pinned-near-bottom card list with mermaid tint and a
+   trailing arrow indicator. Header sits above with title + tagline. */
+
+.dashboard__templates-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+  margin-top: auto;
+}
+
+.dashboard__templates-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.dashboard__templates-title {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-md);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.dashboard__templates-tagline {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
+  color: var(--ref-color-grey-80);
+}
+
+.dashboard__templates-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+/* Settings — pinned to the very bottom of the sidebar via auto-margin. */
+
+.dashboard__settings {
+  margin-top: var(--ref-spacing-xs);
 }
 
 .dashboard__main {
@@ -40,37 +145,43 @@
   letter-spacing: 0.04em;
 }
 
-/* Template starter buttons (plain list, no ap-list-panel because we want
-   cards-as-links). */
-
-.dashboard__templates-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ref-spacing-xs);
-}
+/* Workflow template card — mermaid-tinted background, title + desc on the
+   left, arrow-right pinned to the right. 62px tall by default but allowed to
+   grow if the description wraps. */
 
 .dashboard__template {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--ref-spacing-xxxs);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
   width: 100%;
+  min-height: 62px;
   padding: var(--ref-spacing-xs);
-  background: var(--app-surface);
-  border: 1px solid var(--app-border-soft);
+  background: var(--ref-color-mermaid-10);
+  border: 1px solid var(--ref-color-mermaid-10);
   border-radius: var(--app-radius-md);
   text-align: left;
   cursor: pointer;
   font-family: inherit;
 }
 
-.dashboard__template:hover {
-  border-color: var(--ref-color-electric-blue-60);
-  background: var(--ref-color-electric-blue-05);
+.dashboard__template:hover,
+.dashboard__template:focus-visible {
+  border-color: var(--ref-color-mermaid-gradient-from);
+  outline: none;
+}
+
+.dashboard__template-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ref-spacing-xxxs);
+  min-width: 0;
 }
 
 .dashboard__template-name {
   font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
   font-weight: var(--ref-font-weight-bold);
   color: var(--ref-color-grey-150);
 }
@@ -78,7 +189,13 @@
 .dashboard__template-desc {
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-xs);
-  color: var(--sys-text-color-light);
+  color: var(--ref-color-grey-80);
+}
+
+.dashboard__template-arrow {
+  flex-shrink: 0;
+  color: var(--ref-color-electric-blue-100);
+  font-size: var(--sys-icon-css-sm);
 }
 
 .dashboard__form-error {
@@ -90,12 +207,6 @@
 
 .dashboard__form-error[hidden] {
   display: none;
-}
-
-/* Main tabs container */
-
-.dashboard__main-tabs {
-  margin-top: calc(-1 * var(--ref-spacing-xs));
 }
 
 .dashboard__subtabs {
@@ -112,49 +223,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--ref-spacing-xs);
-}
-
-/* Recent sessions */
-
-.dashboard__session-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--ref-spacing-sm);
-}
-
-.dashboard__session-card {
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-  border-width: 1px;
-  background: var(--app-surface);
-  width: 100%;
-  transition: border-color 120ms ease;
-}
-
-.dashboard__session-card:hover {
-  border-color: var(--ref-color-electric-blue-60);
-}
-
-.dashboard__session-card-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--ref-spacing-xs);
-}
-
-.dashboard__session-name {
-  font-size: var(--ref-font-size-md);
-  line-height: var(--ref-font-line-height-md);
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-150);
-}
-
-.dashboard__session-meta {
-  display: flex;
-  gap: var(--ref-spacing-xxs);
-  flex-wrap: wrap;
-  font-size: var(--ref-font-size-xs);
 }
 
 /* ---- Unified Content workspace — shared by session + dashboard ------- */
@@ -377,62 +445,57 @@
   pointer-events: none;
 }
 
-/* Idea card — Figma 42:4870. Four zones, stacked:
-     1. source-row   — PDF/video/URL icon + filename link + "· extracted X"
-     2. body         — grey-05 callout, mermaid-gradient left border, title + hook
-     3. actions      — potential pill (left), Create-post CTA + more-menu (right)
-   The card's "Open idea" trigger is the source link at the top. Pin moves
-   into the three-dots overflow menu. */
+/* Idea card — Figma 204:2318. Two-piece structure:
+     - White inner card with potential pill (top), title + hook, and an
+       actions row with [Sources ▾ toggle | Draft Post + ⋯].
+     - Grey-05 attribution panel that slides under the white card when the
+       Sources toggle is open. Holds an info-circle + caption line followed
+       by the source chip list.
+   Toggle state lives on the article's data-sources-open attribute. Default
+   state is collapsed; the attribution panel is hidden via the [hidden] attr
+   the JS sets on it. */
 
 .idea-card {
   display: flex;
   flex-direction: column;
+  border-radius: var(--ref-border-radius-md);
+  background: var(--ref-color-grey-05);
+}
+
+/* When sources are collapsed, no grey-05 wrapper is visible — the inner card
+   fills the whole article. Toggling open exposes the panel + grey-05 frame. */
+.idea-card[data-sources-open="false"] {
+  background: transparent;
+}
+
+/* White inner card — border, padding, internal stack. */
+.idea-card__inner {
+  display: flex;
+  flex-direction: column;
   gap: var(--ref-spacing-xxs);
-  padding: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-sm) var(--ref-spacing-xs);
+  background: var(--ref-color-white);
   border: 1px solid var(--ref-color-grey-10);
   border-radius: var(--ref-border-radius-md);
-  background: var(--ref-color-white);
 }
 
-/* Source info row — `.ap-link.standalone` is a DS variant that keeps the link
-   aligned with an inline icon. We add a muted meta span after it. */
-.idea-card__source-row {
+.idea-card__signals {
   display: flex;
-  align-items: center;
-  gap: var(--ref-spacing-xs);
-  flex-wrap: wrap;
-}
-
-.idea-card__source-link {
-  display: inline-flex;
   align-items: center;
   gap: var(--ref-spacing-xxs);
 }
 
-.idea-card__source-meta {
-  font-size: var(--ref-font-size-xs);
-  line-height: var(--ref-font-line-height-xs);
-}
-
-/* Body callout — grey-05 with a 3px mermaid-gradient-from left stripe. We use
-   the solid start-color of the mermaid gradient (Figma does the same: a
-   border-l-3 at --ref-mermaid-gradient-from, not the full gradient). Right
-   corners are rounded; left edge is flush against the colored stripe. */
+/* Body — plain text on white, no callout chrome. */
 .idea-card__body {
   display: flex;
   flex-direction: column;
   gap: var(--ref-spacing-xxxs);
-  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
-  background: var(--ref-color-grey-05);
-  border-left: 3px solid var(--ref-color-mermaid-gradient-from);
-  border-top-right-radius: var(--ref-border-radius-md);
-  border-bottom-right-radius: var(--ref-border-radius-md);
 }
 
 .idea-card__title {
   margin: 0;
-  font-size: var(--ref-font-size-sm);
-  line-height: var(--ref-font-line-height-sm);
+  font-size: var(--ref-font-size-md);
+  line-height: var(--ref-font-line-height-lg);
   font-weight: var(--ref-font-weight-bold);
   color: var(--ref-color-grey-150);
 }
@@ -444,8 +507,132 @@
   color: var(--ref-color-grey-80);
 }
 
-/* Actions row — potential pill takes the free space on the left; the mermaid
-   CTA + more button anchor to the right. */
+/* Wrapper button around title+hook — invisible chrome via display: contents
+   so the inner block keeps participating in the parent flex column. */
+.idea-card__open {
+  display: contents;
+  background: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+/* Sources toggle — text + chevron, no background/border. Sits on the left
+   side of the actions row. */
+.idea-card__sources-toggle {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+  background: 0;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--ref-color-grey-80);
+  cursor: pointer;
+  user-select: none;
+}
+
+.idea-card__sources-toggle--empty {
+  cursor: default;
+}
+
+.idea-card__sources-toggle:hover,
+.idea-card__sources-toggle:focus-visible {
+  color: var(--ref-color-grey-150);
+  outline: none;
+}
+
+.idea-card__sources-chevron {
+  font-size: var(--sys-icon-css-xs);
+  color: var(--ref-color-grey-80);
+  transition: transform 150ms ease;
+}
+
+.idea-card[data-sources-open="true"] .idea-card__sources-chevron {
+  transform: rotate(180deg);
+}
+
+/* Attribution panel — appears beneath the white card when toggle is open. */
+.idea-card__source-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xs);
+}
+
+.idea-card__source-info[hidden] {
+  display: none;
+}
+
+.idea-card__source-info-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--ref-color-grey-80);
+}
+
+.idea-card__source-info-icon {
+  font-size: var(--sys-icon-css-xs);
+  color: var(--ref-color-grey-80);
+}
+
+.idea-card__sources-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxxs);
+}
+
+/* Per-source chip — small electric-blue file-kind tile + filename styled as
+   an electric-blue link. The tile is a wrapper span (the .ap-icon-* `<i>`
+   uses mask-image + currentColor to render the glyph, so we can't put the
+   tile background on the icon itself or the icon would render in the tile
+   color). */
+.idea-card__source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxxs);
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-electric-blue-100);
+  text-decoration: none;
+}
+
+.idea-card__source-chip:hover,
+.idea-card__source-chip:focus-visible {
+  color: var(--ref-color-electric-blue-150);
+  outline: none;
+}
+
+.idea-card__source-chip-tile {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  background: var(--ref-color-electric-blue-05);
+  border-radius: var(--ref-border-radius-sm);
+}
+
+.idea-card__source-chip-tile > i {
+  font-size: var(--sys-icon-css-xs);
+  color: var(--ref-color-electric-blue-100);
+}
+
+/* Actions row — sources toggle on the left, Draft Post + more on the right. */
 
 .idea-card__actions {
   display: flex;
@@ -534,84 +721,18 @@
   flex-shrink: 0;
 }
 
-/* Global contexts */
-
-.dashboard__context-create {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--ref-spacing-sm);
-}
-
-.dashboard__context-create-icon {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  background: var(--ref-color-electric-blue-10);
-  border-radius: var(--app-radius-md);
-  color: var(--ref-color-electric-blue-150);
-  flex-shrink: 0;
-}
-
-.dashboard__context-row {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ref-spacing-sm);
-}
-
-.dashboard__context-left {
-  display: flex;
-  align-items: center;
-  gap: var(--ref-spacing-sm);
-  min-width: 0;
-}
-
-.dashboard__context-title {
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-150);
-}
-
-.dashboard__context-actions {
-  display: flex;
-  gap: var(--ref-spacing-xxs);
-  flex-shrink: 0;
-}
-
-/* ---------- All-ideas grouped layout ----------
-   Groups ideas by source: one source-separator row + a 2-column auto-fill
-   grid of idea cards. The separator makes the source redundant on each card
-   (hideSourceRow: true), eliminating the repeated file-name noise. */
-
-.dashboard__ideas-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ref-spacing-xs);
-  margin-bottom: var(--ref-spacing-sm);
-}
-
-.dashboard__ideas-group:last-child {
-  margin-bottom: 0;
-}
-
-.dashboard__ideas-separator {
-  display: flex;
-  align-items: center;
-  gap: var(--ref-spacing-xxs);
-  padding-bottom: var(--ref-spacing-xxs);
-  border-bottom: 1px solid var(--ref-color-grey-10);
-  font-size: var(--ref-font-size-sm);
-  color: var(--ref-color-grey-150);
-}
-
-.dashboard__ideas-separator-name {
-  font-weight: var(--ref-font-weight-bold);
-}
-
-/* auto-fill + minmax gives a 2-column layout at typical widths and collapses
-   to 1 column gracefully on narrow screens — no media query needed. */
+/* All-ideas grid — strict 2-column layout per the Figma. minmax(0, 1fr)
+   prevents children with intrinsic min-width (e.g. long filenames in source
+   chips) from blowing the column out. Collapses to 1 column on narrow
+   viewports via the media query so the cards stay legible. */
 .dashboard__ideas-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--ref-spacing-sm);
+}
+
+@media (max-width: 720px) {
+  .dashboard__ideas-grid {
+    grid-template-columns: 1fr;
+  }
 }

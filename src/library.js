@@ -109,7 +109,7 @@ export function addSource(sessionId, kind) {
       channels: seed.channels || ["linkedin"],
       state: "New",
       pinned: false,
-      sourceId,
+      sourceIds: [sourceId],
       extractedAt: "just now",
     }));
     ideas.get(sessionId).unshift(...extracted);

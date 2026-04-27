@@ -139,13 +139,27 @@
 
 /* ---------- Post card ---------- */
 
+/* Wrapper that holds the per-post error infobox + the card itself in a column.
+   The 500px cap lives here (not on .posts__card) so the infobox tracks the
+   card's width and both align to the same left edge. */
+.posts__card-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+  min-width: 0;
+  max-width: 500px;
+  width: 100%;
+}
+
+.posts__card-errors-list {
+  margin: 0;
+  padding-left: var(--ref-spacing-md);
+  list-style: disc outside;
+}
+
 .posts__card {
   gap: var(--ref-spacing-sm);
   min-width: 0;
-  /* Post cards mimic a LinkedIn-style feed post — capped at 500px so the
-     line length stays comfortable even on wide viewports. */
-  max-width: 500px;
-  width: 100%;
 }
 
 .posts__card-header {

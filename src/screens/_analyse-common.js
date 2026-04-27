@@ -161,9 +161,26 @@ export function summarySections(sections, headerExtra = "") {
 
 // -- Sticky picker (option rows + optional text input) ----------------------
 
-function renderPicker(picker) {
+export function renderPicker(picker) {
   if (!picker) return "";
-  const { items = [], handler, customPlaceholder = null, customHandler = null } = picker;
+  const {
+    items = [],
+    handler,
+    customPlaceholder = null,
+    customHandler = null,
+    multi = false,
+    submitLabel = "Continue",
+    title = null, // text shown at the top of the picker (mirrors the AI question)
+    stepIndicator = null, // small label on the top right (e.g. "3 of 7")
+    skipLabel = null, // when set, render a "Skip" button next to Submit
+  } = picker;
+
+  // Multi-select swaps the trailing chevron for a check icon (visible only
+  // when the option is selected via .is-selected) so the user understands
+  // the row is a toggle, not an immediate jump.
+  const trailingIcon = multi
+    ? `<i class="ap-icon-rounded-check analyse__option-check" aria-hidden="true"></i>`
+    : `<i class="ap-icon-chevron-right analyse__option-chevron" aria-hidden="true"></i>`;
 
   const rows = items
     .map(
@@ -172,6 +189,7 @@ function renderPicker(picker) {
           type="button"
           class="analyse__option"
           data-${handler}="${it.value}"
+          ${multi ? 'aria-pressed="false"' : ""}
         >
           <span class="analyse__option-shortcut" aria-hidden="true">${i + 1}</span>
           <span class="analyse__option-icon">
@@ -181,7 +199,7 @@ function renderPicker(picker) {
             <span class="analyse__option-label">${it.label}</span>
             ${it.caption ? `<span class="muted">${it.caption}</span>` : ""}
           </span>
-          <i class="ap-icon-chevron-right analyse__option-chevron"></i>
+          ${trailingIcon}
         </button>
       `,
     )
@@ -214,7 +232,31 @@ function renderPicker(picker) {
     `
     : "";
 
-  return `<div class="analyse__options">${rows}${customRow}</div>`;
+  // Header — shown when the picker carries a title or a step indicator.
+  // Mirrors the AI question text so the user has the full prompt in view
+  // while scanning options. The step indicator (e.g. "3 of 7") sits on the
+  // right and helps with multi-step wizards.
+  const header =
+    title || stepIndicator
+      ? `
+        <header class="analyse__picker-header">
+          ${title ? `<h3 class="analyse__picker-title">${title}</h3>` : ""}
+          ${stepIndicator ? `<span class="analyse__picker-step muted">${stepIndicator}</span>` : ""}
+        </header>
+      `
+      : "";
+
+  // Footer — Skip + (multi-only) Submit. Single-select pickers without a
+  // skipLabel render no footer at all.
+  const skipBtn = skipLabel
+    ? `<button type="button" class="ap-button stroked grey" data-${handler}-skip><span>${skipLabel}</span></button>`
+    : "";
+  const submitBtn = multi
+    ? `<button type="button" class="ap-button primary orange" data-${handler}-submit><span>${submitLabel}</span></button>`
+    : "";
+  const footer = skipBtn || submitBtn ? `<div class="analyse__options-submit">${skipBtn}${submitBtn}</div>` : "";
+
+  return `<div class="analyse__options${multi ? " analyse__options--multi" : ""}" ${multi ? "data-multi" : ""}>${header}${rows}${customRow}${footer}</div>`;
 }
 
 // -- Keyboard wiring --------------------------------------------------------
@@ -232,8 +274,12 @@ function renderPicker(picker) {
 
 let currentKeyListener = null;
 
-export function bindWizardKeyboard(target, { handler, onExit, onCustomSubmit = null }) {
+export function bindWizardKeyboard(target, { handler, onExit, onCustomSubmit = null, onMultiSubmit = null }) {
   unbindWizardKeyboard();
+
+  // Multi-select pickers expose `[data-{handler}-submit]`. When present,
+  // digit + click toggle the option rows instead of jumping; Enter submits.
+  const isMulti = () => !!target.querySelector(`[data-${handler}-submit]`);
 
   const listener = (event) => {
     const activeIsInput =
@@ -264,6 +310,8 @@ export function bindWizardKeyboard(target, { handler, onExit, onCustomSubmit = n
     }
 
     // Digits — only when the user isn't typing into the input.
+    // In multi-select mode, click() will toggle the option (handled by the
+    // session.js click delegate) instead of advancing.
     if (/^[1-9]$/.test(event.key) && !activeIsInput) {
       const idx = Number(event.key) - 1;
       const target = focusables[idx];
@@ -275,12 +323,21 @@ export function bindWizardKeyboard(target, { handler, onExit, onCustomSubmit = n
       return;
     }
 
-    // Enter — submit typed input, or activate first option.
+    // Enter — multi-select submits the current selection; single-select
+    // submits typed input or activates the focused/first option.
     if (event.key === "Enter") {
       if (activeIsInput && onCustomSubmit) {
         event.preventDefault();
         const value = event.target.value.trim();
         if (value) onCustomSubmit(value);
+        return;
+      }
+      if (isMulti() && onMultiSubmit) {
+        event.preventDefault();
+        const selected = Array.from(target.querySelectorAll(`[data-${handler}].is-selected`)).map(
+          (el) => el.dataset[handlerCamel(handler)],
+        );
+        if (selected.length) onMultiSubmit(selected);
         return;
       }
       if (!activeIsInput) {
@@ -294,6 +351,11 @@ export function bindWizardKeyboard(target, { handler, onExit, onCustomSubmit = n
       }
     }
   };
+
+  function handlerCamel(h) {
+    // data-wizard-answer → dataset.wizardAnswer
+    return h.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+  }
 
   currentKeyListener = listener;
   document.addEventListener("keydown", listener);

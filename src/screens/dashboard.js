@@ -1,21 +1,20 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=20";
-import { recentSessions, templateStarters, sources, ideas, contexts, contextComponentsFor } from "../mocks.js?v=20";
+import { recentSessions, templateStarters, sources, ideas } from "../mocks.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
-import { renderSourceCard } from "../components/source-card.js?v=20";
-import { renderIdeaCard } from "../components/idea-card.js?v=20";
-import { renderIdeasBySource } from "../components/ideas-by-source.js?v=20";
+import { renderSourceCard } from "../components/source-card.js?v=21";
+import { renderIdeaCard } from "../components/idea-card.js?v=23";
 
-// Dashboard — one URL (#/), multiple state variants encoded in URL params so
-// screens like "Projects · Library" vs "Global Contexts" stay shareable.
+// Dashboard — one URL (#/), state variants encoded in URL params so URLs
+// like "Projects · Ideas" stay shareable.
 //
 // Params:
-//   tab       "projects" (default) | "contexts"
-//   subtab    "library" (default) | "ideas"
 //   ctx       "none" (default) | "voice" | "brief" | "brand"
+//   view      "sources" (default) | "ideas"   — Content section sub-view
 //
-// The wireframe shows these combinations as the 4 Start Screen variants.
+// (The previous "Global contexts" main tab was lifted out — contexts now
+// live behind the Settings entry in the sidebar.)
 
 function readQuery() {
   const raw = window.location.hash.split("?")[1] || "";
@@ -26,7 +25,6 @@ function readQuery() {
   const subtab = params.get("subtab");
   if (subtab === "ideas") view = "ideas";
   return {
-    tab: params.get("tab") || "projects",
     ctx: params.get("ctx") || "none",
     title: params.get("title") || "",
     view,
@@ -46,10 +44,11 @@ export function renderDashboard(_params, target) {
 
   target.innerHTML = html`
     <section class="screen screen--split dashboard">
-      <aside class="dashboard__sidebar">${raw(renderNewProjectCard(q))} ${raw(renderTemplateStarters())}</aside>
-      <section class="dashboard__main">
-        ${raw(renderMainTabs(q))} ${raw(q.tab === "contexts" ? renderContextsPanel() : renderProjectsPanel(q))}
-      </section>
+      <aside class="dashboard__sidebar">
+        ${raw(renderNewProjectCard(q))} ${raw(renderPreviousChats())} ${raw(renderTemplateStarters())}
+        ${raw(renderSidebarSettings())}
+      </aside>
+      <section class="dashboard__main">${raw(renderProjectsPanel(q))}</section>
     </section>
   `;
 
@@ -62,13 +61,13 @@ function renderNewProjectCard(q) {
 
   return html`
     <div class="ap-card dashboard__new-project">
-      <h3 class="ap-card-title">New project</h3>
+      <h3 class="ap-card-title">New chat</h3>
       <div class="ap-form-field">
-        <label>Project name</label>
+        <label>Chat name (optional)</label>
         <div class="ap-input-group">
           <input placeholder="e.g. Q2 launch drumbeat" data-new-project-name value="${q.title}" />
         </div>
-        <p class="dashboard__form-error" data-new-project-error hidden>Give this project a name before creating it.</p>
+        <p class="dashboard__form-error" data-new-project-error hidden>Give this chat a name before creating it.</p>
       </div>
       <div class="ap-form-field">
         <label>Context</label>
@@ -78,15 +77,51 @@ function renderNewProjectCard(q) {
           ${raw(ctxOpt("brand", "Use my brand theme"))}
         </select>
       </div>
-      <button type="button" class="ap-button primary orange" data-new-project-create>Create</button>
+      <button type="button" class="ap-button primary orange" data-new-project-create>New chat</button>
+    </div>
+  `;
+}
+
+function renderPreviousChats() {
+  if (isNewUser() || !recentSessions.length) return "";
+  const items = recentSessions
+    .map(
+      (s) => `
+        <button type="button" class="dashboard__chat" data-open-session="${s.id}">
+          <span class="dashboard__chat-name">${s.name}</span>
+          <span class="dashboard__chat-meta">
+            ${s.sourceCount} sources · ${s.ideaCount} ideas · ${s.postCount} posts · ${s.lastActivity}
+          </span>
+        </button>
+      `,
+    )
+    .join("");
+  return html`
+    <section class="dashboard__chats-section">
+      <h3 class="dashboard__chats-heading">Previous chats</h3>
+      <div class="dashboard__chats-list">${raw(items)}</div>
+    </section>
+  `;
+}
+
+function renderSidebarSettings() {
+  return html`
+    <div class="dashboard__settings">
+      <button type="button" class="ap-button transparent grey" data-open-settings>
+        <i class="ap-icon-cog"></i>
+        <span>Settings</span>
+      </button>
     </div>
   `;
 }
 
 function renderTemplateStarters() {
   return html`
-    <div class="ap-card dashboard__templates">
-      <h3 class="ap-card-title">Template starters</h3>
+    <section class="dashboard__templates-section">
+      <header class="dashboard__templates-header">
+        <h3 class="dashboard__templates-title">Workflow templates</h3>
+        <p class="dashboard__templates-tagline">Use one of these actions to quickly draft some posts</p>
+      </header>
       <ul class="dashboard__templates-list">
         ${raw(
           templateStarters
@@ -94,8 +129,11 @@ function renderTemplateStarters() {
               (t) => `
                 <li>
                   <button type="button" class="dashboard__template" data-template-id="${t.id}">
-                    <span class="dashboard__template-name">${t.name}</span>
-                    <span class="dashboard__template-desc">${t.description}</span>
+                    <span class="dashboard__template-text">
+                      <span class="dashboard__template-name">${t.name}</span>
+                      <span class="dashboard__template-desc">${t.description}</span>
+                    </span>
+                    <i class="ap-icon-arrow-right dashboard__template-arrow" aria-hidden="true"></i>
                   </button>
                 </li>
               `,
@@ -103,32 +141,11 @@ function renderTemplateStarters() {
             .join(""),
         )}
       </ul>
-    </div>
+    </section>
   `;
 }
 
-function renderMainTabs(q) {
-  const projectsCount = isNewUser() ? 0 : recentSessions.length;
-  const contextsCount = isNewUser() ? 0 : contexts.length;
-  return html`
-    <div class="ap-tabs dashboard__main-tabs">
-      <div class="ap-tabs-nav">
-        <button type="button" class="ap-tabs-tab ${q.tab === "projects" ? "active" : ""}" data-main-tab="projects">
-          <i class="ap-icon-folder"></i>
-          <span>Projects</span>
-          <span class="ap-counter normal ${q.tab === "projects" ? "blue" : "grey"}"> ${projectsCount} </span>
-        </button>
-        <button type="button" class="ap-tabs-tab ${q.tab === "contexts" ? "active" : ""}" data-main-tab="contexts">
-          <i class="ap-icon-sparkles"></i>
-          <span>Global contexts</span>
-          <span class="ap-counter normal ${q.tab === "contexts" ? "blue" : "grey"}">${contextsCount}</span>
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-// ---- Projects tab -------------------------------------------------------------
+// ---- Main panel — Content section -----------------------------------------
 
 function renderProjectsPanel(q) {
   if (isNewUser()) {
@@ -149,16 +166,19 @@ function renderProjectsPanel(q) {
       </div>
     `;
   }
-  return html` <div class="dashboard__panel">${raw(renderRecentSessions())} ${raw(renderContentSection(q))}</div> `;
+  return html` <div class="dashboard__panel">${raw(renderContentSection(q))}</div> `;
 }
 
 function renderContentSection(q) {
   const view = q.view === "ideas" ? "ideas" : "sources";
-  // Ideas view: group by source so the source name appears once as a separator
-  // row rather than repeating on every card.
+  // Ideas view: flat 2-column auto-fill grid. Sources are surfaced inside
+  // each idea card now (the multi-source design), so the previous group-by-
+  // source separators are redundant.
   const body =
     view === "ideas"
-      ? renderIdeasBySource(ideas, sources) || `<p class="muted">No ideas yet.</p>`
+      ? ideas.length
+        ? `<div class="dashboard__ideas-grid">${ideas.map((i) => renderIdeaCard(i, sources)).join("")}</div>`
+        : `<p class="muted">No ideas yet.</p>`
       : `<div class="stack-sm">${sources.map((s) => renderSourceCard(s, ideas)).join("")}</div>`;
   return html`
     <section class="dashboard__section">
@@ -170,44 +190,6 @@ function renderContentSection(q) {
         </button>
       </div>
       ${raw(renderContentViewTabs(q))} ${raw(body)}
-    </section>
-  `;
-}
-
-function renderRecentSessions() {
-  const cards = recentSessions
-    .map(
-      (s) => `
-        <button type="button" class="ap-card dashboard__session-card" data-open-session="${s.id}">
-          <div class="dashboard__session-card-head">
-            <span class="dashboard__session-name">${s.name}</span>
-            ${
-              s.hasContext
-                ? '<span class="ap-status blue">Context attached</span>'
-                : '<span class="ap-status grey">No context</span>'
-            }
-          </div>
-          <div class="dashboard__session-meta muted">
-            <span>${s.sourceCount} sources</span>
-            <span>·</span>
-            <span>${s.ideaCount} ideas</span>
-            <span>·</span>
-            <span>${s.postCount} posts</span>
-            <span>·</span>
-            <span>${s.lastActivity}</span>
-          </div>
-        </button>
-      `,
-    )
-    .join("");
-
-  return html`
-    <section class="dashboard__section">
-      <div class="row-between">
-        <h2 class="text-section">Your recent sessions</h2>
-        <a class="ap-link small" href="#/">View all →</a>
-      </div>
-      <div class="dashboard__session-grid">${raw(cards)}</div>
     </section>
   `;
 }
@@ -232,82 +214,25 @@ function renderContentViewTabs(q) {
   `;
 }
 
-// ---- Global contexts tab ------------------------------------------------------
-
-function renderContextsPanel() {
-  const availableContexts = isNewUser() ? [] : contexts;
-
-  const rows = availableContexts.length
-    ? availableContexts
-        .map(
-          (c) => `
-            <div class="ap-card dashboard__context-row">
-              <div class="dashboard__context-left">
-                <i class="ap-icon-sparkles-mermaid md"></i>
-                <div class="stack-sm">
-                  <span class="dashboard__context-title">${c.name}</span>
-                  <span class="muted">${contextComponentsFor(c).join(" · ")} · Updated ${c.updatedAt}</span>
-                </div>
-              </div>
-              <div class="dashboard__context-actions">
-                <button type="button" class="ap-button stroked grey" data-open-context="${c.id}">
-                  <i class="ap-icon-pen"></i>
-                  <span>Edit</span>
-                </button>
-                <button type="button" class="ap-icon-button stroked" aria-label="More actions">
-                  <i class="ap-icon-more"></i>
-                </button>
-              </div>
-            </div>
-          `,
-        )
-        .join("")
-    : `<p class="muted">No saved contexts yet — create your first one above.</p>`;
-
-  return html`
-    <div class="dashboard__panel">
-      <section class="dashboard__section">
-        <div class="ap-card dashboard__context-create">
-          <div class="dashboard__context-create-icon">
-            <i class="ap-icon-sparkles md"></i>
-          </div>
-          <div class="grow stack-sm">
-            <h3 class="text-subtitle">Create a new context</h3>
-            <p class="muted">
-              Teach Archie how you write, what you're building, and how your brand looks. Contexts can be reused across
-              projects.
-            </p>
-          </div>
-          <button type="button" class="ap-button primary orange" data-create-context>Create context</button>
-        </div>
-      </section>
-      <section class="dashboard__section">
-        <h2 class="text-section">Available contexts</h2>
-        <div class="stack-sm">${raw(rows)}</div>
-      </section>
-    </div>
-  `;
-}
-
 // ---- Wiring -------------------------------------------------------------------
 
 function bindDashboard(root) {
   root.addEventListener("click", (event) => {
-    const mainTab = event.target.closest("[data-main-tab]");
-    if (mainTab) {
-      setQuery({ tab: mainTab.dataset.mainTab });
-      return;
-    }
-
     const contentView = event.target.closest("[data-content-view]");
     if (contentView) {
-      setQuery({ tab: "projects", view: contentView.dataset.contentView });
+      setQuery({ view: contentView.dataset.contentView });
       return;
     }
 
     const openSession = event.target.closest("[data-open-session]");
     if (openSession) {
       navigate(`/session/${openSession.dataset.openSession}`);
+      return;
+    }
+
+    if (event.target.closest("[data-open-settings]")) {
+      // Settings screen is a follow-up — no-op for now so the wireframe is
+      // visually complete without dead-ending the user.
       return;
     }
 
@@ -321,7 +246,6 @@ function bindDashboard(root) {
         if (nameInput) nameInput.value = title;
         if (contextSelect) contextSelect.value = template.id === "tpl-launch" ? "brand" : "voice";
         setQuery({
-          tab: "projects",
           title,
           ctx: contextSelect?.value || "voice",
         });
@@ -340,9 +264,19 @@ function bindDashboard(root) {
         return;
       }
       if (error) error.hidden = true;
-      const contextId = contextIdForNewProject(contextSelect?.value || "none");
+      const contextValue = contextSelect?.value || "none";
+      const contextId = contextIdForNewProject(contextValue);
       const qs = new URLSearchParams({ tab: "posts", title });
       if (contextId) qs.set("contextId", contextId);
+      // Hand-off pattern (mirrors pendingDraftIdeaId): the session screen
+      // reads + clears this flag on mount and triggers the right start flow.
+      sessionStorage.setItem(
+        "pendingStartFlow",
+        JSON.stringify({
+          hasContext: !!contextId,
+          contextName: contextNameFor(contextValue),
+        }),
+      );
       navigate(`/session/new?${qs.toString()}`);
       return;
     }
@@ -352,21 +286,18 @@ function bindDashboard(root) {
       return;
     }
 
-    if (event.target.closest("[data-create-context]")) {
-      navigate("/analyse");
-      return;
-    }
-
-    const openContext = event.target.closest("[data-open-context]");
-    if (openContext) {
-      navigate(`/analyse?contextId=${openContext.dataset.openContext}`);
-      return;
-    }
-
     // Source-card actions on the Content section — open the default session
     // and land in the right tab. The card now exposes three actions:
     // "Ask" → posts tab, "View all N ideas" → All ideas view, more → no-op.
     const defaultSessionId = recentSessions[0]?.id || "new";
+
+    // Idea-card source chips — navigate to the source within its session.
+    const openSrc = event.target.closest("[data-source-open]");
+    if (openSrc) {
+      event.preventDefault();
+      navigate(`/session/${defaultSessionId}?tab=content&view=sources&focusSource=${openSrc.dataset.sourceOpen}`);
+      return;
+    }
     if (event.target.closest("[data-source-view]")) {
       event.preventDefault();
       navigate(`/session/${defaultSessionId}?tab=content&view=ideas`);
@@ -422,4 +353,11 @@ function contextIdForNewProject(value) {
   if (value === "voice") return "ctx-founder-voice";
   if (value === "brief" || value === "brand") return "ctx-acme";
   return "";
+}
+
+function contextNameFor(value) {
+  if (value === "voice") return "My voice profile";
+  if (value === "brief") return "My strategy brief";
+  if (value === "brand") return "My brand theme";
+  return "Your context";
 }

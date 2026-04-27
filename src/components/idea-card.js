@@ -1,26 +1,25 @@
 // Shared idea-card renderer — used by the dashboard Content section (All
 // ideas view) and the session Content tab.
 //
-// Matches Figma 42:4870. Stripped down to the four things a reader actually
-// needs to judge whether to act on an idea:
-//   1. Where it came from (source link at the top doubles as "open idea")
-//   2. The idea itself (title + hook inside a grey-05 callout with a
-//      mermaid-gradient left border)
-//   3. Its editorial weight (one "High/Medium/Low potential" status pill)
-//   4. One primary action — "Create post from this idea" (mermaid button),
-//      plus a three-dots overflow that holds Pin / Unpin.
+// Matches Figma 204:2318. Two-piece structure:
+//   - White inner card: potential pill (top), title (H3 Bold) + hook,
+//     actions row with [Sources ▾ toggle] on the left and [Draft Post + ⋯]
+//     on the right.
+//   - Expanded grey-05 attribution panel that appears beneath the white card
+//     when sources are toggled open. Holds an info-circle + "This idea has
+//     been generated using these sources" line followed by a wrapping list
+//     of source chips. Collapsed by default.
 //
-// Things that used to be on the card and are now gone from the surface:
-//   numeric score, workflow-state tag, channel-fit chips, "AI confidence X%"
-//   line, standalone "Why this could work" rationale block, "Open idea →"
-//   button, dedicated pin button. Their data fields remain on the idea
-//   object — they just stop being surfaced here.
+// Toggle state lives on the article's data-sources-open attribute. Click
+// handling for the Sources toggle is module-local (alongside the existing
+// more-menu wiring).
 //
-// Idea shape:   { id, title, body, confidence, pinned, sourceId,
+// Idea shape:   { id, title, body, confidence, pinned, sourceIds[],
 //                 extractedAt, channels, state, rationale }
 // Source shape: { id, filename, kind, ... }
 //
-// Caller passes the full sources list so the card can resolve its origin.
+// Caller passes the full sources list so the card can resolve every
+// contributing source by id.
 
 function potentialFor(confidence) {
   if (confidence >= 80) return { label: "High potential", color: "green" };
@@ -97,6 +96,19 @@ function togglePinMenuItem(pinBtn) {
 }
 
 document.addEventListener("click", (event) => {
+  // Sources toggle — show/hide the attribution panel
+  const sourcesBtn = event.target.closest("[data-sources-toggle]");
+  if (sourcesBtn) {
+    event.preventDefault();
+    const card = sourcesBtn.closest(".idea-card");
+    const willOpen = card?.dataset.sourcesOpen !== "true";
+    if (card) card.dataset.sourcesOpen = willOpen ? "true" : "false";
+    sourcesBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    const panelId = sourcesBtn.getAttribute("aria-controls");
+    const panel = panelId ? document.getElementById(panelId) : null;
+    if (panel) panel.hidden = !willOpen;
+    return;
+  }
   // Open/close handler
   const moreBtn = event.target.closest("[data-idea-more]");
   if (moreBtn) {
@@ -121,83 +133,114 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeAllIdeaMoreMenus();
 });
 
-export function renderIdeaCard(idea, allSources = [], { hideSourceRow = false } = {}) {
-  const source = allSources.find((s) => s.id === idea.sourceId) || null;
+export function renderIdeaCard(idea, allSources = []) {
+  const sourceIds = idea.sourceIds || [];
+  const sources = sourceIds.map((id) => allSources.find((s) => s.id === id)).filter(Boolean);
   const potential = potentialFor(idea.confidence || 0);
-
-  // Source info row. The link itself triggers data-idea-open — the removed
-  // "Open idea →" button handler takes over here.
-  // When hideSourceRow is true (e.g. inside a grouped by-source layout where
-  // the source is already shown as a section separator), skip this row.
-  const sourceRow = hideSourceRow
-    ? ""
-    : source
-      ? `
-        <div class="idea-card__source-row">
-          <a class="ap-link standalone idea-card__source-link" href="#" data-idea-open="${idea.id}">
-            <i class="${iconFor(source.kind)}"></i>
-            <span>${source.filename}</span>
-          </a>
-          ${idea.extractedAt ? `<span class="muted idea-card__source-meta">· extracted ${idea.extractedAt}</span>` : ""}
-        </div>
-      `
-      : idea.extractedAt
-        ? `<div class="idea-card__source-row"><span class="muted idea-card__source-meta">Extracted ${idea.extractedAt}</span></div>`
-        : "";
-
   const pinLabel = idea.pinned ? "Unpin idea" : "Pin idea";
+  const panelId = `idea-sources-${idea.id}`;
+
+  const sourceChips = sources
+    .map(
+      (s) => `
+        <li>
+          <a class="idea-card__source-chip" href="#" data-source-open="${s.id}">
+            <span class="idea-card__source-chip-tile">
+              <i class="${iconFor(s.kind)}" aria-hidden="true"></i>
+            </span>
+            <span>${s.filename}</span>
+          </a>
+        </li>
+      `,
+    )
+    .join("");
+
+  const sourcesPanel = sources.length
+    ? `
+      <div id="${panelId}" class="idea-card__source-info" hidden>
+        <div class="idea-card__source-info-label">
+          <i class="ap-icon-information-circle idea-card__source-info-icon" aria-hidden="true"></i>
+          <span>This idea has been generated using these sources</span>
+        </div>
+        <ul class="idea-card__sources-list">${sourceChips}</ul>
+      </div>
+    `
+    : "";
+
+  const sourcesToggle = sources.length
+    ? `
+      <button
+        type="button"
+        class="idea-card__sources-toggle"
+        data-sources-toggle
+        aria-expanded="false"
+        aria-controls="${panelId}"
+      >
+        <span>Sources</span>
+        <i class="ap-icon-chevron-down idea-card__sources-chevron" aria-hidden="true"></i>
+      </button>
+    `
+    : '<span class="idea-card__sources-toggle idea-card__sources-toggle--empty"></span>';
 
   return `
-    <article class="ap-card idea-card" data-idea-id="${idea.id}">
-      ${sourceRow}
+    <article class="idea-card" data-idea-id="${idea.id}" data-sources-open="false">
+      <div class="idea-card__inner">
+        <div class="idea-card__signals">
+          <span class="ap-status ${potential.color} idea-card__potential">${potential.label}</span>
+        </div>
 
-      <div class="idea-card__body">
-        <h3 class="idea-card__title">${idea.title}</h3>
-        ${idea.body ? `<p class="idea-card__hook">${idea.body}</p>` : ""}
-      </div>
+        <button type="button" class="idea-card__open" data-idea-open="${idea.id}" aria-label="Open idea: ${idea.title}">
+          <div class="idea-card__body">
+            <h3 class="idea-card__title">${idea.title}</h3>
+            ${idea.body ? `<p class="idea-card__hook">${idea.body}</p>` : ""}
+          </div>
+        </button>
 
-      <div class="idea-card__actions">
-        <span class="ap-status ${potential.color} idea-card__potential">${potential.label}</span>
+        <div class="idea-card__actions">
+          ${sourcesToggle}
 
-        <div class="idea-card__secondary-actions">
-          <button
-            type="button"
-            class="ap-button mermaid"
-            data-idea-generate="${idea.id}"
-          >
-            <i class="ap-icon-sparkles"></i>
-            <span>Draft a post</span>
-          </button>
-
-          <div class="idea-card__more-wrap">
+          <div class="idea-card__secondary-actions">
             <button
               type="button"
-              class="ap-icon-button transparent idea-card__more"
-              data-idea-more="${idea.id}"
-              aria-haspopup="menu"
-              aria-expanded="false"
-              aria-controls="idea-more-${idea.id}"
-              aria-label="More actions"
+              class="ap-button mermaid"
+              data-idea-generate="${idea.id}"
             >
-              <i class="ap-icon-more"></i>
+              <i class="ap-icon-sparkles"></i>
+              <span>Draft Post</span>
             </button>
-            <ul id="idea-more-${idea.id}" class="idea-card__more-menu" role="menu" hidden>
-              <li role="none">
-                <button
-                  type="button"
-                  role="menuitem"
-                  class="idea-card__more-item"
-                  data-idea-pin="${idea.id}"
-                  aria-pressed="${idea.pinned ? "true" : "false"}"
-                >
-                  <i class="ap-icon-pin"></i>
-                  <span>${pinLabel}</span>
-                </button>
-              </li>
-            </ul>
+
+            <div class="idea-card__more-wrap">
+              <button
+                type="button"
+                class="ap-icon-button transparent idea-card__more"
+                data-idea-more="${idea.id}"
+                aria-haspopup="menu"
+                aria-expanded="false"
+                aria-controls="idea-more-${idea.id}"
+                aria-label="More actions"
+              >
+                <i class="ap-icon-more"></i>
+              </button>
+              <ul id="idea-more-${idea.id}" class="idea-card__more-menu" role="menu" hidden>
+                <li role="none">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    class="idea-card__more-item"
+                    data-idea-pin="${idea.id}"
+                    aria-pressed="${idea.pinned ? "true" : "false"}"
+                  >
+                    <i class="ap-icon-pin"></i>
+                    <span>${pinLabel}</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
+
+      ${sourcesPanel}
     </article>
   `;
 }

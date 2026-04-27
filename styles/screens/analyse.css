@@ -206,6 +206,66 @@
   outline-offset: -2px;
 }
 
+/* Multi-select state — when the user has toggled the row on. The trailing
+   check icon is hidden by default and revealed via .is-selected (paired with
+   an electric-blue background tint matching the focus state). */
+.analyse__option .analyse__option-check {
+  color: var(--ref-color-electric-blue-100);
+  font-size: var(--sys-icon-css-sm);
+  visibility: hidden;
+}
+
+.analyse__option.is-selected {
+  background: var(--ref-color-electric-blue-05);
+}
+
+.analyse__option.is-selected .analyse__option-check {
+  visibility: visible;
+}
+
+.analyse__option.is-selected .analyse__option-shortcut {
+  border-color: var(--ref-color-electric-blue-100);
+  color: var(--ref-color-electric-blue-150);
+  background: var(--ref-color-electric-blue-05);
+}
+
+.analyse__options-submit {
+  margin-top: var(--ref-spacing-xs);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ref-spacing-xs);
+  align-items: center;
+}
+
+/* Picker header — full question on the left, step indicator pinned right.
+   Sits above the option rows and inside the same .analyse__options frame. */
+.analyse__picker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ref-spacing-sm);
+  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
+  border-bottom: 1px solid var(--app-border-soft);
+}
+
+.analyse__picker-title {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  line-height: var(--ref-font-line-height-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.analyse__picker-step {
+  flex-shrink: 0;
+  font-size: var(--ref-font-size-xs);
+  line-height: var(--ref-font-line-height-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .analyse__option-shortcut {
   min-width: 22px;
   height: 22px;

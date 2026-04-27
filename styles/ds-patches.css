@@ -23,3 +23,134 @@
 .ap-status.mermaid::before {
   background: var(--ref-color-mermaid-gradient-from);
 }
+
+/* The DS ships --comp-status-card-* tokens and an Angular <ap-status-card>
+   component, but no CSS-UI class. Recreate the primitive here so the
+   html-prototype gets the same structure + visuals as the Angular version.
+   Mirrors libs/ui-components/status-card/src/status-card.component.scss
+   (full-width flex column, bottom border only, .upper > [icon] + .flow,
+   optional <p> italic note). Six color variants map 1:1 to the
+   --comp-status-card-{green|tag-orange|blue|red|orange|grey} token families.
+   Modifier naming mirrors .ap-status (.tagOrange, not .tag-orange). */
+.ap-status-card {
+  --comp-icon-size: 16px;
+  --comp-avatar-size: 16px;
+  --comp-border-size: 1px;
+  container: statuscard / inline-size;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 100%;
+  border-bottom-style: solid;
+  border-bottom-width: var(--comp-border-size);
+  padding: var(--comp-status-card-padding-horizontal) var(--comp-status-card-padding-vertical)
+    calc(var(--comp-status-card-padding-horizontal) - var(--comp-border-size)) var(--comp-status-card-padding-vertical);
+  gap: var(--comp-status-card-spacing-vertical);
+}
+
+.ap-status-card .upper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--comp-status-card-spacing-horizontal);
+}
+
+.ap-status-card .upper > i {
+  width: var(--comp-icon-size);
+  min-width: var(--comp-icon-size);
+  max-width: var(--comp-icon-size);
+  height: var(--comp-icon-size);
+  min-height: var(--comp-icon-size);
+  max-height: var(--comp-icon-size);
+  align-self: flex-start;
+  font-size: var(--comp-icon-size);
+  line-height: 1;
+}
+
+.ap-status-card .flow {
+  display: flex;
+  align-items: center;
+  gap: var(--comp-status-card-content-spacing);
+  flex: 1;
+  flex-wrap: wrap;
+  color: var(--comp-status-card-text-color);
+  font-family: var(--comp-status-card-text-style-font-family);
+  font-size: var(--comp-status-card-text-style-size);
+  font-weight: var(--comp-status-card-text-style-font-weight);
+  line-height: var(--comp-status-card-text-style-line-height);
+}
+
+.ap-status-card .flow span {
+  font-family: var(--comp-status-card-user-text-style-font-family);
+  font-size: var(--comp-status-card-user-text-style-size);
+  font-weight: var(--comp-status-card-user-text-style-font-weight);
+  line-height: var(--comp-status-card-user-text-style-line-height);
+}
+
+.ap-status-card p {
+  margin: 0;
+  color: var(--comp-status-card-text-color);
+  font-family: var(--comp-status-card-text-style-font-family);
+  font-size: var(--comp-status-text-style-size);
+  font-weight: var(--comp-status-card-text-style-font-weight);
+  font-style: italic;
+}
+
+.ap-status-card .standalone {
+  align-self: flex-start;
+}
+
+.ap-status-card.blue {
+  background-color: var(--comp-status-card-blue-background-color);
+  border-color: var(--comp-status-card-blue-border-color);
+}
+.ap-status-card.blue .upper > i {
+  color: var(--comp-status-card-blue-icon-color);
+}
+
+.ap-status-card.tagOrange {
+  background-color: var(--comp-status-card-tag-orange-background-color);
+  border-color: var(--comp-status-card-tag-orange-border-color);
+}
+.ap-status-card.tagOrange .upper > i {
+  color: var(--comp-status-card-tag-orange-icon-color);
+}
+
+.ap-status-card.green {
+  background-color: var(--comp-status-card-green-background-color);
+  border-color: var(--comp-status-card-green-border-color);
+}
+.ap-status-card.green .upper > i {
+  color: var(--comp-status-card-green-icon-color);
+}
+
+.ap-status-card.orange {
+  background-color: var(--comp-status-card-orange-background-color);
+  border-color: var(--comp-status-card-orange-border-color);
+}
+.ap-status-card.orange .upper > i {
+  color: var(--comp-status-card-orange-icon-color);
+}
+
+.ap-status-card.grey {
+  background-color: var(--comp-status-card-grey-background-color);
+  border-color: var(--comp-status-card-grey-border-color);
+}
+.ap-status-card.grey .upper > i {
+  color: var(--comp-status-card-grey-icon-color);
+}
+
+.ap-status-card.red {
+  background-color: var(--comp-status-card-red-background-color);
+  border-color: var(--comp-status-card-red-border-color);
+}
+.ap-status-card.red .upper > i {
+  color: var(--comp-status-card-red-icon-color);
+}
+
+@container statuscard (max-width: 130px) {
+  .ap-status-card .upper > i {
+    display: none;
+  }
+}

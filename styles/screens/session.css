@@ -14,6 +14,50 @@
   overflow: hidden;
 }
 
+/* Wizard mode — same panel, two rows: scrollable chat + sticky picker bar.
+   Reuses the .analyse__chat and .analyse__sticky-bar rules from analyse.css
+   (which already work in any flex column container) and just constrains
+   them to the sidebar width. */
+.session__assistant--wizard {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.session__assistant-wizard-chat {
+  overflow-y: auto;
+  padding: var(--ref-spacing-md);
+}
+
+.session__assistant-wizard-bar {
+  border-top: 1px solid var(--app-border-soft);
+  padding: var(--ref-spacing-sm) var(--ref-spacing-md);
+  background: var(--app-surface);
+}
+
+/* The default analyse picker rows are full-page width — tighten them so they
+   read well in the ~400px sidebar. */
+.session__assistant-wizard-bar .analyse__sticky-bar-inner {
+  max-width: none;
+  padding: 0;
+}
+
+.session__assistant-wizard-bar .analyse__option {
+  padding: var(--ref-spacing-xs);
+  gap: var(--ref-spacing-xs);
+}
+
+.session__assistant-wizard-bar .analyse__option-icon {
+  display: none;
+}
+
+.session__assistant-wizard-bar .analyse__option-shortcut {
+  flex-shrink: 0;
+}
+
+.session__assistant-wizard-bar .analyse__hints {
+  margin-top: var(--ref-spacing-xs);
+  font-size: var(--ref-font-size-xs);
+}
+
 .session__assistant-thread {
   overflow-y: auto;
   padding: var(--ref-spacing-md);

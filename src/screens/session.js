@@ -10,13 +10,15 @@ import {
   postAssistantMessage,
   subscribe,
   submitAssistantChoice,
-} from "../assistant.js?v=20";
+} from "../assistant.js?v=21";
 import { getSources, getIdeas, subscribe as subscribeLibrary, addSource } from "../library.js?v=20";
 import { getPosts, attachImageToDraft, subscribe as subscribePostsStore } from "../posts-store.js?v=20";
 import { startDraftFlow, executeDraft } from "../draft-flow.js?v=20";
-import { renderSourceCard } from "../components/source-card.js?v=20";
-import { renderIdeaCard } from "../components/idea-card.js?v=20";
-import { renderIdeasBySource } from "../components/ideas-by-source.js?v=20";
+import { startContextBuildFlow, startActionPickerFlow, handleActionPick } from "../start-flow.js?v=22";
+import * as sidebarWizard from "../sidebar-wizard.js?v=29";
+import { renderPicker, bindWizardKeyboard, unbindWizardKeyboard } from "./_analyse-common.js?v=23";
+import { renderSourceCard } from "../components/source-card.js?v=21";
+import { renderIdeaCard } from "../components/idea-card.js?v=23";
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 
 // Session screen — persistent assistant panel on the left, workspace with
@@ -51,6 +53,7 @@ function readQuery() {
     postsNetwork: params.get("postsNetwork") || "all",
     focusIdea: params.get("focusIdea") || "",
     focusPost: params.get("focusPost") || "",
+    focusSource: params.get("focusSource") || "",
     // Content tab state
     view: params.get("view") || viewFromOldTab || "sources",
   };
@@ -127,12 +130,25 @@ export function renderSession(params, target) {
   `;
 
   bindSession(target, session);
-  wireAssistantPanel(target, session);
+  wireAssistantPanel(target, session, attachedContext);
 }
 
 function renderAssistantPanel(session, attachedContext) {
-  const thread = getThread(session.id, { hasContext: !!attachedContext });
+  // Skip the default greeting if a start flow is queued — its first AI bubble
+  // will introduce the conversation instead. (Read-only: don't consume the
+  // flag here; the bindSession handoff below clears it after dispatching.)
+  const hasPendingStartFlow = !!sessionStorage.getItem("pendingStartFlow");
+  const thread = getThread(session.id, {
+    hasContext: !!attachedContext,
+    skipGreeting: hasPendingStartFlow,
+  });
   const prompts = pickSuggestedPrompts({ hasContext: !!attachedContext });
+
+  // Wizard mode — when sidebar-wizard has state for this session, replace the
+  // normal thread + composer with the analyse-style wizard chrome.
+  if (sidebarWizard.isActive(session.id)) {
+    return renderAssistantPanelWizard(session);
+  }
 
   return html`
     <aside class="session__assistant" aria-label="Assistant panel">
@@ -205,6 +221,30 @@ function renderAssistantPanel(session, attachedContext) {
             <span>${session.name}</span>
             <i class="ap-icon-chevron-down"></i>
           </button>
+        </div>
+      </div>
+    </aside>
+  `;
+}
+
+// Wizard chrome — replaces the normal thread + suggestions + composer when
+// sidebar-wizard is active. Reuses the analyse-* picker rendering and
+// keyboard binding so the UX is identical to the standalone /analyse routes.
+function renderAssistantPanelWizard(session) {
+  const chrome = sidebarWizard.renderChrome(session.id);
+  if (!chrome) return "";
+  return html`
+    <aside class="session__assistant session__assistant--wizard" aria-label="Assistant panel">
+      <div class="session__assistant-wizard-chat analyse__chat" id="sidebarWizardChat">
+        <div class="analyse__chat-inner">${raw(chrome.body)}</div>
+      </div>
+      <div class="analyse__sticky-bar session__assistant-wizard-bar" role="group" aria-label="Answer">
+        <div class="analyse__sticky-bar-inner">
+          ${raw(chrome.picker ? renderPicker(chrome.picker) : "")}
+          <p class="analyse__hints muted">
+            <kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>1</kbd>–<kbd>9</kbd> pick · <kbd>Enter</kbd> submit ·
+            <kbd>Esc</kbd> exit
+          </p>
         </div>
       </div>
     </aside>
@@ -387,7 +427,7 @@ function renderExtractionTurn(message) {
   `;
 }
 
-function wireAssistantPanel(root, session) {
+function wireAssistantPanel(root, session, attachedContext) {
   // Tear down any subscriptions attached to the previous render.
   if (currentUnsubscribe) {
     currentUnsubscribe();
@@ -433,6 +473,48 @@ function wireAssistantPanel(root, session) {
     applyIdeaFocus(root);
   });
 
+  // Subscribe to sidebar-wizard state — when state changes, re-render the
+  // entire assistant panel (wizard chrome <-> normal thread+composer) and
+  // re-bind keyboard nav for the wizard picker.
+  const rebindWizardKeyboardIfActive = () => {
+    const aside = root.querySelector(".session__assistant");
+    if (!aside) return;
+    if (sidebarWizard.isActive(session.id)) {
+      bindWizardKeyboard(aside, {
+        handler: "wizard-answer",
+        onExit: () => {
+          unbindWizardKeyboard();
+          sidebarWizard.exit(session.id);
+        },
+        onCustomSubmit: (value) => {
+          sidebarWizard.answer(session.id, "other", value);
+        },
+        onMultiSubmit: (selectedValues) => {
+          sidebarWizard.answer(session.id, selectedValues);
+        },
+      });
+    } else {
+      unbindWizardKeyboard();
+    }
+  };
+  const offWizard = sidebarWizard.subscribe(session.id, () => {
+    const aside = root.querySelector(".session__assistant");
+    const screen = aside?.parentElement;
+    if (screen) {
+      const fresh = renderAssistantPanel(session, attachedContext);
+      // Replace just the aside — leaves the workspace tab body intact.
+      const tmp = document.createElement("div");
+      tmp.innerHTML = fresh;
+      const newAside = tmp.firstElementChild;
+      if (newAside && aside) {
+        screen.replaceChild(newAside, aside);
+      }
+    }
+    rebindWizardKeyboardIfActive();
+  });
+  // Initial bind in case the panel was rendered with wizard mode already on.
+  rebindWizardKeyboardIfActive();
+
   // Subscribe to posts-store changes — re-render the Posts tab if active.
   const offPosts = subscribePostsStore(session.id, () => {
     const body = root.querySelector("[data-tab-body]");
@@ -456,6 +538,26 @@ function wireAssistantPanel(root, session) {
   if (pendingIdeaId) {
     sessionStorage.removeItem("pendingDraftIdeaId");
     setTimeout(() => startDraftFlow(session.id, pendingIdeaId), 100);
+  }
+
+  // Pending start flow set by the dashboard's New chat button. Same handoff
+  // pattern as pendingDraftIdeaId — read, clear, dispatch with a tiny delay
+  // so the assistant subscriber is wired up before turns get pushed.
+  const pendingStartRaw = sessionStorage.getItem("pendingStartFlow");
+  if (pendingStartRaw) {
+    sessionStorage.removeItem("pendingStartFlow");
+    try {
+      const pendingStart = JSON.parse(pendingStartRaw);
+      setTimeout(() => {
+        if (pendingStart.hasContext) {
+          startActionPickerFlow(session.id, { contextName: pendingStart.contextName });
+        } else {
+          startContextBuildFlow(session.id);
+        }
+      }, 200);
+    } catch {
+      // Malformed JSON — silently skip; no harm done.
+    }
   }
 
   currentUnsubscribe = () => {
@@ -613,7 +715,7 @@ function renderContentWorkspace(libSources, libIdeas, q) {
   const filteredSources = libSources.filter((s) => {
     if (matchesQuery(s.filename) || matchesQuery(s.kind)) return true;
     // Also surface a source if any of its ideas match.
-    return libIdeas.some((i) => i.sourceId === s.id && (matchesQuery(i.title) || matchesQuery(i.body)));
+    return libIdeas.some((i) => (i.sourceIds || []).includes(s.id) && (matchesQuery(i.title) || matchesQuery(i.body)));
   });
 
   const sortedIdeas = sortIdeas(filteredIdeas, sort);
@@ -692,7 +794,9 @@ function sortIdeas(ideas, sort) {
     return copy;
   }
   if (sort === "source") {
-    return copy.sort((a, b) => String(a.sourceId || "").localeCompare(String(b.sourceId || "")));
+    return copy.sort((a, b) =>
+      String((a.sourceIds || [])[0] || "").localeCompare(String((b.sourceIds || [])[0] || "")),
+    );
   }
   if (sort === "state") {
     const rank = { Pinned: 0, Reviewed: 1, Generated: 2, New: 3 };
@@ -721,12 +825,9 @@ function renderAllIdeasBody(ideas, allSources, search) {
       body: search ? `No idea matches "${search}". Try a different term.` : "No ideas yet.",
     });
   }
-  // Group ideas by source so the source name appears once as a separator
-  // instead of repeating on every card.
-  return (
-    renderIdeasBySource(ideas, allSources) ||
-    `<div class="stack-sm">${ideas.map((i) => renderIdeaCard(i, allSources)).join("")}</div>`
-  );
+  // Flat 2-column auto-fill grid — sources are now surfaced inside each card,
+  // so the previous group-by-source separators are redundant.
+  return `<div class="dashboard__ideas-grid">${ideas.map((i) => renderIdeaCard(i, allSources)).join("")}</div>`;
 }
 
 // Called from bindSession to re-render only the content workspace body (not
@@ -744,7 +845,7 @@ function rerenderContentWorkspace(root, session) {
   );
   const filteredSources = libSources.filter((s) => {
     if (matchesQuery(s.filename) || matchesQuery(s.kind)) return true;
-    return libIdeas.some((i) => i.sourceId === s.id && (matchesQuery(i.title) || matchesQuery(i.body)));
+    return libIdeas.some((i) => (i.sourceIds || []).includes(s.id) && (matchesQuery(i.title) || matchesQuery(i.body)));
   });
   const sortedIdeas = sortIdeas(filteredIdeas, contentState.sort);
   const body = root.querySelector("[data-content-body]");
@@ -868,14 +969,42 @@ function renderPostsEmpty(q) {
   `;
 }
 
+function renderPostErrors(post) {
+  if (!post.errors?.length) return "";
+  const body =
+    post.errors.length === 1
+      ? post.errors[0].message
+      : `<ul class="posts__card-errors-list">${post.errors.map((e) => `<li>${e.message}</li>`).join("")}</ul>`;
+  return `
+    <div class="ap-infobox error" role="alert">
+      <i class="ap-icon-error_fill" aria-hidden="true"></i>
+      <div class="ap-infobox-content">
+        <div class="ap-infobox-texts">
+          <span class="ap-infobox-message">${body}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPostScheduled(post) {
+  if (post.status !== "scheduled") return "";
+  const when = post.scheduledForLabel || "later";
+  return `
+    <div class="ap-status-card orange">
+      <div class="upper">
+        <i class="ap-icon-calendar" aria-hidden="true"></i>
+        <div class="flow"><span>Scheduled</span> ${when}</div>
+      </div>
+    </div>
+  `;
+}
+
 function renderPostCard(post, q = {}) {
   const statusPill = (() => {
-    if (post.status === "needs_fixes") {
-      return '<span class="ap-status red">Needs fixes</span>';
-    }
-    if (post.status === "scheduled") {
-      return `<span class="ap-status orange">Scheduled · ${post.scheduledForLabel || ""}</span>`;
-    }
+    // "needs_fixes" surfaces above the card via renderPostErrors — no header pill.
+    // "scheduled" surfaces above the card via renderPostScheduled — no header pill.
+    if (post.status === "needs_fixes" || post.status === "scheduled") return "";
     return '<span class="ap-status green">Draft ready</span>';
   })();
 
@@ -916,43 +1045,46 @@ function renderPostCard(post, q = {}) {
         <i></i>
       </label>
 
-      <article class="ap-card posts__card">
-        <header class="posts__card-header">
-          <div class="posts__card-avatar" aria-hidden="true">${post.author.initials}</div>
-          <div class="posts__card-author">
-            <div class="row posts__card-author-row">
-              <span class="posts__card-name">${post.author.name}</span>
-              <span class="muted">· ${post.author.connection}</span>
+      <div class="posts__card-wrap">
+        ${raw(renderPostErrors(post))} ${raw(renderPostScheduled(post))}
+        <article class="ap-card posts__card">
+          <header class="posts__card-header">
+            <div class="posts__card-avatar" aria-hidden="true">${post.author.initials}</div>
+            <div class="posts__card-author">
+              <div class="row posts__card-author-row">
+                <span class="posts__card-name">${post.author.name}</span>
+                <span class="muted">· ${post.author.connection}</span>
+              </div>
+              <div class="muted posts__card-title">${post.author.title}</div>
+              <div class="muted posts__card-meta">${post.timeLabel} · ${post.author.visibility}</div>
             </div>
-            <div class="muted posts__card-title">${post.author.title}</div>
-            <div class="muted posts__card-meta">${post.timeLabel} · ${post.author.visibility}</div>
-          </div>
-          <div class="posts__card-status">${raw(statusPill)}</div>
-        </header>
+            <div class="posts__card-status">${raw(statusPill)}</div>
+          </header>
 
-        <div class="posts__card-body">${raw(bodyParagraphs)} ${raw(hashtags)} ${raw(cta)}</div>
+          <div class="posts__card-body">${raw(bodyParagraphs)} ${raw(hashtags)} ${raw(cta)}</div>
 
-        ${raw(imageBlock)} ${raw(engagement)}
+          ${raw(imageBlock)} ${raw(engagement)}
 
-        <footer class="posts__card-footer">
-          <button class="posts__card-action" type="button">
-            <i class="ap-icon-thumb-up"></i>
-            <span>Like</span>
-          </button>
-          <button class="posts__card-action" type="button">
-            <i class="ap-icon-single-chat-bubble"></i>
-            <span>Comment</span>
-          </button>
-          <button class="posts__card-action" type="button">
-            <i class="ap-icon-repost"></i>
-            <span>Repost</span>
-          </button>
-          <button class="posts__card-action" type="button">
-            <i class="ap-icon-paper-plane"></i>
-            <span>Send</span>
-          </button>
-        </footer>
-      </article>
+          <footer class="posts__card-footer">
+            <button class="posts__card-action" type="button">
+              <i class="ap-icon-thumb-up"></i>
+              <span>Like</span>
+            </button>
+            <button class="posts__card-action" type="button">
+              <i class="ap-icon-single-chat-bubble"></i>
+              <span>Comment</span>
+            </button>
+            <button class="posts__card-action" type="button">
+              <i class="ap-icon-repost"></i>
+              <span>Repost</span>
+            </button>
+            <button class="posts__card-action" type="button">
+              <i class="ap-icon-paper-plane"></i>
+              <span>Send</span>
+            </button>
+          </footer>
+        </article>
+      </div>
 
       <div class="posts__row-actions" aria-label="Post actions">
         <button type="button" class="ap-icon-button stroked" aria-label="Edit post">
@@ -1006,6 +1138,7 @@ function renderChoiceTurn(message) {
     })
     .join("");
 
+  const submitLabel = message.submitLabel || "Submit";
   const footer = isAnswered
     ? ""
     : `<div class="chat-bubble-choices-footer">
@@ -1014,7 +1147,7 @@ function renderChoiceTurn(message) {
           class="ap-button primary orange"
           data-assistant-choice-submit="${message.id}"
         >
-          <span>Draft them</span>
+          <span>${submitLabel}</span>
         </button>
       </div>`;
 
@@ -1314,6 +1447,43 @@ function bindSession(root, session) {
         return;
       }
 
+      // Sidebar wizard option click — single-select advances immediately,
+      // multi-select toggles the row and waits for the Submit button.
+      const wizardOption = event.target.closest("[data-wizard-answer]");
+      if (wizardOption) {
+        event.preventDefault();
+        const opts = wizardOption.closest(".analyse__options");
+        if (opts?.dataset.multi !== undefined) {
+          const wasSelected = wizardOption.classList.contains("is-selected");
+          wizardOption.classList.toggle("is-selected", !wasSelected);
+          wizardOption.setAttribute("aria-pressed", !wasSelected ? "true" : "false");
+        } else {
+          sidebarWizard.answer(session.id, wizardOption.dataset.wizardAnswer);
+        }
+        return;
+      }
+
+      // Multi-select submit — collect every .is-selected in the picker and
+      // hand the array to the wizard as the answer value.
+      const wizardSubmitBtn = event.target.closest("[data-wizard-answer-submit]");
+      if (wizardSubmitBtn) {
+        event.preventDefault();
+        const opts = wizardSubmitBtn.closest(".analyse__options");
+        const selected = opts
+          ? Array.from(opts.querySelectorAll("[data-wizard-answer].is-selected")).map((el) => el.dataset.wizardAnswer)
+          : [];
+        if (selected.length) sidebarWizard.answer(session.id, selected);
+        return;
+      }
+
+      // Skip button — bumps the wizard to the next stage's intake (or to
+      // the memorize step if this was the last stage).
+      if (event.target.closest("[data-wizard-answer-skip]")) {
+        event.preventDefault();
+        sidebarWizard.skipStage(session.id);
+        return;
+      }
+
       // Channel-picker chip toggle — visual only, no state change yet.
       const choiceChip = event.target.closest("[data-assistant-choice]");
       if (choiceChip && choiceChip.tagName === "BUTTON") {
@@ -1343,6 +1513,8 @@ function bindSession(root, session) {
         submitAssistantChoice(session.id, msgId, selectedValues);
         if (msg.handler === "draft-channels" && msg.context?.ideaId) {
           executeDraft(session.id, msg.context.ideaId, selectedValues);
+        } else if (msg.handler === "start-action") {
+          handleActionPick(session.id, msg, selectedValues, { setQuery });
         }
         return;
       }
@@ -1397,9 +1569,17 @@ function bindSession(root, session) {
         return;
       }
 
-      // Idea-card source link doubles as "Open idea" — give the card a
-      // visual pulse (dossier view is future work). Pin + more-menu behavior
-      // is encapsulated inside src/components/idea-card.js.
+      // Idea-card source chips — navigate to the source within this session.
+      const openSrc = event.target.closest("[data-source-open]");
+      if (openSrc) {
+        event.preventDefault();
+        setQuery({ tab: "content", view: "sources", focusSource: openSrc.dataset.sourceOpen });
+        return;
+      }
+
+      // Idea-card title click → "Open idea": give the card a visual pulse
+      // (dossier view is future work). Pin + more-menu behavior is
+      // encapsulated inside src/components/idea-card.js.
       const openBtn = event.target.closest("[data-idea-open]");
       if (openBtn) {
         event.preventDefault();

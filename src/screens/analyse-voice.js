@@ -12,7 +12,7 @@ import {
   bindWizardKeyboard,
   unbindWizardKeyboard,
   scrollChatToLatest,
-} from "./_analyse-common.js?v=20";
+} from "./_analyse-common.js?v=23";
 
 // Voice wizard — conversational flow.
 // Step 0        → "Want me to learn how you write?"

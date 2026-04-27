@@ -19,9 +19,9 @@ function newId() {
 
 // --- Public API -----------------------------------------------------------
 
-export function getThread(sessionId, { hasContext = false } = {}) {
+export function getThread(sessionId, { hasContext = false, skipGreeting = false } = {}) {
   if (!threads.has(sessionId)) {
-    seedThread(sessionId, { hasContext });
+    seedThread(sessionId, { hasContext, skipGreeting });
   }
   return threads.get(sessionId);
 }
@@ -217,7 +217,10 @@ export function postUserChoice(sessionId, { text }) {
 // Push an "assistant-choice" turn that renders a set of toggle chips plus a
 // submit button. Keeps the module generic — the handler string identifies
 // what the click delegate in session.js should do on submit.
-export function postAssistantChoice(sessionId, { text, choices, multi = true, handler = "", context = {} }) {
+export function postAssistantChoice(
+  sessionId,
+  { text, choices, multi = true, handler = "", context = {}, submitLabel = "Submit" },
+) {
   const thread = getThread(sessionId);
   thread.push({
     id: newId(),
@@ -229,6 +232,7 @@ export function postAssistantChoice(sessionId, { text, choices, multi = true, ha
     multi,
     handler,
     context,
+    submitLabel,
     status: "ready",
     createdAt: Date.now(),
   });
@@ -295,7 +299,14 @@ function notify(sessionId) {
   set.forEach((fn) => fn(snapshot));
 }
 
-function seedThread(sessionId, { hasContext }) {
+function seedThread(sessionId, { hasContext, skipGreeting }) {
+  // Start-flow takes over the intro — skip the default greeting so we don't
+  // double up "Hi —" + the flow's first AI turn.
+  if (skipGreeting) {
+    threads.set(sessionId, []);
+    return;
+  }
+
   const greeting = hasContext
     ? "Hi — I can compare ideas, pick the strongest signal, or draft a post. Pick a suggestion below, type a question, or drop a source."
     : "Hi — I'll help you pick sources, sharpen angles, and draft posts. Attach a context (Voice, Brief, Brand) any time to make my suggestions sharper.";

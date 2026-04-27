@@ -86,7 +86,7 @@ export const ideas = [
     channels: ["linkedin"],
     state: "Pinned",
     pinned: true,
-    sourceId: "src-1",
+    sourceIds: ["src-1", "src-2"],
     extractedAt: "2d ago",
   },
   {
@@ -101,7 +101,7 @@ export const ideas = [
     channels: ["linkedin", "x"],
     state: "New",
     pinned: false,
-    sourceId: "src-1",
+    sourceIds: ["src-1", "src-2", "src-3"],
     extractedAt: "2d ago",
   },
   {
@@ -116,7 +116,7 @@ export const ideas = [
     channels: ["linkedin", "instagram"],
     state: "New",
     pinned: false,
-    sourceId: "src-2",
+    sourceIds: ["src-2"],
     extractedAt: "2d ago",
   },
   {
@@ -131,7 +131,7 @@ export const ideas = [
     channels: ["linkedin"],
     state: "Reviewed",
     pinned: false,
-    sourceId: "src-3",
+    sourceIds: ["src-3"],
     extractedAt: "just now",
   },
   {
@@ -146,7 +146,7 @@ export const ideas = [
     channels: ["x"],
     state: "New",
     pinned: false,
-    sourceId: "src-1",
+    sourceIds: ["src-1"],
     extractedAt: "2d ago",
   },
 ];
@@ -348,6 +348,20 @@ export const posts = [
     cta: "",
     stats: { likes: 0, comments: 0, reposts: 0 },
     hasImage: false,
+    errors: [
+      {
+        id: "e-3-1",
+        message: "Caption exceeds 2,200 characters for LinkedIn.",
+        field: "caption",
+        platform: "linkedin",
+      },
+      {
+        id: "e-3-2",
+        message: "First comment requires at least one mention.",
+        field: "firstComment",
+        platform: "linkedin",
+      },
+    ],
   },
   {
     id: "post-4",
@@ -384,15 +398,23 @@ export const posts = [
     id: "post-6",
     author: AUTHOR_MC,
     network: "linkedin",
-    status: "ready",
+    status: "needs_fixes",
     timeLabel: "3d",
     text: [
       "Behind-the-scenes on the founder keynote — including the parts that got cut. The cuts are more instructive than the keynote itself.",
     ],
     hashtags: ["FounderKeynote", "BTS"],
     cta: "",
-    stats: { likes: 93, comments: 6, reposts: 3 },
+    stats: { likes: 0, comments: 0, reposts: 0 },
     hasImage: false,
+    errors: [
+      {
+        id: "e-6-1",
+        message: "Image dimensions invalid for LinkedIn (1200×627 recommended).",
+        field: "media",
+        platform: "linkedin",
+      },
+    ],
   },
 ];
 

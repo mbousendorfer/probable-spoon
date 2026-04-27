@@ -1,18 +1,15 @@
 // Shared source-card renderer — used by the dashboard Content section and
 // the session Content tab (By source view).
 //
-// Matches Figma 42:5197. The card is now a compact one-row listing:
+// Matches Figma 42:5197. The card is a compact one-row listing:
 // kind-icon in a tinted square, filename + meta sub, then quiet action
-// buttons on the right ("Ask", "View all N ideas", more).
+// buttons on the right ("Ask", more).
 //
 // When the source is still processing, the icon box turns electric-blue,
-// the icon becomes a spinner, the filename goes grey-60, "Ask" becomes
-// disabled and the primary CTA turns into a disabled "Processing" pill.
+// the icon becomes a spinner, the filename goes grey-60, and "Ask" is
+// disabled.
 //
 // Source shape: { id, filename, kind, status, ideaCount, addedAt, ... }
-// Idea shape is not read here anymore (the embedded idea-preview rows that
-// used to live inside the card were removed in this redesign — the user
-// jumps into All ideas via "View all N ideas" instead).
 
 const KIND_ICON = {
   pdf: "ap-icon-file--pdf",
@@ -26,8 +23,10 @@ function iconFor(kind) {
 
 export function renderSourceCard(source, allIdeas = []) {
   const isProcessing = source.status === "Processing";
-  const ideasForSource = allIdeas.filter((i) => i.sourceId === source.id);
-  const totalIdeas = typeof source.ideaCount === "number" ? source.ideaCount : ideasForSource.length;
+  const totalIdeas =
+    typeof source.ideaCount === "number"
+      ? source.ideaCount
+      : allIdeas.filter((i) => (i.sourceIds || []).includes(source.id)).length;
 
   // Sub-line varies by state. While processing we don't yet have ideas to
   // count, so we just show "Processing · Added <when>".
@@ -40,15 +39,11 @@ export function renderSourceCard(source, allIdeas = []) {
     ? `<span class="source-card__spinner" role="status" aria-label="Processing"></span>`
     : `<i class="${iconFor(source.kind)} source-card__kind-icon" aria-hidden="true"></i>`;
 
-  // Primary CTA — View all ideas, replaced with a quiet "Processing" pill
-  // while the source is still being analysed.
-  const primaryCta = isProcessing
+  // Processing pill — shown in place of actions while the source is still
+  // being analysed.
+  const processingPill = isProcessing
     ? `<span class="ap-button secondary blue source-card__primary source-card__primary--processing" aria-disabled="true">Processing</span>`
-    : `<a
-        class="ap-button secondary blue source-card__primary"
-        href="#"
-        data-source-view="${source.id}"
-      >View all ${totalIdeas} idea${totalIdeas === 1 ? "" : "s"}</a>`;
+    : "";
 
   // "Ask" — available always, but visually muted while processing.
   const askButton = `<button
@@ -72,7 +67,7 @@ export function renderSourceCard(source, allIdeas = []) {
 
       <div class="source-card__actions">
         ${askButton}
-        ${primaryCta}
+        ${processingPill}
         <button
           type="button"
           class="ap-icon-button transparent source-card__more"
