@@ -38,28 +38,6 @@ function iconFor(kind) {
   return KIND_ICON[(kind || "").toLowerCase()] || "ap-icon-file";
 }
 
-const CHANNEL_META = {
-  linkedin: { icon: "ap-icon-linkedin", label: "LinkedIn" },
-  x: { icon: "ap-icon-twitter-official", label: "X" },
-  twitter: { icon: "ap-icon-twitter-official", label: "X" },
-  instagram: { icon: "ap-icon-instagram", label: "Instagram" },
-};
-
-// Still exported — source-card.js (Library view) uses it in compact mode
-// to show tiny channel icons on each idea preview row.
-export function renderChannelChips(channels = [], { compact = false } = {}) {
-  if (!channels || channels.length === 0) return "";
-  return `<span class="channel-chips${compact ? " channel-chips--compact" : ""}" aria-label="Channel fit">${channels
-    .map((c) => {
-      const meta = CHANNEL_META[c.toLowerCase()];
-      if (!meta) return "";
-      return compact
-        ? `<i class="${meta.icon} channel-chips__icon" title="${meta.label}" aria-label="${meta.label}"></i>`
-        : `<span class="channel-chip"><i class="${meta.icon}"></i><span>${meta.label}</span></span>`;
-    })
-    .join("")}</span>`;
-}
-
 // ── Overflow menu — one open at a time ─────────────────────────────────
 //
 // idea-card manages its own menu state so screen-level code (dashboard.js,
