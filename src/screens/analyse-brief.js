@@ -12,7 +12,7 @@ import {
   bindWizardKeyboard,
   unbindWizardKeyboard,
   scrollChatToLatest,
-} from "./_analyse-common.js?v=23";
+} from "./_analyse-common.js?v=24";
 
 // Strategy brief wizard — one step per section + summary.
 

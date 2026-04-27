@@ -1,7 +1,13 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=21";
-import { getSessionById, getContextById, contextComponentsFor, contexts as allContexts } from "../mocks.js?v=22";
+import {
+  getSessionById,
+  getContextById,
+  contextComponentsFor,
+  contexts as allContexts,
+  socialAccounts,
+} from "../mocks.js?v=22";
 import { isNewUser } from "../user-mode.js?v=20";
 import {
   getThread,
@@ -16,12 +22,12 @@ import { getPosts, attachImageToDraft, subscribe as subscribePostsStore } from "
 import { startDraftFlow, executeDraft } from "../draft-flow.js?v=20";
 import { startContextBuildFlow, startActionPickerFlow, handleActionPick } from "../start-flow.js?v=22";
 import * as sidebarWizard from "../sidebar-wizard.js?v=29";
-import { renderPicker, bindWizardKeyboard, unbindWizardKeyboard } from "./_analyse-common.js?v=23";
+import * as inlineQuestion from "../inline-question.js?v=20";
+import { renderPicker, bindWizardKeyboard, unbindWizardKeyboard } from "./_analyse-common.js?v=24";
 import { renderSourceCard } from "../components/source-card.js?v=21";
 import { renderIdeaCard } from "../components/idea-card.js?v=23";
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
-import { open as openSocialPickerModal } from "../components/social-picker-modal.js?v=20";
 
 // Session screen — persistent assistant panel on the left, workspace with
 // tabs on the right.
@@ -151,6 +157,11 @@ function renderAssistantPanel(session, attachedContext) {
   if (sidebarWizard.isActive(session.id)) {
     return renderAssistantPanelWizard(session);
   }
+  // Inline single-question mode — same chrome as the wizard but for one-shot
+  // pickers (e.g. "Which profile to draft for?").
+  if (inlineQuestion.isActive(session.id)) {
+    return renderAssistantPanelQuestion(session);
+  }
 
   return html`
     <aside class="session__assistant" aria-label="Assistant panel">
@@ -251,6 +262,60 @@ function renderAssistantPanelWizard(session) {
       </div>
     </aside>
   `;
+}
+
+// Inline question chrome — same shell as the wizard but for one-shot pickers.
+function renderAssistantPanelQuestion(session) {
+  const chrome = inlineQuestion.renderChrome(session.id);
+  if (!chrome) return "";
+  return html`
+    <aside class="session__assistant session__assistant--wizard" aria-label="Assistant panel">
+      <div class="session__assistant-wizard-chat analyse__chat" id="inlineQuestionChat">
+        <div class="analyse__chat-inner">${raw(chrome.body)}</div>
+      </div>
+      <div class="analyse__sticky-bar session__assistant-wizard-bar" role="group" aria-label="Answer">
+        <div class="analyse__sticky-bar-inner">
+          ${raw(chrome.picker ? renderPicker(chrome.picker) : "")}
+          <p class="analyse__hints muted">
+            <kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>1</kbd>–<kbd>9</kbd> pick · <kbd>Enter</kbd> submit ·
+            <kbd>Esc</kbd> exit
+          </p>
+        </div>
+      </div>
+    </aside>
+  `;
+}
+
+// Build + show the "Which profile?" question. Used both from the in-session
+// Draft Post button and from the dashboard's Draft Post handler (via the
+// pendingDraftIdeaId hand-off in sessionStorage).
+function askProfileQuestion(sessionId, ideaId) {
+  const connected = socialAccounts.filter((a) => a.status === "connected");
+  if (connected.length === 0) {
+    postAssistantMessage(
+      sessionId,
+      "You don't have any connected social profiles yet. Open Settings → Social accounts to connect one, then come back to draft.",
+    );
+    return;
+  }
+  inlineQuestion.ask(sessionId, {
+    intro: "Which profile should I draft this for?",
+    title: "Pick a connected social profile",
+    stepLabel: "Profile",
+    items: connected.map((a) => ({
+      value: a.id,
+      label: a.platformLabel,
+      caption: a.handle ? (a.kind ? `${a.kind} · ${a.handle}` : a.handle) : a.kind || "",
+      imgSrc: a.logo,
+    })),
+    onPick: (accountId) => {
+      sessionStorage.setItem("pendingDraftAccountId", accountId);
+      startDraftFlow(sessionId, ideaId);
+    },
+    onSkip: () => {
+      // Just exit the question — no draft started, no error.
+    },
+  });
 }
 
 function renderThread(messages) {
@@ -495,16 +560,26 @@ function wireAssistantPanel(root, session, attachedContext) {
           sidebarWizard.answer(session.id, selectedValues);
         },
       });
+    } else if (inlineQuestion.isActive(session.id)) {
+      bindWizardKeyboard(aside, {
+        handler: "inline-question",
+        onExit: () => {
+          unbindWizardKeyboard();
+          inlineQuestion.skip(session.id);
+        },
+        onCustomSubmit: (value) => {
+          inlineQuestion.submitCustom(session.id, value);
+        },
+      });
     } else {
       unbindWizardKeyboard();
     }
   };
-  const offWizard = sidebarWizard.subscribe(session.id, () => {
+  const refreshAssistantAside = () => {
     const aside = root.querySelector(".session__assistant");
     const screen = aside?.parentElement;
     if (screen) {
       const fresh = renderAssistantPanel(session, attachedContext);
-      // Replace just the aside — leaves the workspace tab body intact.
       const tmp = document.createElement("div");
       tmp.innerHTML = fresh;
       const newAside = tmp.firstElementChild;
@@ -513,8 +588,10 @@ function wireAssistantPanel(root, session, attachedContext) {
       }
     }
     rebindWizardKeyboardIfActive();
-  });
-  // Initial bind in case the panel was rendered with wizard mode already on.
+  };
+  const offWizard = sidebarWizard.subscribe(session.id, refreshAssistantAside);
+  const offInlineQuestion = inlineQuestion.subscribe(session.id, refreshAssistantAside);
+  // Initial bind in case the panel was rendered with wizard / question mode on.
   rebindWizardKeyboardIfActive();
 
   // Subscribe to posts-store changes — re-render the Posts tab if active.
@@ -539,7 +616,7 @@ function wireAssistantPanel(root, session, attachedContext) {
   const pendingIdeaId = sessionStorage.getItem("pendingDraftIdeaId");
   if (pendingIdeaId) {
     sessionStorage.removeItem("pendingDraftIdeaId");
-    setTimeout(() => startDraftFlow(session.id, pendingIdeaId), 100);
+    setTimeout(() => askProfileQuestion(session.id, pendingIdeaId), 100);
   }
 
   // Pending start flow set by the dashboard's New chat button. Same handoff
@@ -566,6 +643,8 @@ function wireAssistantPanel(root, session, attachedContext) {
     offThread();
     offLibrary();
     offPosts();
+    offWizard();
+    offInlineQuestion();
     stopThinkingTimer();
   };
 }
@@ -1487,6 +1566,29 @@ function bindSession(root, session) {
         return;
       }
 
+      // Inline single-question pick / skip / custom-submit.
+      const inlineQuestionBtn = event.target.closest("[data-inline-question]");
+      if (inlineQuestionBtn) {
+        event.preventDefault();
+        inlineQuestion.pick(session.id, inlineQuestionBtn.dataset.inlineQuestion);
+        return;
+      }
+      if (event.target.closest("[data-inline-question-skip]")) {
+        event.preventDefault();
+        inlineQuestion.skip(session.id);
+        return;
+      }
+      const inlineQuestionCustomSubmit = event.target.closest("[data-inline-question-custom-submit]");
+      if (inlineQuestionCustomSubmit) {
+        event.preventDefault();
+        const input = inlineQuestionCustomSubmit
+          .closest(".analyse__options")
+          ?.querySelector("[data-inline-question-custom]");
+        const value = input?.value?.trim();
+        if (value) inlineQuestion.submitCustom(session.id, value);
+        return;
+      }
+
       // Channel-picker chip toggle — visual only, no state change yet.
       const choiceChip = event.target.closest("[data-assistant-choice]");
       if (choiceChip && choiceChip.tagName === "BUTTON") {
@@ -1598,14 +1700,7 @@ function bindSession(root, session) {
       if (event.target.closest("[data-idea-generate]")) {
         event.preventDefault();
         const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
-        if (ideaId) {
-          openSocialPickerModal({
-            onPick: (account) => {
-              sessionStorage.setItem("pendingDraftAccountId", account.id);
-              startDraftFlow(session.id, ideaId);
-            },
-          });
-        }
+        if (ideaId) askProfileQuestion(session.id, ideaId);
         return;
       }
 

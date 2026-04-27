@@ -193,7 +193,7 @@ export function renderPicker(picker) {
         >
           <span class="analyse__option-shortcut" aria-hidden="true">${i + 1}</span>
           <span class="analyse__option-icon">
-            <i class="${it.icon}"></i>
+            ${it.imgSrc ? `<img src="${it.imgSrc}" alt="" />` : `<i class="${it.icon || "ap-icon-circle"}"></i>`}
           </span>
           <span class="analyse__option-text">
             <span class="analyse__option-label">${it.label}</span>

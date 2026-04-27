@@ -45,7 +45,10 @@
   gap: var(--ref-spacing-xs);
 }
 
-.session__assistant-wizard-bar .analyse__option-icon {
+/* Hide DS-icon variant of the option-icon in the sidebar (compact layout),
+ * but keep image-variant visible — image options carry brand logos that need
+ * to render (e.g. inline-question social profile picker). */
+.session__assistant-wizard-bar .analyse__option-icon:not(:has(img)) {
   display: none;
 }
 

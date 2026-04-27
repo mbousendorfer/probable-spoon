@@ -2,7 +2,6 @@ import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=21";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
-import { open as openSocialPickerModal } from "../components/social-picker-modal.js?v=20";
 import { recentSessions, templateStarters, sources, ideas } from "../mocks.js?v=22";
 import { isNewUser } from "../user-mode.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=21";
@@ -327,13 +326,10 @@ function bindDashboard(root) {
       event.preventDefault();
       const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
       if (ideaId) {
-        openSocialPickerModal({
-          onPick: (account) => {
-            sessionStorage.setItem("pendingDraftIdeaId", ideaId);
-            sessionStorage.setItem("pendingDraftAccountId", account.id);
-            navigate(`/session/${defaultSessionId}?tab=content&view=ideas`);
-          },
-        });
+        // Hand off to the session — it consumes the flag on mount and shows
+        // the inline "Which profile?" question before starting the draft.
+        sessionStorage.setItem("pendingDraftIdeaId", ideaId);
+        navigate(`/session/${defaultSessionId}?tab=content&view=ideas`);
       }
       return;
     }

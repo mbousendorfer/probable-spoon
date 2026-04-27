@@ -10,7 +10,7 @@ import {
   bindWizardKeyboard,
   unbindWizardKeyboard,
   scrollChatToLatest,
-} from "./_analyse-common.js?v=23";
+} from "./_analyse-common.js?v=24";
 
 // Brand theme wizard.
 // Step 0        → URL input (custom sticky footer instead of a picker)

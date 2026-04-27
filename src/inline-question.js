@@ -1,0 +1,105 @@
+// Inline single-question picker — renders inside the assistant panel using
+// the same numbered-option-row UX as the analyse-* wizards. Reusable for any
+// "pick one of N options before continuing" prompt: which social profile,
+// which language, which tone, etc.
+//
+// Sibling of sidebar-wizard.js but for one-shot questions (no multi-stage
+// flow). Both share the wizardChrome + renderPicker rendering primitives,
+// keyboard nav, and the "session__assistant--wizard" chrome in session.js.
+//
+// Public API:
+//   ask(sessionId, opts)     → show the question; opts described below
+//   pick(sessionId, value)   → resolve with the chosen value
+//   submitCustom(sessionId, value) → resolve with a free-text answer
+//   skip(sessionId)          → call onSkip and exit
+//   exit(sessionId)          → just clear state (no callbacks)
+//   isActive(sessionId)      → boolean
+//   getState(sessionId)      → current state or null
+//   renderChrome(sessionId)  → { body, picker } for the current question
+//   subscribe(sessionId, fn) → re-render hook
+//
+// Options accepted by ask():
+//   intro             string  — assistant message rendered above the picker
+//   title             string  — question header inside the picker card
+//   stepLabel         string  — small label on the top right (e.g. "Profile")
+//   skipLabel         string  — label on the Skip button (default "Skip")
+//   items             array   — [{ value, label, caption?, icon?, imgSrc? }]
+//   customPlaceholder string  — when set, render a free-text option row
+//   onPick(value)     fn      — called with the chosen item's value
+//   onCustom(value)   fn      — called with the free-text answer
+//   onSkip()          fn      — called when Skip / Esc; if omitted, no skip btn
+
+import { chatTurn } from "./screens/_analyse-common.js?v=24";
+
+const states = new Map(); // sessionId → opts
+const subscribers = new Map(); // sessionId → Set<fn>
+
+function notify(sessionId) {
+  const subs = subscribers.get(sessionId);
+  if (subs) for (const fn of subs) fn();
+}
+
+export function ask(sessionId, opts) {
+  states.set(sessionId, opts);
+  notify(sessionId);
+}
+
+export function pick(sessionId, value) {
+  const s = states.get(sessionId);
+  if (!s) return;
+  states.delete(sessionId);
+  notify(sessionId);
+  s.onPick?.(value);
+}
+
+export function submitCustom(sessionId, value) {
+  const s = states.get(sessionId);
+  if (!s) return;
+  states.delete(sessionId);
+  notify(sessionId);
+  if (s.onCustom) s.onCustom(value);
+  else s.onPick?.(value);
+}
+
+export function skip(sessionId) {
+  const s = states.get(sessionId);
+  if (!s) return;
+  states.delete(sessionId);
+  notify(sessionId);
+  s.onSkip?.();
+}
+
+export function exit(sessionId) {
+  if (!states.has(sessionId)) return;
+  states.delete(sessionId);
+  notify(sessionId);
+}
+
+export function isActive(sessionId) {
+  return states.has(sessionId);
+}
+
+export function getState(sessionId) {
+  return states.get(sessionId) || null;
+}
+
+export function subscribe(sessionId, fn) {
+  if (!subscribers.has(sessionId)) subscribers.set(sessionId, new Set());
+  subscribers.get(sessionId).add(fn);
+  return () => subscribers.get(sessionId)?.delete(fn);
+}
+
+export function renderChrome(sessionId) {
+  const s = states.get(sessionId);
+  if (!s) return null;
+  const body = s.intro ? chatTurn({ role: "ai", text: s.intro }) : "";
+  const picker = {
+    items: s.items || [],
+    handler: "inline-question",
+    title: s.title || null,
+    stepIndicator: s.stepLabel || null,
+    skipLabel: s.onSkip ? s.skipLabel || "Skip" : null,
+    customPlaceholder: s.customPlaceholder || null,
+  };
+  return { body, picker };
+}

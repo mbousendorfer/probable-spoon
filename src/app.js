@@ -5,15 +5,14 @@ import { init as initBugReportModal } from "./components/bug-report-modal.js?v=2
 import { init as initFeedbackModal } from "./components/feedback-modal.js?v=20";
 import { init as initGenerateImageModal } from "./components/generate-image-modal.js?v=20";
 import { init as initSettingsDrawer } from "./components/settings-drawer.js?v=21";
-import { init as initSocialPickerModal } from "./components/social-picker-modal.js?v=20";
-import { renderDashboard } from "./screens/dashboard.js?v=30";
-import { renderSession } from "./screens/session.js?v=39";
+import { renderDashboard } from "./screens/dashboard.js?v=31";
+import { renderSession } from "./screens/session.js?v=40";
 import { renderAnalyseHub } from "./screens/analyse-hub.js?v=20";
 import { renderAnalyseVoice } from "./screens/analyse-voice.js?v=20";
 import { renderAnalyseBrief } from "./screens/analyse-brief.js?v=20";
 import { renderAnalyseBrand } from "./screens/analyse-brand.js?v=20";
 import { renderAnalyseSummary } from "./screens/analyse-summary.js?v=20";
-import { unbindWizardKeyboard } from "./screens/_analyse-common.js?v=23";
+import { unbindWizardKeyboard } from "./screens/_analyse-common.js?v=24";
 
 // Route table.
 // Every screen is responsible for calling renderTopbar() itself so the crumb
@@ -45,5 +44,4 @@ initBugReportModal();
 initFeedbackModal();
 initGenerateImageModal();
 initSettingsDrawer();
-initSocialPickerModal();
 start();

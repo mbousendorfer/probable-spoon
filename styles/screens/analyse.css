@@ -298,6 +298,13 @@
   color: var(--ref-color-grey-100);
   border-radius: var(--app-radius-md);
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.analyse__option-icon > img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .analyse__option-text {
