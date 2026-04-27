@@ -478,7 +478,7 @@ body.has-modal {
 }
 
 .gen-derive-btn i {
-  font-size: 14px;
+  font-size: var(--ref-font-size-sm);
 }
 
 /* Chip selectors — single-select with toggle-off. */
@@ -519,7 +519,7 @@ body.has-modal {
 }
 
 .gen-chip-icon {
-  font-size: 14px;
+  font-size: var(--ref-font-size-sm);
   line-height: 1;
 }
 
