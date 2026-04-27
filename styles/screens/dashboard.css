@@ -542,7 +542,7 @@
 .idea-card__sources-chevron {
   font-size: var(--sys-icon-css-xs);
   color: var(--ref-color-grey-80);
-  transition: transform 150ms ease;
+  transition: transform var(--ref-animation-short) ease;
 }
 
 .idea-card[data-sources-open="true"] .idea-card__sources-chevron {

@@ -35,8 +35,8 @@
   gap: var(--ref-spacing-xs);
   cursor: pointer;
   transition:
-    border-color 0.15s,
-    background 0.15s;
+    border-color var(--ref-animation-short),
+    background var(--ref-animation-short);
   background: var(--ref-color-white);
 }
 

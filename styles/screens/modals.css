@@ -141,9 +141,9 @@ body.has-modal {
   cursor: pointer;
   font-family: inherit;
   transition:
-    border-color 0.15s,
-    background 0.15s,
-    color 0.15s;
+    border-color var(--ref-animation-short),
+    background var(--ref-animation-short),
+    color var(--ref-animation-short);
 }
 
 .bug-category-chip:hover {
@@ -172,8 +172,8 @@ body.has-modal {
   color: var(--ref-color-grey-150);
   background: var(--ref-color-white);
   transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+    border-color var(--ref-animation-short),
+    box-shadow var(--ref-animation-short);
   box-sizing: border-box;
 }
 
@@ -216,8 +216,8 @@ body.has-modal {
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-md);
   transition:
-    border-color 0.15s,
-    background 0.15s;
+    border-color var(--ref-animation-short),
+    background var(--ref-animation-short);
   user-select: none;
 }
 
