@@ -1,7 +1,7 @@
 import { html } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
-import { open as openBugReportModal } from "./bug-report-modal.js?v=20";
-import { open as openFeedbackModal } from "./feedback-modal.js?v=20";
+import { open as openBugReportModal } from "./bug-report-modal.js?v=21";
+import { open as openFeedbackModal } from "./feedback-modal.js?v=24";
 import { open as openSettingsDrawer } from "./settings-drawer.js?v=21";
 
 // Persistent top bar. The wireframe shows it on every screen (dashboard, session,

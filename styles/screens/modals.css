@@ -394,6 +394,34 @@ body.has-modal {
   align-items: center;
   justify-content: center;
   color: var(--ref-color-green-100);
+  animation: app-success-pop 360ms var(--app-ease-bounce) both;
+}
+
+@keyframes app-success-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── Modal submit-button spinner ─────────────────────────── */
+
+.bug-report-modal__submit-spinner,
+.feedback-modal__submit-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: var(--ref-spacing-xxs);
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--app-radius-circle);
+  vertical-align: -2px;
+  animation: app-spin 0.9s linear infinite;
+  opacity: 0.85;
 }
 
 .bug-report-modal__success h3,

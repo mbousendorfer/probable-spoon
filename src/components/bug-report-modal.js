@@ -356,7 +356,7 @@ export function init() {
     }
     problemInput.classList.remove("invalid");
     submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting…";
+    submitBtn.innerHTML = `<span class="bug-report-modal__submit-spinner" aria-hidden="true"></span>Submitting…`;
     // In a real app we'd post { category, action, problem, screenshot, context }.
     void {
       category: selectedCategory && CATEGORY_LABELS[selectedCategory],
