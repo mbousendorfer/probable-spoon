@@ -95,12 +95,24 @@
   white-space: nowrap;
 }
 
+.assistant-prompt {
+  transition:
+    background-color var(--ref-animation-short) var(--app-ease-out),
+    border-color var(--ref-animation-short) var(--app-ease-out),
+    color var(--ref-animation-short) var(--app-ease-out);
+}
+
 .assistant-prompt:hover,
 .assistant-prompt:focus-visible {
   background: var(--ref-color-electric-blue-05);
   border-color: var(--ref-color-electric-blue-60);
   color: var(--ref-color-electric-blue-150);
   outline: none;
+}
+
+.assistant-prompt:active {
+  background: var(--ref-color-electric-blue-10);
+  border-color: var(--ref-color-electric-blue-100);
 }
 
 /* Assistant notice (Figma 25:1043 / 25:1054) — a mermaid `.ap-status` pill
@@ -298,10 +310,20 @@
   font-size: var(--sys-icon-css-sm);
 }
 
+.extraction-turn__idea-card-thumb {
+  transition:
+    color var(--ref-animation-short) var(--app-ease-out),
+    background-color var(--ref-animation-short) var(--app-ease-out);
+}
+
 .extraction-turn__idea-card-thumb:hover,
 .extraction-turn__idea-card-thumb:focus-visible {
   color: var(--ref-color-electric-blue-150);
   outline: none;
+}
+
+.extraction-turn__idea-card-thumb:active {
+  background: var(--ref-color-electric-blue-10);
 }
 
 .extraction-turn__idea-card-thumb.is-active {
@@ -442,10 +464,18 @@
   text-align: left;
 }
 
+.session__composer-session {
+  transition: background-color var(--ref-animation-short) var(--app-ease-out);
+}
+
 .session__composer-session:hover,
 .session__composer-session:focus-visible {
   background: var(--ref-color-grey-10);
   outline: none;
+}
+
+.session__composer-session:active {
+  background: var(--ref-color-grey-20);
 }
 
 .session__composer-session i {
@@ -492,10 +522,18 @@
   text-align: left;
 }
 
+.assistant-attach__item {
+  transition: background-color var(--ref-animation-short) var(--app-ease-out);
+}
+
 .assistant-attach__item:hover,
 .assistant-attach__item:focus-visible {
   background: var(--app-surface-subtle);
   outline: none;
+}
+
+.assistant-attach__item:active {
+  background: var(--ref-color-grey-10);
 }
 
 /* ---------- Workspace ---------- */

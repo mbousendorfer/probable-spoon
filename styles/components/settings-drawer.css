@@ -302,6 +302,11 @@
   border-color: var(--ref-color-grey-60);
 }
 
+.settings-drawer__radio-card:active {
+  background: var(--ref-color-grey-05);
+  border-color: var(--ref-color-orange-100);
+}
+
 .settings-drawer__radio-card.selected {
   border-color: var(--ref-color-orange-100);
   background: var(--ref-color-orange-10);

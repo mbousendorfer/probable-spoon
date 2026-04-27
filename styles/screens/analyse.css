@@ -36,11 +36,18 @@
   cursor: pointer;
   font-family: inherit;
   background: var(--app-surface);
-  transition: border-color 120ms ease;
+  transition:
+    border-color var(--ref-animation-short) var(--app-ease-out),
+    background-color var(--ref-animation-short) var(--app-ease-out);
 }
 
 .analyse__hub-card:hover {
   border-color: var(--ref-color-electric-blue-60);
+}
+
+.analyse__hub-card:active {
+  background: var(--ref-color-electric-blue-05);
+  border-color: var(--ref-color-electric-blue-100);
 }
 
 .analyse__hub-card-icon {
@@ -189,7 +196,7 @@
   border-bottom: 1px solid var(--app-border-soft);
   cursor: pointer;
   color: inherit;
-  transition: background-color 80ms ease;
+  transition: background-color var(--ref-animation-short) var(--app-ease-out);
 }
 
 .analyse__option:last-child {
@@ -198,6 +205,10 @@
 
 .analyse__option:hover {
   background: var(--app-surface-subtle);
+}
+
+.analyse__option:active {
+  background: var(--ref-color-grey-10);
 }
 
 .analyse__option:focus-visible {

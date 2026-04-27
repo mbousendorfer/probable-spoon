@@ -274,13 +274,18 @@
   line-height: 1.2;
   cursor: pointer;
   transition:
-    border-color 0.12s,
-    background 0.12s,
-    color 0.12s;
+    border-color var(--ref-animation-short),
+    background var(--ref-animation-short),
+    color var(--ref-animation-short);
 }
 
 button.chat-bubble-choice-chip:hover {
   border-color: var(--ref-color-grey-60);
+}
+
+button.chat-bubble-choice-chip:active {
+  background: var(--ref-color-grey-05);
+  border-color: var(--ref-color-orange-100);
 }
 
 button.chat-bubble-choice-chip.is-selected,

@@ -54,10 +54,18 @@
   font-family: inherit;
 }
 
+.dashboard__chat {
+  transition: background-color var(--ref-animation-short) var(--app-ease-out);
+}
+
 .dashboard__chat:hover,
 .dashboard__chat:focus-visible {
   background: var(--ref-color-grey-05);
   outline: none;
+}
+
+.dashboard__chat:active {
+  background: var(--ref-color-grey-10);
 }
 
 .dashboard__chat-name {
@@ -165,10 +173,21 @@
   font-family: inherit;
 }
 
+.dashboard__template {
+  transition:
+    border-color var(--ref-animation-short) var(--app-ease-out),
+    background-color var(--ref-animation-short) var(--app-ease-out);
+}
+
 .dashboard__template:hover,
 .dashboard__template:focus-visible {
   border-color: var(--ref-color-mermaid-gradient-from);
   outline: none;
+}
+
+.dashboard__template:active {
+  background: var(--ref-color-mermaid-20);
+  border-color: var(--ref-color-mermaid-gradient-from);
 }
 
 .dashboard__template-text {
@@ -533,10 +552,18 @@
   cursor: default;
 }
 
+.idea-card__sources-toggle {
+  transition: color var(--ref-animation-short) var(--app-ease-out);
+}
+
 .idea-card__sources-toggle:hover,
 .idea-card__sources-toggle:focus-visible {
   color: var(--ref-color-grey-150);
   outline: none;
+}
+
+.idea-card__sources-toggle:active {
+  color: var(--ref-color-electric-blue-100);
 }
 
 .idea-card__sources-chevron {
@@ -682,10 +709,18 @@
   cursor: pointer;
 }
 
+.idea-card__more-item {
+  transition: background-color var(--ref-animation-short) var(--app-ease-out);
+}
+
 .idea-card__more-item:hover,
 .idea-card__more-item:focus-visible {
   background: var(--ref-color-grey-05);
   outline: none;
+}
+
+.idea-card__more-item:active {
+  background: var(--ref-color-grey-10);
 }
 
 .idea-card__more-item[aria-pressed="true"] {
