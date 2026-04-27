@@ -122,7 +122,7 @@ export function renderAnalyseHub(_params, target) {
       });
       if (editingId) qs.set("contextId", editingId);
       // Navigate into the first selected stage.
-      window.location.hash = `#/analyse/${stages[0]}?${qs.toString()}`;
+      navigate(`/analyse/${stages[0]}?${qs.toString()}`);
     }
   });
 }

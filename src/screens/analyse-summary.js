@@ -76,7 +76,7 @@ export function renderAnalyseSummary(_params, target) {
         title: `${name} session`,
         contextId: q.get("contextId") || "ctx-acme",
       });
-      window.location.hash = `#/session/new?${qs.toString()}`;
+      navigate(`/session/new?${qs.toString()}`);
     }
   });
 }

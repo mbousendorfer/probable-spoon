@@ -40,7 +40,7 @@ function setQuery(next) {
   const current = readQuery();
   const merged = { ...current, ...next };
   const qs = new URLSearchParams(merged).toString();
-  window.location.hash = `#/?${qs}`;
+  navigate(`/?${qs}`);
 }
 
 // Cleared and reset on every renderDashboard so subscriptions don't pile up

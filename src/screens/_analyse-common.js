@@ -1,4 +1,5 @@
 import { html, raw } from "../utils.js?v=20";
+import { navigate } from "../router.js?v=20";
 
 // Shared pieces for all three Analyse wizards.
 //
@@ -37,9 +38,9 @@ export function advanceContextStage(currentStage) {
   params.delete("step");
 
   if (nextStage) {
-    window.location.hash = `#/analyse/${nextStage}?${params.toString()}`;
+    navigate(`/analyse/${nextStage}?${params.toString()}`);
   } else {
-    window.location.hash = `#/analyse/summary?${params.toString()}`;
+    navigate(`/analyse/summary?${params.toString()}`);
   }
 }
 
@@ -52,11 +53,11 @@ export function getStep(defaultStep) {
 }
 
 export function setStep(step) {
-  const path = window.location.hash.split("?")[0];
+  const path = window.location.hash.split("?")[0].replace(/^#/, "") || "/";
   const raw = window.location.hash.split("?")[1] || "";
   const params = new URLSearchParams(raw);
   params.set("step", step);
-  window.location.hash = `${path}?${params.toString()}`;
+  navigate(`${path}?${params.toString()}`);
 }
 
 // -- Wizard shell (conversational layout) -----------------------------------

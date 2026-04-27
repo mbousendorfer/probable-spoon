@@ -74,7 +74,7 @@ function setQuery(next) {
   });
   const qs = new URLSearchParams(merged).toString();
   const sessionId = getActiveSessionIdFromHash();
-  window.location.hash = `#/session/${sessionId}?${qs}`;
+  navigate(`/session/${sessionId}?${qs}`);
 }
 
 function getActiveSessionIdFromHash() {
