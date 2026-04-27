@@ -9,6 +9,7 @@
 // continue running even after the modal closes.
 
 import { html, raw, escapeHtml } from "../utils.js?v=20";
+import { iconFor } from "../file-kinds.js?v=20";
 import { connectors, connectorDocs } from "../mocks.js?v=22";
 import {
   classifyFile,
@@ -24,23 +25,6 @@ let backdrop, modal, tabsEl, contentEl, footerEl, fileInput;
 let initialized = false;
 let unsubscribeUploads = null;
 let inlineErrorTimeout = null;
-
-// File-kind icon map mirroring source-card KIND_ICON. Used in the upload
-// list rows + Browse sub-screen.
-const KIND_ICON = {
-  pdf: "ap-icon-file--pdf",
-  video: "ap-icon-file--video",
-  url: "ap-icon-link",
-  word: "ap-icon-file--text",
-  text: "ap-icon-file--text",
-  image: "ap-icon-file--image",
-  audio: "ap-icon-file",
-  file: "ap-icon-file",
-};
-
-function iconFor(key) {
-  return KIND_ICON[(key || "").toLowerCase()] || "ap-icon-file";
-}
 
 const TABS = [
   { id: "upload", label: "Upload" },

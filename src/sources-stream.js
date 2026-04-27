@@ -55,7 +55,7 @@ export function subscribeUploads(fn) {
 }
 
 // File extensions → ({ kind, iconKey }). The iconKey is the lowercase
-// value source-card.js uses for KIND_ICON lookup.
+// value file-kinds.js uses for KIND_ICON lookup.
 const EXT_MAP = {
   pdf: { kind: "PDF", iconKey: "pdf" },
   doc: { kind: "Word", iconKey: "word" },

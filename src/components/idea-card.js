@@ -27,16 +27,7 @@ function potentialFor(confidence) {
   return { label: "Low potential", color: "grey" };
 }
 
-// Source-card keeps its own copy for Library; idea-card keeps a tiny local
-// copy to stay self-contained. Four entries — no value in sharing.
-const KIND_ICON = {
-  pdf: "ap-icon-file--pdf",
-  video: "ap-icon-file--video",
-  url: "ap-icon-link",
-};
-function iconFor(kind) {
-  return KIND_ICON[(kind || "").toLowerCase()] || "ap-icon-file";
-}
+import { iconFor } from "../file-kinds.js?v=20";
 
 // ── Overflow menu — one open at a time ─────────────────────────────────
 //
