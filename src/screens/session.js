@@ -1615,8 +1615,14 @@ function bindSession(root, session) {
 
       if (event.target.closest("[data-idea-generate]")) {
         event.preventDefault();
-        const ideaId = event.target.closest("[data-idea-generate]")?.dataset.ideaGenerate;
-        if (ideaId) askProfileQuestion(session.id, ideaId);
+        const btn = event.target.closest("[data-idea-generate]");
+        if (btn.disabled) return;
+        const ideaId = btn.dataset.ideaGenerate;
+        if (ideaId) {
+          btn.disabled = true;
+          btn.classList.add("is-pending");
+          askProfileQuestion(session.id, ideaId);
+        }
         return;
       }
 

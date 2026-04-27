@@ -713,6 +713,14 @@
   transition: background-color var(--ref-animation-short) var(--app-ease-out);
 }
 
+/* Draft Post button while a draft is being generated (1.5–2s thinking
+   chip → posts created). Visually de-emphasizes the button and prevents
+   double-clicks. The actual disabled attr is set in the click handler. */
+[data-idea-generate].is-pending {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .idea-card__more-item:hover,
 .idea-card__more-item:focus-visible {
   background: var(--ref-color-grey-05);
