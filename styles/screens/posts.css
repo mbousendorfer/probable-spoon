@@ -103,17 +103,7 @@
 
 .posts__row.is-focused .posts__card {
   border-color: var(--ref-color-electric-blue-100);
-  animation: post-focus-pulse 1.6s ease;
-}
-
-@keyframes post-focus-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(23, 141, 254, 0);
-  }
-  50% {
-    box-shadow: 0 0 0 4px var(--ref-color-electric-blue-20);
-  }
+  animation: app-focus-pulse 1.6s ease;
 }
 
 .posts__row-check {

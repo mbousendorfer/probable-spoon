@@ -367,13 +367,7 @@
   border-radius: 50%;
   border: 2px solid var(--ref-color-electric-blue-20, #cce4ff);
   border-top-color: var(--ref-color-electric-blue-100);
-  animation: source-card-spin 1s linear infinite;
-}
-
-@keyframes source-card-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  animation: app-spin 1s linear infinite;
 }
 
 /* Info column — filename + sub. Takes the free space between the icon and

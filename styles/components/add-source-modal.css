@@ -177,13 +177,7 @@
   border: 1.5px solid var(--ref-color-electric-blue-20);
   border-top-color: var(--ref-color-electric-blue-100);
   border-radius: 50%;
-  animation: add-source-spin 0.7s linear infinite;
-}
-
-@keyframes add-source-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  animation: app-spin 0.7s linear infinite;
 }
 
 /* ── URL tab ──────────────────────────────────────────────────────────── */

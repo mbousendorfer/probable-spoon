@@ -188,7 +188,7 @@
   border-radius: 50%;
   border: 2px solid var(--ref-color-electric-blue-20);
   border-top-color: var(--ref-color-electric-blue-100);
-  animation: session-thinking-spin 0.9s linear infinite;
+  animation: app-spin 0.9s linear infinite;
   flex-shrink: 0;
 }
 
@@ -212,19 +212,10 @@
 }
 
 /* Focused idea in the Content Ideas tab — briefly outlined in electric-blue
-   after navigating from an extraction-card external-link. */
-@keyframes idea-focus-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(23, 141, 254, 0);
-  }
-  50% {
-    box-shadow: 0 0 0 4px var(--ref-color-electric-blue-20);
-  }
-}
-
+   after navigating from an extraction-card external-link. Uses the shared
+   app-focus-pulse keyframes (see base.css). */
 .idea-card.is-focused {
-  animation: idea-focus-pulse 1.6s ease;
+  animation: app-focus-pulse 1.6s ease;
   border-color: var(--ref-color-electric-blue-100);
 }
 
@@ -430,14 +421,8 @@
   border-radius: 50%;
   border: 1.5px solid var(--ref-color-mermaid-20);
   border-top-color: var(--ref-color-mermaid-gradient-from);
-  animation: session-thinking-spin 0.9s linear infinite;
+  animation: app-spin 0.9s linear infinite;
   flex-shrink: 0;
-}
-
-@keyframes session-thinking-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* Session chip inside the composer card. */
