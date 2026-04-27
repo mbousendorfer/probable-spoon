@@ -14,6 +14,8 @@
 // On submit we simulate a ~1.4s round-trip and flash a success state; the
 // modal then closes itself. Nothing is actually posted.
 
+import { escapeHtml } from "../utils.js?v=20";
+
 let backdrop, modal, submitBtn, problemInput, actionInput;
 let categoriesEl, previewEl, dropzoneFallback, dropzone, fileInput;
 let previewImg, fileNameEl, autoBadge, capturingBadge, contextBar;
@@ -111,10 +113,6 @@ const HTML = `
     <p>Thanks for helping improve Archie.<br/>We read every report.</p>
   </div>
 </aside>`;
-
-function escapeHtml(v = "") {
-  return String(v).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-}
 
 function focusSafe(el) {
   try {

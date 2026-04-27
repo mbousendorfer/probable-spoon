@@ -15,6 +15,8 @@
 // close. If a caller passes an `onUse` callback to open(), it fires with
 // the picked image URL when the user confirms. No store, no persistence.
 
+import { escapeHtml } from "../utils.js?v=20";
+
 let backdrop, modal, body, footer;
 let initialized = false;
 
@@ -65,10 +67,6 @@ const HTML = `
 </aside>`;
 
 // ── Helpers ───────────────────────────────────────────────────────────
-
-function escapeHtml(v = "") {
-  return String(v).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-}
 
 function focusSafe(el) {
   try {
