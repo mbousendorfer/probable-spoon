@@ -1,8 +1,21 @@
-# Archie — Flow Audit (phase 1)
+# Archie — Flow Audit
 
-**Branche** : `chore/flow-audit` · **Date** : 2026-04-27 · **Périmètre** : tout le proto · **Modif code applicatif** : aucune
+**Branche** : `chore/flow-audit` · **Phase 1** : 2026-04-27 (audit) · **Phase 2** : 2026-04-28 (fixes) · **Périmètre** : tout le proto
 
-> Audit exhaustif des surfaces, éléments interactifs, triggers automatiques et flows. Identifie ce qui est cassé, orphelin, dupliqué ou placeholder. Phase 2 (fixes) déclenchée par GO explicite après lecture.
+> Audit exhaustif des surfaces, éléments interactifs, triggers automatiques et flows. Identifie ce qui est cassé, orphelin, dupliqué ou placeholder. Phase 2 a appliqué **15/28 findings** (toutes les Medium + toutes les Safe + 7 Low). Voir `FLOW-CHANGELOG.md` pour le détail commit ↔ FIND-XXX.
+
+## Phase 2 status banner
+
+| Tier                 | Total | Done    | Deferred                   |
+| -------------------- | ----- | ------- | -------------------------- |
+| **Medium**           | 2     | **2** ✓ | 0                          |
+| **Safe**             | 6     | **6** ✓ | 0                          |
+| **Low** (UX-quality) | 20    | **7** ✓ | 13 (tracked for follow-up) |
+| **TOTAL**            | 28    | **15**  | 13                         |
+
+**Done in phase 2** : FIND-01, FIND-02, FIND-03, FIND-04, FIND-05, FIND-06, FIND-07, FIND-08, FIND-09, FIND-10, FIND-11, FIND-15, FIND-23, FIND-25, FIND-26.
+
+**Deferred to a follow-up audit** : FIND-12, FIND-13, FIND-14, FIND-16, FIND-17, FIND-18, FIND-19, FIND-20, FIND-21, FIND-22, FIND-27, FIND-28 (Low-risk UX-quality items with mock limitations or out-of-scope feature work).
 
 ---
 
@@ -489,7 +502,9 @@
 
 ### E.1 — Risk: Medium
 
-#### `FIND-01` — Connector state partagé par mutation directe de mocks.connectors
+> **Phase 2 status** : both Done (commits `d244dd5`, `c7f9045`).
+
+#### `FIND-01` ✅ — Connector state partagé par mutation directe de mocks.connectors
 
 - **Type** : store desync / fragile pattern
 - **Locations** :
@@ -499,26 +514,31 @@
 - **Description** : Les deux composants importent le même array exporté de `mocks.js`. Les mutations sont visibles entre eux via la référence ES module partagée — ça MARCHE actuellement par accident. Mais : (a) aucun store/observer, donc rien ne re-render automatiquement quand l'autre côté mute, il faut être sur le bon onglet ; (b) au reload, l'array est ré-initialisé depuis mocks.js → état perdu ; (c) le moindre `.slice()` ou clone côté lecteur casse la sync silencieusement. Les 3 agents l'ont confirmé.
 - **Risque** : **Medium** — fonctionne mais bombe à retardement
 - **Fix proposal** : Extraire un `src/connectors-store.js` avec `getConnectors()` / `subscribe()` / `setConnectorStatus(id, status)`. Les deux consommateurs s'abonnent. Aligne avec le pattern des autres stores (sources-stream, posts-store, assistant).
+- **Status post-fix** : ✅ **Done** in `d244dd5`. `src/connectors-store.js` extracted with full subscribe/publish API; settings-drawer + add-source-modal both go through it. Add-source modal subscribes on open so settings-drawer toggles repaint live. mocks.connectors stays as the seed (cloned on store init).
 
-#### `FIND-23` — Modal stacking sans garde
+#### `FIND-23` ✅ — Modal stacking sans garde
 
 - **Type** : interaction robustness
 - **Locations** : tous les modals (`open()` dans `add-source-modal.js`, `bug-report-modal.js`, `feedback-modal.js`, `chat-picker-modal.js`, `generate-image-modal.js`)
 - **Description** : Aucune modale ne vérifie si une autre est déjà ouverte avant d'ouvrir. Les buttons topbar (Bug report, Feedback, Settings) ne sont pas désactivés quand un modal est en cours. Risque concret : ouvrir Bug Report puis Feedback empile les backdrops, l'Esc handler du modal du dessous peut firer en premier.
 - **Risque** : **Medium** — pas observé sur les flows nominaux mais facile à reproduire
 - **Fix proposal** : Mini `modal-coordinator.js` exposant `requestOpen(id)` qui ferme automatiquement la modale active avant d'ouvrir la nouvelle. OU disable des boutons triggers pendant qu'une modale est ouverte.
+- **Status post-fix** : ✅ **Done** in `c7f9045`. `src/modal-coordinator.js` ships with `requestOpen` / `notifyClose` / `getActive`. All 7 overlays (5 modals + drawer + legend) register on open and unregister on close. Settings drawer registers `attemptClose` so its unsaved-changes confirm still fires when preempted.
 
 ### E.2 — Risk: Safe (placeholders à arbitrer)
 
-#### `FIND-03` — `window.alert()` natif dans analyse-hub
+> **Phase 2 status** : all Done (commits `74802a4`, `d9850f3`, `9f0f1e0`).
+
+#### `FIND-03` ✅ — `window.alert()` natif dans analyse-hub
 
 - **Type** : placeholder / DS violation
 - **Location** : `src/screens/analyse-hub.js:111`
 - **Description** : `window.alert("Pick at least one component.")` quand l'user clique Continue sans cocher de composant. Bloque le thread JS, viole le DS, pas accessible.
 - **Risque** : **Safe**
 - **Fix proposal** : Remplacer par `showToast("Pick at least one component", { variant: "error" })` OU inline error en bas du form avec focus sur la 1re checkbox.
+- **Status post-fix** : ✅ **Done** in `74802a4`. `showToast(..., { variant: "error" })` + focus on first checkbox. Verified via preview MCP: `alertCalls: 0, errorToastVisible: true`.
 
-#### `FIND-04` — Source card More menu no-op
+#### `FIND-04` ✅ — Source card More menu no-op
 
 - **Type** : placeholder
 - **Locations** :
@@ -528,80 +548,92 @@
 - **Description** : Le bouton `⋯` apparaît sur chaque source card, mais le click handler retourne juste preventDefault(). Aucun menu n'est défini.
 - **Risque** : **Safe**
 - **Fix proposal** : Soit supprimer le bouton de `source-card.js` jusqu'à design, soit câbler une action minimale (ex: "Ask about this source" en analogie avec idea card more menu). Voir aussi FIND-06 pour la cohérence avec post card footer.
+- **Status post-fix** : ✅ **Done** in `d9850f3`. Button + 3 no-op handlers removed. Verified via preview MCP: `[data-source-more].length === 0`.
 
-#### `FIND-05` — Orphan write `pendingDraftAccountId`
+#### `FIND-05` ✅ — Orphan write `pendingDraftAccountId`
 
 - **Type** : dead code (déjà documenté in-source)
 - **Location** : `src/screens/session.js:360-368`
 - **Description** : Le commentaire dit explicitement "pendingDraftAccountId was set here for a downstream consumer that never landed". Variable écrite jamais lue. Le `startDraftFlow` qui suit n'en a pas besoin.
 - **Risque** : **Safe**
 - **Fix proposal** : Supprimer les lignes 360-363, garder seulement `startDraftFlow(sessionId, ideaId)`.
+- **Status post-fix** : ✅ **Done** in `d9850f3` (same commit as FIND-04). `onPick` now just calls `startDraftFlow` directly.
 
-#### `FIND-25` — CLAUDE.md obsolète
+#### `FIND-25` ✅ — CLAUDE.md obsolète
 
 - **Type** : documentation stale
 - **Location** : `CLAUDE.md`
 - **Description** : Décrit `src/views/` + `src/modals/` qui n'existent plus, et "Zustand vanilla store" alors que les 4 stores actuels sont vanilla maison (Map + Set<fn>). Mentionne aussi `bigbet-library-prototype-v2` localStorage qui n'est utilisé nulle part (seul `archie-user-mode` existe).
 - **Risque** : **Safe** (info seulement, n'affecte pas l'app)
 - **Fix proposal** : Réécrire la section Architecture pour refléter `src/screens/`, `src/components/`, `src/sidebar-wizard.js`, etc., et la liste actuelle des stores.
+- **Status post-fix** : ✅ **Done** in `9f0f1e0` (covers both FIND-25 and FIND-26). Now describes the actual `src/screens/` + `src/components/` layout, the four vanilla stores, the handoff bridge keys, and the admin user-mode chip.
 
 ### E.3 — Risk: Low (UX quality, nice-to-have)
 
-#### `FIND-02` — Settings dirty guard incomplet
+> **Phase 2 status** : 7 Done (FIND-02, FIND-06–11), 13 Deferred (FIND-12 onwards).
+
+#### `FIND-02` ✅ — Settings dirty guard incomplet
 
 - **Type** : incomplete feature
 - **Location** : `src/components/settings-drawer.js:485-575`
 - **Description** : Seules les sections Preferences et Notifications marquent `state.dirty`. Connectors / Social mutent mocks.\* sans dirty marker, donc pas de confirmation avant fermeture. Contexts est safe (navigate trigger close).
 - **Risque** : **Low** — UX inconsistant
 - **Fix proposal** : Soit doc explicite "instant save" pour Connectors/Social, soit working copies + Save button homogène toutes sections.
+- **Status post-fix** : ✅ **Done** in `429631d`. Toast feedback added on every connector + social toggle; instant-save model documented in code comments at the top of `settings-drawer.js`.
 
-#### `FIND-06` — Post card footer Like/Comment/Repost/Send/Edit sans handler
+#### `FIND-06` ✅ — Post card footer Like/Comment/Repost/Send/Edit sans handler
 
 - **Type** : no handler
 - **Locations** : `src/screens/session.js:1059-1080` (5 boutons sans `data-*` ni listener)
 - **Description** : Ces boutons rendent visuellement (parité Figma) mais ne font rien. L'Edit notamment laisse penser qu'on peut éditer un draft, mais click = silencieux.
 - **Risque** : **Low** — décision produit : câbler ou supprimer/désactiver
 - **Fix proposal** : (a) Supprimer les 4 social actions (Like/Comment/Repost/Send) — c'est de la déco LinkedIn-like. (b) Câbler Edit vers un toast "Editing coming soon" OU vers une vraie édition inline.
+- **Status post-fix** : ✅ **Done** in `6da3751`. (a) 4 social actions converted from `<button>` to `<span>` (with `aria-hidden="true"` on the footer + cursor/hover styles dropped). (b) Edit pen removed from row-actions toolbar. Schedule/Duplicate/Delete (also unwired) tracked for follow-up.
 
-#### `FIND-07` — Validation forms tardive (Bug report + Feedback)
+#### `FIND-07` ✅ — Validation forms tardive (Bug report + Feedback)
 
 - **Type** : usability
 - **Locations** : `bug-report-modal.js:350-368`, `feedback-modal.js:133-146`
 - **Description** : Champs requis validés UNIQUEMENT au submit (visual `.invalid` outline rouge, pas de message texte). Pas de feedback inline pendant la saisie.
 - **Risque** : **Low**
 - **Fix proposal** : Ajouter texte erreur sous le champ + indicateur `*` required sur le label. Validation au blur.
+- **Status post-fix** : ✅ **Done** in `1ebd8c0`. New `.form-field-error` class + inline error `<p>` under each required field; `*` indicator added on Feedback (Bug already had it); blur revalidation gated on `hasAttemptedSubmit`.
 
-#### `FIND-08` — Wizard "Rework" n'est pas regenerate
+#### `FIND-08` ✅ — Wizard "Rework" n'est pas regenerate
 
 - **Type** : misleading label
 - **Locations** : `analyse-voice.js:195-206`, `analyse-brief.js` (pareil)
 - **Description** : Option "Needs work — regenerate" dans les sections review. Cliquer ne regenerate rien : tombe dans la branche par défaut qui advance au step suivant comme "Looks good".
 - **Risque** : **Low**
 - **Fix proposal** : Soit câbler une vraie regenerate (mock spinner + nouveau contenu de section), soit retirer l'option et ne garder que "Looks good".
+- **Status post-fix** : ✅ **Done** in `fedf120`. Option removed from voice + brief section pickers; custom input placeholder updated to "Tell me what to tweak about this section…" so users still have a path to leave feedback.
 
-#### `FIND-09` — Voice "Not yet — skip for now" exit complet
+#### `FIND-09` ✅ — Voice "Not yet — skip for now" exit complet
 
 - **Type** : misleading label
 - **Location** : `analyse-voice.js:28` + handler step 0
 - **Description** : Le label dit "skip for now" mais le handler `value === "no"` fait `navigate("/")` (sortie totale du wizard). L'user attend "skip cette étape" pas "abandon".
 - **Risque** : **Low**
 - **Fix proposal** : Relabel "Skip voice analysis" ou "Continue without voice" (plus explicite sur le scope).
+- **Status post-fix** : ✅ **Done** in `7685bdc`. Label is now "Skip voice analysis".
 
-#### `FIND-10` — Brand "No — try another URL" reset complet
+#### `FIND-10` ✅ — Brand "No — try another URL" reset complet
 
 - **Type** : navigation clarity
 - **Location** : `analyse-brand.js:51-59`
 - **Description** : Au summary step, "No" remet à step 0 (input URL vide) au lieu de garder la preview + permettre d'éditer l'URL.
 - **Risque** : **Low**
 - **Fix proposal** : Soit garder l'URL pré-remplie au step 0 (re-edit en place), soit ajouter une option "Edit URL" qui reste sur le preview.
+- **Status post-fix** : ✅ **Done** in `015dca5`. URL persisted via `?brandUrl=` hash param; both "Start over" and "No — try another URL" now keep the user's input pre-filled at step 0.
 
-#### `FIND-11` — Detach context sans confirmation
+#### `FIND-11` ✅ — Detach context sans confirmation
 
 - **Type** : missing safeguard
 - **Location** : `session.js:1685-1687`
 - **Description** : INT-S039 Detach button → setQuery({detached:1}) sans confirm. Une mauvaise manip détache instantanément.
 - **Risque** : **Low** — facile à re-attacher
 - **Fix proposal** : Confirm minimal : "Detach <context name>? You can re-attach it anytime."
+- **Status post-fix** : ✅ **Done** in `3a24027`. Replaced the proposed confirm dialog with the more idiomatic Pin/Unpin pattern: detach immediately, surface a toast with the context name and an Undo action that re-attaches.
 
 #### `FIND-12` — Feedback modal value never sent
 
@@ -634,6 +666,7 @@
 - **Description** : focusIdea est explicitement clear sur tab switch (line 1632) mais focusPost ne l'est pas. Inconsistant.
 - **Risque** : **Low**
 - **Fix proposal** : `setQuery({ tab, focusIdea: "", focusPost: "" })`.
+- **Status post-fix** : ✅ **Done** in `bb18ba8`. All three focus markers (`focusIdea`, `focusPost`, `focusSource`) cleared on tab switch.
 
 #### `FIND-16` — Idea card click in extraction turn (no full-card handler)
 
@@ -698,6 +731,7 @@
 - **Description** : Floating admin chip, toggle "new" ↔ "returning", reload page. Non documenté.
 - **Risque** : **Safe** — admin tool intentionnel
 - **Fix proposal** : Documenter dans CLAUDE.md (cf FIND-25).
+- **Status post-fix** : ✅ **Done** in `9f0f1e0`. CLAUDE.md now has a dedicated "Admin chip (debug-only)" subsection.
 
 #### `FIND-27` — Channel picker empty selection silent
 
