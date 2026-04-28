@@ -213,11 +213,6 @@ function currentContext() {
   const params = new URLSearchParams(qs || "");
   let area = "Dashboard";
   if (path.startsWith("/session/")) area = "Session";
-  else if (path.startsWith("/analyse/voice")) area = "Analyse · Voice";
-  else if (path.startsWith("/analyse/brief")) area = "Analyse · Brief";
-  else if (path.startsWith("/analyse/brand")) area = "Analyse · Brand";
-  else if (path.startsWith("/analyse/summary")) area = "Analyse · Summary";
-  else if (path.startsWith("/analyse")) area = "Analyse";
 
   const tab = params.get("tab") || params.get("view");
   const focus = tab ? `${tab}` : path === "/" || path === "" ? "Home" : path.split("/").pop();

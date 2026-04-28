@@ -1225,12 +1225,6 @@ function renderNoContext() {
           on-message.
         </p>
       </div>
-      <div class="session__context-actions">
-        <button type="button" class="ap-button primary orange" data-create-context>
-          <i class="ap-icon-plus"></i>
-          <span>Create a context</span>
-        </button>
-      </div>
       <div class="session__context-picker">
         <h3 class="text-section">Attach existing</h3>
         <div class="stack-sm">
@@ -1270,10 +1264,6 @@ function renderAttachedContext(context) {
               <span class="text-section">${c.title}</span>
               <span class="muted">Not yet analyzed.</span>
             </div>
-            <button type="button" class="ap-button stroked blue" data-add-component="${c.key}">
-              <i class="ap-icon-plus"></i>
-              <span>Add ${c.title.toLowerCase()}</span>
-            </button>
           </div>
         `;
       }
@@ -1299,10 +1289,6 @@ function renderAttachedContext(context) {
           <p class="muted">Updated ${context.updatedAt}.</p>
         </div>
         <div class="row">
-          <button type="button" class="ap-button stroked grey" data-edit-context="${context.id}">
-            <i class="ap-icon-pen"></i>
-            <span>Edit</span>
-          </button>
           <button type="button" class="ap-button transparent grey" data-detach-context>
             <span>Detach</span>
           </button>
@@ -1657,10 +1643,6 @@ function bindSession(root, session) {
       }
 
       // --- Context tab ---
-      if (event.target.closest("[data-create-context]")) {
-        navigate("/analyse");
-        return;
-      }
       if (event.target.closest("[data-manage-contexts]")) {
         event.preventDefault();
         openSettingsDrawer({ section: "contexts" });
@@ -1669,11 +1651,6 @@ function bindSession(root, session) {
       const attachContext = event.target.closest("[data-attach-context]");
       if (attachContext) {
         setQuery({ tab: "context", contextId: attachContext.dataset.attachContext, detached: "", populated: "" });
-        return;
-      }
-      const editCtx = event.target.closest("[data-edit-context]");
-      if (editCtx) {
-        navigate(`/analyse?contextId=${editCtx.dataset.editContext}`);
         return;
       }
       if (event.target.closest("[data-detach-context]")) {
@@ -1696,12 +1673,6 @@ function bindSession(root, session) {
         });
         return;
       }
-      const addComp = event.target.closest("[data-add-component]");
-      if (addComp) {
-        navigate(`/analyse/${addComp.dataset.addComponent}?stages=${addComp.dataset.addComponent}`);
-        return;
-      }
-
       // --- Assistant panel ---
       const promptBtn = event.target.closest("[data-assistant-prompt]");
       if (promptBtn && input) {

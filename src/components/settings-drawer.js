@@ -8,7 +8,6 @@
 // editable forms with dirty/cancel semantics).
 
 import { html, raw, escapeHtml } from "../utils.js?v=20";
-import { navigate } from "../router.js?v=20";
 import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
 import { showToast } from "./toast.js?v=20";
 
@@ -143,17 +142,13 @@ function renderConnectorRow(c) {
 function renderContextsSection() {
   const all = contexts || [];
   return html`
-    <header class="settings-drawer__section-header settings-drawer__section-header--with-action">
+    <header class="settings-drawer__section-header">
       <div>
         <h3 class="settings-drawer__section-title">Contexts</h3>
         <p class="settings-drawer__section-sub">
           Reusable bundles of voice, brief, and brand to keep posts on-message.
         </p>
       </div>
-      <button type="button" class="ap-button primary orange" data-context-create>
-        <i class="ap-icon-plus"></i>
-        <span>New context</span>
-      </button>
     </header>
     ${raw(
       all.length === 0
@@ -162,12 +157,8 @@ function renderContextsSection() {
               <div class="settings-drawer__empty-icon"><i class="ap-icon-headset lg"></i></div>
               <h4 class="settings-drawer__empty-title">No contexts yet</h4>
               <p class="settings-drawer__empty-body">
-                Create one to attach voice, brief, or brand details to a session.
+                Context creation is not available in this prototype version.
               </p>
-              <button type="button" class="ap-button primary orange" data-context-create>
-                <i class="ap-icon-plus"></i>
-                <span>New context</span>
-              </button>
             </div>
           `
         : `<ul class="settings-drawer__rows">${all.map(renderContextRow).join("")}</ul>`,
@@ -190,12 +181,6 @@ function renderContextRow(ctx) {
         <div class="settings-row__title">${escapeHtml(ctx.name)}</div>
         <div class="settings-row__sub">Updated ${escapeHtml(ctx.updatedAt)}</div>
         <div class="settings-row__tags">${components.length ? components.map(tagFor).join("") : `<span class="ap-tag grey">Empty</span>`}</div>
-      </div>
-      <div class="settings-row__action">
-        <button type="button" class="ap-button stroked grey" data-context-edit="${escapeHtml(ctx.id)}">
-          <i class="ap-icon-pen"></i>
-          <span>Edit</span>
-        </button>
       </div>
     </li>
   `;
@@ -608,19 +593,6 @@ function onClick(event) {
       renderContent();
       showToast(`${updated.name} ${wasConnected ? "disconnected" : "connected"}`);
     }
-    return;
-  }
-
-  // Contexts — create / edit deep-link into /analyse flow.
-  if (event.target.closest("[data-context-create]")) {
-    close();
-    navigate("/analyse");
-    return;
-  }
-  const editCtx = event.target.closest("[data-context-edit]");
-  if (editCtx) {
-    close();
-    navigate(`/analyse?contextId=${encodeURIComponent(editCtx.dataset.contextEdit)}`);
     return;
   }
 
