@@ -8,8 +8,9 @@ import {
   voiceAnalysis,
   strategyBrief,
   brandTheme,
-} from "../mocks.js?v=22";
-import { getContextById, getContexts, addContext, updateContext } from "../contexts-store.js?v=20";
+  chatStarters,
+} from "../mocks.js?v=23";
+import { getContextById, getContexts, addContext, updateContext } from "../contexts-store.js?v=21";
 import { isNewUser } from "../user-mode.js?v=20";
 import {
   getThread,
@@ -18,13 +19,13 @@ import {
   postAssistantMessage,
   subscribe,
   submitAssistantChoice,
-} from "../assistant.js?v=21";
-import { getSources, getIdeas, subscribe as subscribeLibrary, addSource } from "../library.js?v=22";
+} from "../assistant.js?v=22";
+import { getSources, getIdeas, subscribe as subscribeLibrary, addSource } from "../library.js?v=23";
 import { wireLibraryActions, renderSourcesBulkBar, renderIdeasBulkBar } from "../library-actions.js?v=20";
-import { getPosts, attachImageToDraft, subscribe as subscribePostsStore } from "../posts-store.js?v=20";
+import { getPosts, attachImageToDraft, subscribe as subscribePostsStore } from "../posts-store.js?v=21";
 import { startDraftFlow, executeDraft } from "../draft-flow.js?v=20";
 import { startContextBuildFlow, startActionPickerFlow, handleActionPick } from "../start-flow.js?v=23";
-import * as sidebarWizard from "../sidebar-wizard.js?v=30";
+import * as sidebarWizard from "../sidebar-wizard.js?v=31";
 import * as inlineQuestion from "../inline-question.js?v=20";
 import { renderPicker, bindWizardKeyboard, unbindWizardKeyboard } from "./_analyse-common.js?v=24";
 import { renderSourceCard } from "../components/source-card.js?v=25";
@@ -36,9 +37,9 @@ import {
   renderContentEmptyState,
 } from "../components/content-workspace.js?v=23";
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
-import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
-import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
-import { open as openAddSourceModal } from "../components/add-source-modal.js?v=20";
+import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=22";
+import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=21";
+import { open as openAddSourceModal } from "../components/add-source-modal.js?v=21";
 import { showToast } from "../components/toast.js?v=20";
 import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
@@ -183,24 +184,35 @@ function renderAssistantPanel(session, attachedContext) {
     return renderAssistantPanelQuestion(session);
   }
 
+  // Empty conversation = the user hasn't typed anything yet. We swap the
+  // thread for the handoff "What are we creating today?" hero with a 2x2
+  // grid of starter cards (Q14). Once the user types their first message
+  // the thread takes over and the existing pickSuggestedPrompts row above
+  // the composer surfaces contextual follow-ups.
+  const isEmptyConversation = thread.every((m) => m.role !== "user");
+
   return html`
     <aside class="session__assistant" aria-label="Assistant panel">
       <div class="session__assistant-thread" id="assistantThread" data-assistant-thread>
-        ${raw(renderThread(thread))}
+        ${isEmptyConversation ? raw(renderEmptyHero()) : raw(renderThread(thread))}
       </div>
-      <div class="session__assistant-suggestions" data-assistant-prompts>
-        ${raw(
-          prompts
-            .map(
-              (p) => `
-                <button type="button" class="assistant-prompt" data-assistant-prompt="${p.value}">
-                  <span class="assistant-prompt__title">${p.title}</span>
-                </button>
-              `,
-            )
-            .join(""),
-        )}
-      </div>
+      ${isEmptyConversation
+        ? ""
+        : html`
+            <div class="session__assistant-suggestions" data-assistant-prompts>
+              ${raw(
+                prompts
+                  .map(
+                    (p) => `
+                      <button type="button" class="assistant-prompt" data-assistant-prompt="${p.value}">
+                        <span class="assistant-prompt__title">${p.title}</span>
+                      </button>
+                    `,
+                  )
+                  .join(""),
+              )}
+            </div>
+          `}
       <div class="session__composer">
         <div class="session__composer-card">
           <div class="session__composer-thinking" data-assistant-thinking hidden>
@@ -258,6 +270,44 @@ function renderAssistantPanel(session, attachedContext) {
       </div>
     </aside>
   `;
+}
+
+// Empty-state hero — shown inside the assistant thread region when the user
+// hasn't sent a first message yet. Mirrors the handoff (Chat.jsx empty state):
+// hero question + sub-line + 2x2 grid of starter cards. Cards click → prefill
+// the composer textarea (handler in bindSession via [data-starter]).
+function renderEmptyHero() {
+  const cards = chatStarters
+    .map(
+      (s) => `
+        <button type="button" class="starter-card" data-starter="${s.id}" data-starter-prompt="${escapeHtml(s.prompt)}">
+          <span class="starter-card__icon"><i class="${s.icon}"></i></span>
+          <span class="starter-card__title">${s.title}</span>
+          <span class="starter-card__prompt">${s.prompt}</span>
+        </button>
+      `,
+    )
+    .join("");
+  return html`
+    <div class="empty-chat" data-empty-chat>
+      <div class="empty-chat__hello">What are we creating today?</div>
+      <div class="empty-chat__sub">
+        Drop in a source and Archie will turn it into a batch of posts you can review, edit, and schedule.
+      </div>
+      <div class="starter-grid">${raw(cards)}</div>
+    </div>
+  `;
+}
+
+// Minimal HTML attribute escaper — starter prompts contain quotes that would
+// otherwise break the data-starter-prompt attribute.
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 // Wizard chrome — replaces the normal thread + suggestions + composer when
@@ -1810,6 +1860,18 @@ function bindSession(root, session) {
       if (promptBtn && input) {
         input.value = promptBtn.dataset.assistantPrompt;
         input.focus();
+        return;
+      }
+
+      // Empty-state starter card click — pre-fills the composer textarea
+      // with the starter's prompt text. Doesn't auto-send so the user can
+      // tweak the {{source}} placeholder before submitting.
+      const starterBtn = event.target.closest("[data-starter]");
+      if (starterBtn && input) {
+        input.value = starterBtn.dataset.starterPrompt;
+        input.focus();
+        // Place cursor at end so the user can edit.
+        input.setSelectionRange(input.value.length, input.value.length);
         return;
       }
 

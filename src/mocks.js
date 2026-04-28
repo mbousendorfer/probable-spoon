@@ -13,21 +13,37 @@ export const recentSessions = [
   },
 ];
 
-export const templateStarters = [
+// Empty-state Chat starter cards — the four handoff-spec prompts shown when a
+// conversation has no user message yet. The {{source}} placeholder is left
+// literal in the prompt so the user (or a future Lot) can replace it via the
+// source picker. Per Q14 these are now the only starters in the product —
+// the previous `templateStarters` array (dashboard sidebar workflow templates)
+// was dropped at Lot 2.1.
+export const chatStarters = [
   {
-    id: "tpl-thought-leadership",
-    name: "Thought leadership series",
-    description: "Weekly LinkedIn posts grounded in one long-form source.",
+    id: "starter-batch",
+    icon: "ap-icon-sparkles",
+    title: "Batch from a source",
+    prompt: "Pull the strongest moments from {{source}} and draft 5 posts across LinkedIn, X, and Instagram.",
   },
   {
-    id: "tpl-launch",
-    name: "Product launch drumbeat",
-    description: "Teaser → reveal → recap across 3 weeks.",
+    id: "starter-launch",
+    icon: "ap-icon-feature-publishing",
+    title: "Plan a launch week",
+    prompt: "Plan a 5-day launch sequence using {{source}}. One post per day, mixed networks, ready to schedule.",
   },
   {
-    id: "tpl-podcast",
-    name: "Podcast repurposing",
-    description: "Turn a 40-minute episode into 6 social posts.",
+    id: "starter-repurpose",
+    icon: "ap-icon-pen",
+    title: "Repurpose a long-form piece",
+    prompt:
+      "Turn {{source}} into 8 posts: 3 for LinkedIn, 3 for X, 2 for Instagram. Different angles, same brand voice.",
+  },
+  {
+    id: "starter-customer",
+    icon: "ap-icon-megaphone",
+    title: "Customer story → multi-channel",
+    prompt: "Use {{source}} to draft a customer-story post for each network we publish on.",
   },
 ];
 

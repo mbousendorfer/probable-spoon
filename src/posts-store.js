@@ -7,7 +7,7 @@
 //   attachImageToDraft(sessionId, postId, imageUrl)
 //   subscribe(sessionId, fn)    → unsubscribe fn
 
-import { posts as mockPosts } from "./mocks.js?v=22";
+import { posts as mockPosts } from "./mocks.js?v=23";
 import { isNewUser } from "./user-mode.js?v=20";
 
 // --- Module state -------------------------------------------------------

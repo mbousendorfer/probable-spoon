@@ -18,8 +18,8 @@
 //     Flow B — context already attached. Skips the wizard and asks
 //     "what do you want to do?" with one chip per quick action.
 
-import { postAssistantMessage, postUserTurn, postAssistantChoice } from "./assistant.js?v=21";
-import * as sidebarWizard from "./sidebar-wizard.js?v=30";
+import { postAssistantMessage, postUserTurn, postAssistantChoice } from "./assistant.js?v=22";
+import * as sidebarWizard from "./sidebar-wizard.js?v=31";
 
 // ---- Flow A — Context-build sequence ------------------------------------
 

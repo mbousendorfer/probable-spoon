@@ -2,10 +2,10 @@ import { html, raw } from "../utils.js?v=20";
 import { navigate, getPath } from "../router.js?v=20";
 import { open as openBugReportModal } from "./bug-report-modal.js?v=21";
 import { open as openFeedbackModal } from "./feedback-modal.js?v=24";
-import { open as openSettingsDrawer } from "./settings-drawer.js?v=21";
+import { open as openSettingsDrawer } from "./settings-drawer.js?v=22";
 import { toggle as toggleShortcutLegend } from "./shortcut-legend.js?v=20";
 import { toggleSidebar } from "./sidebar.js?v=22";
-import { recentSessions } from "../mocks.js?v=22";
+import { recentSessions } from "../mocks.js?v=23";
 
 // Persistent top bar.
 //

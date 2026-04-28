@@ -14,9 +14,9 @@
 //   3. Creates one draft post per channel via posts-store.js.
 //   4. Posts a structured "Drafted N posts" result turn.
 
-import { postUserTurn, postAssistantChoice, startPending, finishPending, postDraftResult } from "./assistant.js?v=21";
-import { getIdeas } from "./library.js?v=22";
-import { addPostDraft } from "./posts-store.js?v=20";
+import { postUserTurn, postAssistantChoice, startPending, finishPending, postDraftResult } from "./assistant.js?v=22";
+import { getIdeas } from "./library.js?v=23";
+import { addPostDraft } from "./posts-store.js?v=21";
 
 const CHANNEL_META = {
   linkedin: { icon: "ap-icon-linkedin", label: "LinkedIn" },

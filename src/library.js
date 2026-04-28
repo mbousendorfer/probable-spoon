@@ -12,7 +12,7 @@
 //   appendExtractedIdeas(sessionId, sources)  bulk "extract more" flow
 //   removeIdeasForSources(sessionId, sourceIds)  cleanup after bulk-delete
 
-import { ideas as seedIdeas } from "./mocks.js?v=22";
+import { ideas as seedIdeas } from "./mocks.js?v=23";
 import { isNewUser } from "./user-mode.js?v=20";
 import {
   postAssistantMessage,
@@ -20,13 +20,13 @@ import {
   postSourceIntake,
   startPending,
   finishPending,
-} from "./assistant.js?v=21";
+} from "./assistant.js?v=22";
 import {
   getSources as streamGetSources,
   subscribeSources,
   pushScriptedSource,
   completeScriptedSource,
-} from "./sources-stream.js?v=21";
+} from "./sources-stream.js?v=22";
 
 // --- Module state -------------------------------------------------------
 
