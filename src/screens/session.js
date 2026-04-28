@@ -1,6 +1,6 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=23";
+import { renderTopbar } from "../components/topbar.js?v=24";
 import {
   getSessionById,
   socialAccounts,

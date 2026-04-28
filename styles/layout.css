@@ -53,34 +53,20 @@
   display: flex;
   align-items: center;
   gap: var(--ref-spacing-xs);
+  min-width: 0;
 }
 
-.app-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ref-spacing-xxs);
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: var(--ref-font-size-md);
-  font-weight: var(--ref-font-weight-extra-bold);
+.app-topbar__title {
+  margin: 0;
+  font-family: var(--sys-text-style-h4-font-family);
+  font-size: var(--sys-text-style-h4-size);
+  font-weight: var(--sys-text-style-h4-weight);
+  line-height: var(--sys-text-style-h4-line-height);
   color: var(--ref-color-grey-150);
-}
-
-.app-brand {
-  transition: color var(--ref-animation-short) var(--app-ease-out);
-}
-
-.app-brand:hover,
-.app-brand:focus-visible {
-  color: var(--ref-color-electric-blue-100);
-  outline: none;
-}
-
-.app-brand:active {
-  color: var(--ref-color-electric-blue-150);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .app-topbar__feedback {
