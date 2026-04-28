@@ -7,11 +7,46 @@ import { isNewUser } from "../user-mode.js?v=20";
 // Global app sidebar — Brand / + New conversation / Recent chats / User footer.
 // Rendered once at boot into #sidebar; re-rendered on every route change so the
 // active conversation row stays highlighted.
+//
+// Collapsed state — driven by the .is-sidebar-collapsed class on #appShell.
+// Toggle is exposed via the head button or Cmd/Ctrl+B (cf. initSidebar).
+// State persists across reloads via localStorage so the chrome stays predictable.
+
+const COLLAPSED_KEY = "archie-sidebar-collapsed";
+
+export function isSidebarCollapsed() {
+  return localStorage.getItem(COLLAPSED_KEY) === "1";
+}
+
+export function setSidebarCollapsed(collapsed) {
+  const shell = document.getElementById("appShell");
+  if (!shell) return;
+  shell.classList.toggle("is-sidebar-collapsed", collapsed);
+  if (collapsed) localStorage.setItem(COLLAPSED_KEY, "1");
+  else localStorage.removeItem(COLLAPSED_KEY);
+  // Re-render so the collapsed/expanded chrome swaps without leaving stale
+  // pieces (e.g. the brand wordmark) hidden under CSS-only rules.
+  renderSidebar();
+}
+
+export function toggleSidebar() {
+  setSidebarCollapsed(!isSidebarCollapsed());
+}
 
 export function initSidebar() {
   const el = document.getElementById("sidebar");
   if (!el) return;
+
+  // Apply persisted collapse state before the first render so we don't flash
+  // the expanded layout on boot.
+  const shell = document.getElementById("appShell");
+  if (shell && isSidebarCollapsed()) shell.classList.add("is-sidebar-collapsed");
+
   el.addEventListener("click", (event) => {
+    if (event.target.closest("[data-sidebar-toggle]")) {
+      toggleSidebar();
+      return;
+    }
     if (event.target.closest("[data-sidebar-home]")) {
       navigate("/");
       return;
@@ -29,6 +64,24 @@ export function initSidebar() {
       openSettingsDrawer();
     }
   });
+
+  // Cmd/Ctrl+B toggles the sidebar — matches Claude.ai. Skip the binding when
+  // the user is typing into an input/textarea/contenteditable so it never
+  // hijacks composer input.
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "b" && event.key !== "B") return;
+    if (!(event.metaKey || event.ctrlKey)) return;
+    const t = event.target;
+    if (
+      t instanceof HTMLElement &&
+      (t.matches("input, textarea, [contenteditable=true]") || t.closest("[contenteditable=true]"))
+    ) {
+      // Inside an editable surface — let the platform shortcut (e.g. bold) win.
+      return;
+    }
+    event.preventDefault();
+    toggleSidebar();
+  });
 }
 
 export function renderSidebar() {
@@ -36,12 +89,64 @@ export function renderSidebar() {
   if (!el) return;
   const path = getPath();
   const activeSessionId = matchSessionId(path);
+  const collapsed = isSidebarCollapsed();
+
+  if (collapsed) {
+    el.innerHTML = html`
+      <div class="app-sidebar__head app-sidebar__head--collapsed">
+        <button
+          type="button"
+          class="ap-icon-button transparent"
+          data-sidebar-toggle
+          aria-label="Expand sidebar"
+          title="Expand sidebar (⌘B)"
+        >
+          <i class="ap-icon-view-list"></i>
+        </button>
+      </div>
+
+      <button
+        type="button"
+        class="app-sidebar__new app-sidebar__new--collapsed"
+        data-sidebar-new
+        aria-label="New conversation"
+        title="New conversation"
+      >
+        <i class="ap-icon-plus"></i>
+      </button>
+
+      <div class="app-sidebar__list-spacer"></div>
+
+      <div class="app-sidebar__foot app-sidebar__foot--collapsed">
+        <div class="ap-avatar size-32">MB</div>
+        <button
+          type="button"
+          class="ap-icon-button transparent"
+          data-sidebar-settings
+          aria-label="Settings"
+          title="Settings"
+        >
+          <i class="ap-icon-cog"></i>
+        </button>
+      </div>
+    `;
+    return;
+  }
 
   el.innerHTML = html`
     <div class="app-sidebar__head">
       <button type="button" class="app-sidebar__brand" data-sidebar-home aria-label="Go to Archie home">
         <span class="app-sidebar__brand-mark"><i class="ap-icon-sparkles-mermaid"></i></span>
         <span class="app-sidebar__brand-name">Archie</span>
+      </button>
+      <button
+        type="button"
+        class="ap-icon-button transparent"
+        data-sidebar-toggle
+        aria-label="Collapse sidebar"
+        title="Collapse sidebar (⌘B)"
+      >
+        <i class="ap-icon-chevron-left"></i>
       </button>
     </div>
 

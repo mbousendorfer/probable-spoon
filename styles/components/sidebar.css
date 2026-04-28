@@ -1,6 +1,13 @@
 /* Global app sidebar — collapsible left rail.
    Layout: brand head / new-conversation CTA / recent list (scrollable) / footer.
-   Width controlled by --app-sidebar-width on .app-shell. */
+   Width controlled by --app-sidebar-width on .app-shell.
+   Collapsed state — driven by .is-sidebar-collapsed on #appShell — swaps the
+   markup to an icon-only stack. The grid template column on .app-shell
+   transitions smoothly between expanded and collapsed widths. */
+
+.app-shell {
+  transition: grid-template-columns var(--ref-animation-normal) var(--app-ease-standard);
+}
 
 .app-sidebar {
   display: flex;
@@ -206,4 +213,38 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ── Collapsed mode (56px) ────────────────────────────────────────────
+   Icon-only stack centred horizontally. Markup is rendered server-side
+   so we don't have to fight CSS-only hiding rules. */
+
+.app-sidebar__head--collapsed {
+  justify-content: center;
+  padding: var(--ref-spacing-xs) var(--ref-spacing-xxs);
+}
+
+.app-sidebar__new--collapsed {
+  margin: 0 var(--ref-spacing-xxs) var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xxs);
+  width: calc(var(--app-sidebar-width-collapsed) - var(--ref-spacing-sm));
+  align-self: center;
+  justify-content: center;
+  font-size: 0; /* Strip the leftover whitespace nodes; icon stays. */
+}
+
+.app-sidebar__new--collapsed i {
+  font-size: var(--sys-icon-css-sm);
+}
+
+.app-sidebar__list-spacer {
+  flex: 1 1 auto;
+}
+
+.app-sidebar__foot--collapsed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xs) var(--ref-spacing-xxs);
 }
