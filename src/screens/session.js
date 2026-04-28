@@ -1914,7 +1914,13 @@ function bindSession(root, session) {
     input.addEventListener(
       "keydown",
       (event) => {
-        if (event.key === "Enter" && !event.shiftKey) {
+        // Cmd/Ctrl+Enter sends from anywhere in the textarea (matches Claude.ai
+        // and the handoff README spec). Plain Enter (no shift, no modifier)
+        // also sends — preserves the archie default. Shift+Enter newlines.
+        const isCmdEnter = event.key === "Enter" && (event.metaKey || event.ctrlKey);
+        const isPlainEnter =
+          event.key === "Enter" && !event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey;
+        if (isCmdEnter || isPlainEnter) {
           event.preventDefault();
           submitInput();
         }
