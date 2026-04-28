@@ -1,10 +1,9 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=23";
-import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=20";
-import { recentSessions, templateStarters } from "../mocks.js?v=22";
+import { recentSessions } from "../mocks.js?v=22";
 import { getContexts, getContextById } from "../contexts-store.js?v=20";
 import { setHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
@@ -81,12 +80,8 @@ export function renderDashboard(_params, target) {
   ideaSelection.clear();
 
   target.innerHTML = html`
-    <section class="screen screen--split dashboard">
-      <aside class="dashboard__sidebar">
-        ${raw(renderNewProjectCard(q))} ${raw(renderPreviousChats())} ${raw(renderTemplateStarters())}
-        ${raw(renderSidebarSettings())}
-      </aside>
-      <section class="dashboard__main">${raw(renderProjectsPanel(q))}</section>
+    <section class="screen dashboard">
+      <section class="dashboard__main">${raw(renderNewProjectCard(q))} ${raw(renderProjectsPanel(q))}</section>
     </section>
   `;
 
@@ -161,68 +156,10 @@ function renderNewProjectCard(q) {
   `;
 }
 
-function renderPreviousChats() {
-  if (isNewUser() || !recentSessions.length) return "";
-  const items = recentSessions
-    .map(
-      (s) => `
-        <button type="button" class="dashboard__chat" data-open-session="${s.id}">
-          <span class="dashboard__chat-name">${s.name}</span>
-          <span class="dashboard__chat-meta">
-            ${s.sourceCount} sources · ${s.ideaCount} ideas · ${s.postCount} posts · ${s.lastActivity}
-          </span>
-        </button>
-      `,
-    )
-    .join("");
-  return html`
-    <section class="dashboard__chats-section">
-      <h3 class="dashboard__chats-heading">Previous chats</h3>
-      <div class="dashboard__chats-list">${raw(items)}</div>
-    </section>
-  `;
-}
-
-function renderSidebarSettings() {
-  return html`
-    <div class="dashboard__settings">
-      <button type="button" class="ap-button transparent grey" data-open-settings>
-        <i class="ap-icon-cog"></i>
-        <span>Settings</span>
-      </button>
-    </div>
-  `;
-}
-
-function renderTemplateStarters() {
-  return html`
-    <section class="dashboard__templates-section">
-      <header class="dashboard__templates-header">
-        <h3 class="dashboard__templates-title">Workflow templates</h3>
-        <p class="dashboard__templates-tagline">Use one of these actions to quickly draft some posts</p>
-      </header>
-      <ul class="dashboard__templates-list">
-        ${raw(
-          templateStarters
-            .map(
-              (t) => `
-                <li>
-                  <button type="button" class="dashboard__template" data-template-id="${t.id}">
-                    <span class="dashboard__template-text">
-                      <span class="dashboard__template-name">${t.name}</span>
-                      <span class="dashboard__template-desc">${t.description}</span>
-                    </span>
-                    <i class="ap-icon-arrow-right dashboard__template-arrow" aria-hidden="true"></i>
-                  </button>
-                </li>
-              `,
-            )
-            .join(""),
-        )}
-      </ul>
-    </section>
-  `;
-}
+// (Recent chats, sidebar settings, and workflow templates were removed in
+// Lot 2.1 — recent chats now live in the global app sidebar; templates are
+// dropped per Q14 in favor of the four handoff starters that ship with the
+// Chat empty state in Lot 3.)
 
 // ---- Main panel — Content section -----------------------------------------
 
@@ -298,31 +235,9 @@ function bindDashboard(root) {
       return;
     }
 
-    const openSession = event.target.closest("[data-open-session]");
-    if (openSession) {
-      navigate(`/session/${openSession.dataset.openSession}`);
-      return;
-    }
-
-    if (event.target.closest("[data-open-settings]")) {
-      openSettingsDrawer();
-      return;
-    }
-
-    const templateBtn = event.target.closest("[data-template-id]");
-    if (templateBtn) {
-      const template = templateStarters.find((t) => t.id === templateBtn.dataset.templateId);
-      if (template) {
-        const nameInput = root.querySelector("[data-new-project-name]");
-        const title = `${template.name} project`;
-        if (nameInput) nameInput.value = title;
-        // Templates only pre-fill the chat name; context choice stays at the
-        // user's current selection (defaulting to "" — no context yet, AI will
-        // walk the user through creation).
-        setQuery({ title });
-      }
-      return;
-    }
+    // (Recent chats now live in the global app sidebar — no [data-open-session]
+    // handling here. Settings is reachable from the sidebar footer too.
+    // Workflow templates dropped per Q14.)
 
     if (event.target.closest("[data-new-project-create]")) {
       const nameInput = root.querySelector("[data-new-project-name]");

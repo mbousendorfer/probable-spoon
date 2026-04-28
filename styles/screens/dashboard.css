@@ -1,130 +1,13 @@
-/* Dashboard screen — sidebar (new project + templates) + main (tabs + content). */
+/* Dashboard screen — single-column main panel with the new chat hero card on
+   top and the Content workspace below. The previous left sidebar (recent
+   chats / templates / settings) was lifted into the global app sidebar in
+   Lot 2.1; the Workflow templates card was dropped per Q14 in favor of the
+   four handoff starters that ship with the Chat empty state in Lot 3. */
 
 .dashboard {
-  gap: 0;
-}
-
-.dashboard__sidebar {
-  flex: 0 0 400px;
-  width: 400px;
-  border-right: 1px solid var(--app-border-soft);
-  padding: var(--ref-spacing-md);
+  /* Single column — no horizontal split anymore. */
   display: flex;
   flex-direction: column;
-  gap: var(--ref-spacing-md);
-  overflow-y: auto;
-  background: var(--app-surface);
-}
-
-/* Previous chats — flat list of past sessions in the sidebar. Hover lifts a
-   subtle grey background; no card chrome on each row. */
-
-.dashboard__chats-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ref-spacing-xs);
-}
-
-.dashboard__chats-heading {
-  margin: 0;
-  font-size: var(--ref-font-size-xs);
-  line-height: var(--ref-font-line-height-xs);
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-150);
-}
-
-.dashboard__chats-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ref-spacing-xs);
-}
-
-.dashboard__chat {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--ref-spacing-xxxs);
-  width: 100%;
-  padding: var(--ref-spacing-xxs) var(--ref-spacing-xxs);
-  background: transparent;
-  border: 0;
-  border-radius: var(--app-radius-md);
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.dashboard__chat {
-  transition: background-color var(--ref-animation-short) var(--app-ease-out);
-}
-
-.dashboard__chat:hover,
-.dashboard__chat:focus-visible {
-  background: var(--ref-color-grey-05);
-  outline: none;
-}
-
-.dashboard__chat:active {
-  background: var(--ref-color-grey-10);
-}
-
-.dashboard__chat-name {
-  font-size: var(--ref-font-size-sm);
-  line-height: var(--ref-font-line-height-sm);
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-150);
-}
-
-.dashboard__chat-meta {
-  font-size: var(--ref-font-size-xs);
-  line-height: var(--ref-font-line-height-xs);
-  color: var(--ref-color-grey-80);
-}
-
-/* Workflow templates — pinned-near-bottom card list with mermaid tint and a
-   trailing arrow indicator. Header sits above with title + tagline. */
-
-.dashboard__templates-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ref-spacing-xs);
-  margin-top: auto;
-}
-
-.dashboard__templates-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ref-spacing-xxxs);
-}
-
-.dashboard__templates-title {
-  margin: 0;
-  font-size: var(--ref-font-size-sm);
-  line-height: var(--ref-font-line-height-md);
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-150);
-}
-
-.dashboard__templates-tagline {
-  margin: 0;
-  font-size: var(--ref-font-size-sm);
-  line-height: var(--ref-font-line-height-sm);
-  color: var(--ref-color-grey-80);
-}
-
-.dashboard__templates-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ref-spacing-xs);
-}
-
-/* Settings — pinned to the very bottom of the sidebar via auto-margin. */
-
-.dashboard__settings {
-  margin-top: var(--ref-spacing-xs);
 }
 
 .dashboard__main {
@@ -151,70 +34,6 @@
   color: var(--sys-text-color-light);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-}
-
-/* Workflow template card — mermaid-tinted background, title + desc on the
-   left, arrow-right pinned to the right. 62px tall by default but allowed to
-   grow if the description wraps. */
-
-.dashboard__template {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ref-spacing-xs);
-  width: 100%;
-  min-height: 72px;
-  padding: var(--ref-spacing-xs);
-  background: var(--ref-color-mermaid-10);
-  border: 1px solid var(--ref-color-mermaid-10);
-  border-radius: var(--app-radius-md);
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.dashboard__template {
-  transition:
-    border-color var(--ref-animation-short) var(--app-ease-out),
-    background-color var(--ref-animation-short) var(--app-ease-out);
-}
-
-.dashboard__template:hover,
-.dashboard__template:focus-visible {
-  border-color: var(--ref-color-mermaid-gradient-from);
-  outline: none;
-}
-
-.dashboard__template:active {
-  background: var(--ref-color-mermaid-20);
-  border-color: var(--ref-color-mermaid-gradient-from);
-}
-
-.dashboard__template-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--ref-spacing-xxxs);
-  min-width: 0;
-}
-
-.dashboard__template-name {
-  font-size: var(--ref-font-size-sm);
-  line-height: var(--ref-font-line-height-sm);
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-150);
-}
-
-.dashboard__template-desc {
-  font-size: var(--ref-font-size-xs);
-  line-height: var(--ref-font-line-height-xs);
-  color: var(--ref-color-grey-80);
-}
-
-.dashboard__template-arrow {
-  flex-shrink: 0;
-  color: var(--ref-color-electric-blue-100);
-  font-size: var(--sys-icon-css-sm);
 }
 
 .dashboard__form-hint {
