@@ -9,18 +9,25 @@
 //
 // Public API:
 //   contentState                                — { q, sort } shared state
-//   renderContentWorkspace({ sources, ideas, view, headerActions })
+//   renderContentWorkspace({ sources, ideas, view, headerActions, selection, bulkBar })
 //                                                — full HTML render
-//   rerenderContentWorkspaceBody(root, { sources, ideas, view })
+//   rerenderContentWorkspaceBody(root, { sources, ideas, view, selection, bulkBar })
 //                                                — partial re-render (body
-//                                                  + counter pills) so the
-//                                                  search input keeps focus
+//                                                  + counter pills + bulk bar)
+//                                                  so the search input keeps
+//                                                  focus
+//
+// `selection` is an optional Set<sourceId>. When provided, source cards on
+// the By-source view render in selectable mode (leading checkbox; selected
+// cards highlight). `bulkBar` is the HTML of the sticky action bar shown at
+// the top of the body when selection is non-empty (caller-built so it can
+// own its own data-* hooks and copy).
 //
 // Caller wires its own input/change listeners and calls
 // rerenderContentWorkspaceBody(...) on each tick.
 
 import { html, raw } from "../utils.js?v=20";
-import { renderSourceCard } from "./source-card.js?v=22";
+import { renderSourceCard } from "./source-card.js?v=24";
 import { renderIdeaCard } from "./idea-card.js?v=23";
 
 export const contentState = { q: "", sort: "potential" };
@@ -69,7 +76,7 @@ function renderEmptyState({ icon, title, body, actionHtml = "" }) {
   `;
 }
 
-function renderBySourceBody(sources, allIdeas, search) {
+function renderBySourceBody(sources, allIdeas, search, selection = null) {
   if (sources.length === 0) {
     return renderEmptyState({
       icon: "ap-icon-feature-library",
@@ -77,7 +84,10 @@ function renderBySourceBody(sources, allIdeas, search) {
       body: search ? `No source matches "${search}". Try a different term.` : "No sources yet.",
     });
   }
-  return `<div class="stack-sm">${sources.map((s) => renderSourceCard(s, allIdeas)).join("")}</div>`;
+  const selectable = !!selection;
+  return `<div class="stack-sm">${sources
+    .map((s) => renderSourceCard(s, allIdeas, { selectable, isSelected: selectable && selection.has(s.id) }))
+    .join("")}</div>`;
 }
 
 function renderAllIdeasBody(ideas, allSources, search) {
@@ -145,13 +155,16 @@ function renderContentToolbar(view, sourcesCount, ideasCount) {
 // `view` — 'sources' | 'ideas'
 // `headerActions` — optional HTML injected to the right of the count meta
 //                   (e.g. "+ Add source" button on the dashboard)
-export function renderContentWorkspace({ sources, ideas, view, headerActions = "" }) {
+// `selection` — optional Set<sourceId> enabling per-row checkboxes
+// `bulkBar`   — optional HTML rendered at the top of the body, sticky, when
+//               the caller wants to surface bulk actions on the selection
+export function renderContentWorkspace({ sources, ideas, view, headerActions = "", selection = null, bulkBar = "" }) {
   const search = contentState.q;
   const { filteredSources, filteredIdeas } = filterContent(sources, ideas, search);
   const sortedIdeas = sortIdeas(filteredIdeas, contentState.sort);
   const body =
     view === "sources"
-      ? renderBySourceBody(filteredSources, ideas, search)
+      ? renderBySourceBody(filteredSources, ideas, search, selection)
       : renderAllIdeasBody(sortedIdeas, sources, search);
   return html`
     <section class="content-workspace">
@@ -168,23 +181,29 @@ export function renderContentWorkspace({ sources, ideas, view, headerActions = "
         </div>
         ${raw(renderContentToolbar(view, filteredSources.length, filteredIdeas.length))}
       </header>
-      <div class="content-workspace__body" data-content-body>${raw(body)}</div>
+      <div class="content-workspace__body" data-content-body>
+        <div class="content-workspace__bulk-slot" data-bulk-slot>${raw(bulkBar)}</div>
+        ${raw(body)}
+      </div>
     </section>
   `;
 }
 
 // Patches the body + counter pills in place. Preserves search input focus
 // and cursor position because the input itself is left untouched.
-export function rerenderContentWorkspaceBody(root, { sources, ideas, view }) {
+export function rerenderContentWorkspaceBody(root, { sources, ideas, view, selection = null, bulkBar = "" }) {
   const search = contentState.q;
   const { filteredSources, filteredIdeas } = filterContent(sources, ideas, search);
   const sortedIdeas = sortIdeas(filteredIdeas, contentState.sort);
   const body = root.querySelector("[data-content-body]");
   if (body) {
-    body.innerHTML =
+    const cardsHtml =
       view === "sources"
-        ? renderBySourceBody(filteredSources, ideas, search)
+        ? renderBySourceBody(filteredSources, ideas, search, selection)
         : renderAllIdeasBody(sortedIdeas, sources, search);
+    // Re-render preserving the bulk-slot — useful so the slot's reference
+    // stays stable when only the cards change.
+    body.innerHTML = `<div class="content-workspace__bulk-slot" data-bulk-slot>${bulkBar}</div>${cardsHtml}`;
   }
   // Update counter pills in place — don't rebuild the tab buttons.
   root.querySelectorAll("[data-content-view]").forEach((t) => {
@@ -192,6 +211,12 @@ export function rerenderContentWorkspaceBody(root, { sources, ideas, view }) {
     const counter = t.querySelector(".ap-counter");
     if (counter) counter.textContent = which === "sources" ? filteredSources.length : filteredIdeas.length;
   });
+  // Update the static "N sources · M ideas" header line so it stays in sync
+  // when sources land / are deleted / ideas get extracted.
+  const headerCount = root.querySelector(".content-workspace__header-right .muted");
+  if (headerCount) {
+    headerCount.textContent = `${sources.length} source${sources.length === 1 ? "" : "s"} · ${ideas.length} idea${ideas.length === 1 ? "" : "s"}`;
+  }
 }
 
 // Default empty-state for "no sources, no ideas at all" — both screens

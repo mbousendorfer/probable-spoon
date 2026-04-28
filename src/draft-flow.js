@@ -15,7 +15,7 @@
 //   4. Posts a structured "Drafted N posts" result turn.
 
 import { postUserTurn, postAssistantChoice, startPending, finishPending, postDraftResult } from "./assistant.js?v=21";
-import { getIdeas } from "./library.js?v=20";
+import { getIdeas } from "./library.js?v=21";
 import { addPostDraft } from "./posts-store.js?v=20";
 
 const CHANNEL_META = {

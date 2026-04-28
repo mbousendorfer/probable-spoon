@@ -8,16 +8,16 @@ import { recentSessions, templateStarters, ideas } from "../mocks.js?v=22";
 import { getContexts, getContextById } from "../contexts-store.js?v=20";
 import { setHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
-import { getSources, subscribeSources } from "../sources-stream.js?v=20";
+import { getSources, subscribeSources } from "../sources-stream.js?v=21";
 import { isNewUser } from "../user-mode.js?v=20";
-import { renderSourceCard } from "../components/source-card.js?v=22";
+import { renderSourceCard } from "../components/source-card.js?v=24";
 import { renderIdeaCard } from "../components/idea-card.js?v=23";
 import {
   contentState,
   renderContentWorkspace as renderSharedContentWorkspace,
   rerenderContentWorkspaceBody,
   renderContentEmptyState,
-} from "../components/content-workspace.js?v=20";
+} from "../components/content-workspace.js?v=22";
 
 // Dashboard — one URL (#/), state variants encoded in URL params so URLs
 // like "Projects · Ideas" stay shareable.

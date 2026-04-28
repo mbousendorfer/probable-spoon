@@ -783,3 +783,101 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Multi-select on the source list ---------------------------------
+   Sticky bar at the top of the workspace body when N sources are selected.
+   Sits above the cards but inside the same scroll container so it follows
+   the user as they scroll through a long source list. The .bulk-slot
+   wrapper is always in the DOM (empty when no selection) so partial
+   re-renders don't have to recreate it. */
+
+.content-workspace__bulk-slot {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--app-bg, var(--ref-color-grey-05));
+}
+
+.content-workspace__bulk-slot:empty {
+  display: none;
+}
+
+.content-workspace__bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-sm);
+  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
+  margin-bottom: var(--ref-spacing-xs);
+  background: var(--ref-color-electric-blue-05);
+  border: 1px solid var(--ref-color-electric-blue-100);
+  border-radius: var(--ref-border-radius-md);
+}
+
+.content-workspace__bulk-count {
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-electric-blue-150);
+}
+
+.content-workspace__bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+}
+
+/* Leading checkbox on each source card. Sits before the kind-box so it
+   doesn't collide with the icon spinner during processing (we don't
+   render the checkbox at all when processing — see source-card.js). */
+
+.source-card__check {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+.source-card--selected {
+  border-color: var(--ref-color-electric-blue-100);
+  background: var(--ref-color-electric-blue-05);
+}
+
+/* ---- Confirm modal ---------------------------------------------------
+   Reusable confirm dialog (Delete N sources, etc). Tighter than the form
+   modals (bug-report, feedback) — just a title, body paragraph, and the
+   two-button footer. */
+
+.confirm-modal {
+  max-width: 440px;
+  width: calc(100% - var(--ref-spacing-md) * 2);
+}
+
+.confirm-modal__body {
+  margin: 0;
+  color: var(--ref-color-grey-150);
+  line-height: var(--ref-font-line-height-md);
+}
+
+/* Danger CTA — when confirm-modal is opened with danger=true. Uses the
+   DS red palette without depending on a non-existent .ap-button .danger
+   modifier in this DS version. */
+.ap-button.danger {
+  background: var(--ref-color-red-100);
+  color: var(--ref-color-white);
+  border-color: var(--ref-color-red-100);
+}
+
+.ap-button.danger:hover {
+  background: var(--ref-color-red-150, var(--ref-color-red-100));
+  border-color: var(--ref-color-red-150, var(--ref-color-red-100));
+}
+
+.ap-button.stroked.danger {
+  background: transparent;
+  color: var(--ref-color-red-100);
+  border-color: var(--ref-color-red-100);
+}
+
+.ap-button.stroked.danger:hover {
+  background: var(--ref-color-red-05, rgba(220, 38, 38, 0.05));
+}

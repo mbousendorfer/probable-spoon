@@ -44,6 +44,7 @@ body.has-modal {
 .generate-image-modal,
 .chat-picker-modal,
 .add-source-modal,
+.confirm-modal,
 .shortcut-legend {
   position: fixed;
   top: 50vh;
@@ -81,6 +82,7 @@ body.has-modal {
 .generate-image-modal.open,
 .chat-picker-modal.open,
 .add-source-modal.open,
+.confirm-modal.open,
 .shortcut-legend.open {
   display: flex;
   animation: app-modal-fade-in var(--ref-animation-normal) ease;

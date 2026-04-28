@@ -311,3 +311,19 @@ export function cancelUpload(uploadId) {
   }
   notifyUploads();
 }
+
+// Remove one or more processed sources. Used by the bulk-delete flow on the
+// Content tab. The accompanying ideas (per-session) are cleaned up by the
+// caller via library.removeIdeasForSources — this module only owns the
+// global sources array. No-op for ids that aren't found.
+export function removeSources(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return 0;
+  const set = new Set(ids);
+  const before = sources.length;
+  for (let i = sources.length - 1; i >= 0; i -= 1) {
+    if (set.has(sources[i].id)) sources.splice(i, 1);
+  }
+  const removed = before - sources.length;
+  if (removed > 0) notifySources();
+  return removed;
+}

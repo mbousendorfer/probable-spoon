@@ -9,11 +9,17 @@
 // the icon becomes a spinner, the filename goes grey-60, and "Ask" is
 // disabled.
 //
+// When `selectable` is true, the card grows a leading checkbox so callers
+// can run bulk actions (Extract more ideas / Delete) on a multi-selection.
+// Processing sources stay non-selectable — there's nothing to extract from
+// or delete cleanly while the upload is mid-flight.
+//
 // Source shape: { id, filename, kind, status, ideaCount, addedAt, ... }
 
 import { iconFor } from "../file-kinds.js?v=20";
 
-export function renderSourceCard(source, allIdeas = []) {
+// version-bumped to ?v=24 by callers (FIND-S2 selectable rows)
+export function renderSourceCard(source, allIdeas = [], { selectable = false, isSelected = false } = {}) {
   const isProcessing = source.status === "Processing";
   const totalIdeas =
     typeof source.ideaCount === "number"
@@ -48,8 +54,31 @@ export function renderSourceCard(source, allIdeas = []) {
         <span>Ask</span>
       </button>`;
 
+  // Leading checkbox — only when the workspace is in selection mode AND the
+  // source is processed. The DS `.ap-checkbox-container` uses a hidden
+  // input + sibling `<i>` to render the visual box (see ds/css-ui index
+  // around line 1183) so the markup must include both. data-source-select
+  // gives the click delegator a stable hook regardless of which child the
+  // click lands on.
+  const selectCheckbox =
+    selectable && !isProcessing
+      ? `
+        <label class="ap-checkbox-container source-card__check" aria-label="Select ${source.filename}">
+          <input
+            type="checkbox"
+            data-source-select="${source.id}"
+            ${isSelected ? "checked" : ""}
+          />
+          <i></i>
+        </label>
+      `
+      : "";
+
+  const selectedClass = isSelected ? " source-card--selected" : "";
+
   return `
-    <article class="ap-card source-card${isProcessing ? " source-card--processing" : ""}" data-source-id="${source.id}">
+    <article class="ap-card source-card${isProcessing ? " source-card--processing" : ""}${selectedClass}" data-source-id="${source.id}">
+      ${selectCheckbox}
       <div class="source-card__kind-box">${iconContent}</div>
 
       <div class="source-card__info">

@@ -7,8 +7,9 @@ import { init as initGenerateImageModal } from "./components/generate-image-moda
 import { init as initSettingsDrawer } from "./components/settings-drawer.js?v=21";
 import { init as initChatPickerModal } from "./components/chat-picker-modal.js?v=20";
 import { init as initAddSourceModal } from "./components/add-source-modal.js?v=20";
+import { init as initConfirmModal } from "./components/confirm-modal.js?v=20";
 import { renderDashboard } from "./screens/dashboard.js?v=39";
-import { renderSession } from "./screens/session.js?v=44";
+import { renderSession } from "./screens/session.js?v=45";
 // Route table.
 // Every screen is responsible for calling renderTopbar() itself so the crumb
 // stays in sync with the active context.
@@ -27,4 +28,5 @@ initGenerateImageModal();
 initSettingsDrawer();
 initChatPickerModal();
 initAddSourceModal();
+initConfirmModal();
 start();

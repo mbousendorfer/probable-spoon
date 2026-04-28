@@ -9,6 +9,8 @@
 //   getIdeas(sessionId)    → Idea[]
 //   subscribe(sessionId, fn) → unsubscribe   payload: { sources, ideas }
 //   addSource(sessionId, kind)  kicks off the mocked add → extract flow
+//   appendExtractedIdeas(sessionId, sources)  bulk "extract more" flow
+//   removeIdeasForSources(sessionId, sourceIds)  cleanup after bulk-delete
 
 import { ideas as seedIdeas } from "./mocks.js?v=22";
 import { isNewUser } from "./user-mode.js?v=20";
@@ -24,7 +26,7 @@ import {
   subscribeSources,
   pushScriptedSource,
   completeScriptedSource,
-} from "./sources-stream.js?v=20";
+} from "./sources-stream.js?v=21";
 
 // --- Module state -------------------------------------------------------
 
@@ -61,6 +63,80 @@ export function subscribe(sessionId, fn) {
     const set = subscribers.get(sessionId);
     if (set) set.delete(fn);
   };
+}
+
+// Bulk "extract more ideas" — used by the source-list bulk action bar.
+// For each source passed in, generates 1–2 fresh angle-flavored ideas using
+// EXTRA_IDEA_TEMPLATES, prepends them to the per-session ideas store, and
+// posts a single extraction turn into the assistant thread summarising the
+// outcome. The narrative is "give me more angles from these files" — never
+// destructive, always additive.
+export function appendExtractedIdeas(sessionId, sources) {
+  if (!Array.isArray(sources) || sources.length === 0) return [];
+  // Make sure ideas are seeded before we prepend to them.
+  getIdeas(sessionId);
+
+  const pendingId = startPending(sessionId);
+
+  // Synthesise the new ideas synchronously (no extraction delay for bulk
+  // "extract more" — the user already sat through the original processing
+  // pass when each source was first added). We still go through the
+  // pending → extraction-turn dance so the chat looks consistent.
+  const created = [];
+  sources.forEach((source, idx) => {
+    const template = EXTRA_IDEA_TEMPLATES[(idx + created.length) % EXTRA_IDEA_TEMPLATES.length];
+    const idea = {
+      id: newId("idea"),
+      title: template.title.replace("{filename}", source.filename),
+      body: template.body.replace("{filename}", source.filename),
+      rationale: template.rationale,
+      relevance: template.relevance,
+      relevanceColor: template.relevanceColor,
+      confidence: template.confidence,
+      channels: template.channels,
+      state: "New",
+      pinned: false,
+      sourceIds: [source.id],
+      extractedAt: "just now",
+    };
+    created.push(idea);
+  });
+
+  ideasMap.get(sessionId).unshift(...created);
+
+  // Single extraction-turn summarising all of them. If only one source was
+  // selected we use its filename; otherwise show "N sources".
+  const filename =
+    sources.length === 1 ? sources[0].filename : `${sources.length} source${sources.length === 1 ? "" : "s"}`;
+  postExtractionResult(sessionId, { filename, ideas: created });
+
+  finishPending(sessionId, pendingId);
+  notify(sessionId);
+  return created;
+}
+
+// Drop every idea whose ONLY source was one of the deleted sources. Ideas
+// that draw from multiple sources lose just the deleted reference and stay
+// in the list — half their context is still around.
+export function removeIdeasForSources(sessionId, sourceIds) {
+  if (!Array.isArray(sourceIds) || sourceIds.length === 0) return 0;
+  const set = new Set(sourceIds);
+  const ideas = ideasMap.get(sessionId);
+  if (!ideas) return 0;
+  const before = ideas.length;
+  // Filter in place — same array reference so subscribers see the change.
+  for (let i = ideas.length - 1; i >= 0; i -= 1) {
+    const idea = ideas[i];
+    const remaining = (idea.sourceIds || []).filter((sid) => !set.has(sid));
+    if (remaining.length === 0) {
+      ideas.splice(i, 1);
+    } else if (remaining.length !== (idea.sourceIds || []).length) {
+      idea.sourceIds = remaining;
+    }
+  }
+  const removed = before - ideas.length;
+  notify(sessionId);
+  return removed;
 }
 
 export function addSource(sessionId, kind) {
@@ -148,6 +224,52 @@ function notify(sessionId) {
   };
   set.forEach((fn) => fn(payload));
 }
+
+// --- Extra-extraction templates (bulk "extract more ideas") ------------
+//
+// One of these is picked per selected source by appendExtractedIdeas. The
+// {filename} placeholder is replaced with the source's filename so each
+// idea looks freshly mined. Order doesn't matter — they're rotated.
+
+const EXTRA_IDEA_TEMPLATES = [
+  {
+    title: "The unspoken constraint hiding in {filename}",
+    body: "A pattern Archie noticed on a second pass — what the doc keeps circling without naming directly.",
+    rationale:
+      "Re-reads tend to surface the structural constraint authors avoid stating. High-leverage angle for thoughtful audiences.",
+    relevance: "High relevance",
+    relevanceColor: "orange",
+    confidence: 84,
+    channels: ["linkedin"],
+  },
+  {
+    title: "What surprised me about {filename}",
+    body: "A first-person reaction post — the line in the source that didn't match the rest of its tone.",
+    rationale: "Personal-reaction posts perform well when grounded in a specific moment. Reusable template.",
+    relevance: "Medium relevance",
+    relevanceColor: "tagOrange",
+    confidence: 73,
+    channels: ["linkedin", "x"],
+  },
+  {
+    title: "A case-study angle from {filename}",
+    body: "Reframes the source as one company's data point in a larger pattern.",
+    rationale: "Case-study framing draws comments from operators who've lived a similar setup — strong reach signal.",
+    relevance: "Medium relevance",
+    relevanceColor: "tagOrange",
+    confidence: 68,
+    channels: ["linkedin"],
+  },
+  {
+    title: "The contrarian read of {filename}",
+    body: "A take that pushes back on the source's headline argument while staying grounded in its own evidence.",
+    rationale: "Contrarian-but-fair posts attract debate without alienating the original author's audience.",
+    relevance: "High relevance",
+    relevanceColor: "orange",
+    confidence: 81,
+    channels: ["linkedin", "x"],
+  },
+];
 
 // --- Per-kind mock scripts ---------------------------------------------
 
