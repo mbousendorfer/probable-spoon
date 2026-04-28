@@ -42,6 +42,12 @@ import { open as openChatPickerModal } from "../components/chat-picker-modal.js?
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=21";
 import { classifyFile, startFileUpload } from "../sources-stream.js?v=22";
 import { showToast } from "../components/toast.js?v=20";
+import {
+  openDrafts as openDraftsPanel,
+  getActiveBatchRef as getActiveDraftsBatchRef,
+  getMode as getRightPanelMode,
+  subscribe as subscribeRightPanel,
+} from "../components/right-panel.js?v=21";
 import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 
@@ -708,6 +714,17 @@ function wireAssistantPanel(root, session, attachedContext) {
     updateThinkingChip(session.id);
   });
 
+  // Subscribe to the right-panel state — when the active batch flips or the
+  // panel opens/closes, the in-thread Drafts summary card needs to swap its
+  // .is-active visual. Cheaper than re-rendering everything: just repaint
+  // the thread.
+  const offRightPanel = subscribeRightPanel(() => {
+    const thread = getThreadEl();
+    if (!thread) return;
+    const messages = getThread(session.id);
+    thread.innerHTML = renderThread(messages);
+  });
+
   // Subscribe to library/ideas changes — re-render the Content workspace
   // body (both By source and All ideas share the same data).
   const offLibrary = subscribeLibrary(session.id, ({ sources, ideas }) => {
@@ -901,6 +918,7 @@ function wireAssistantPanel(root, session, attachedContext) {
 
   currentUnsubscribe = () => {
     offThread();
+    offRightPanel();
     offLibrary();
     offPosts();
     offWizard();
@@ -1422,9 +1440,15 @@ function renderDraftTurn(message) {
       ? "review, edit, and schedule"
       : `Across ${networkCount} ${networkCount === 1 ? "network" : "networks"} · review, edit, and schedule`;
 
+  // Active when the right panel is open in Drafts mode and pinned to THIS
+  // message — gives the user a visual anchor between the chat thread and
+  // the editable batch surface.
+  const activeRef = getRightPanelMode() === "drafts" ? getActiveDraftsBatchRef() : null;
+  const isActive = activeRef && activeRef.messageId === message.id;
+
   return `
     <div class="chat-turn chat-turn--ai chat-turn--extraction">
-      <button type="button" class="drafts-card" data-drafts-card-message="${message.id || ""}" data-go-to-posts>
+      <button type="button" class="drafts-card ${isActive ? "is-active" : ""}" data-drafts-card-message="${message.id || ""}">
         <span class="drafts-card__icon" aria-hidden="true">
           <i class="ap-icon-pen"></i>
         </span>
@@ -1774,7 +1798,19 @@ function bindSession(root, session) {
         return;
       }
 
-      // "View in Posts" link inside a draft result turn.
+      // In-thread Drafts summary card → opens the right-panel Drafts surface
+      // pinned to this batch's assistant message. The full editable BatchCards
+      // live in the panel; the in-thread card is just the entry point.
+      const draftsCard = event.target.closest("[data-drafts-card-message]");
+      if (draftsCard) {
+        event.preventDefault();
+        const messageId = draftsCard.dataset.draftsCardMessage;
+        openDraftsPanel({ sessionId: session.id, messageId });
+        return;
+      }
+      // Any other [data-go-to-posts] surface (older link patterns) — keep the
+      // legacy navigation to the Posts tab until those callers are migrated
+      // to the right panel.
       if (event.target.closest("[data-go-to-posts]")) {
         event.preventDefault();
         setQuery({ tab: "posts", postsFilter: "all", postsNetwork: "all" });
