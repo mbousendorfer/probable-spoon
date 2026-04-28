@@ -667,6 +667,18 @@ Le handoff définit des alias (`--fg-*`, `--bg-*`, `--border-*`, `--space-*`, `-
 - **Complexité** : **S** (1–2 jours)
 - **Dépendances** : tous les lots précédents.
 
+### Lot 11 — Topbar refactor (ajouté après feedback utilisateur)
+
+- **Périmètre** : la topbar actuelle (`Sidebar toggle | Title || [Drafts] [Ideas] | Feedback | Bug | ? | ⚙`) est encombrée. À aligner sur le handoff :
+  - Topbar minimaliste : `[Sidebar toggle] [Title]   [Context pill] [Drafts] [Ideas]` uniquement.
+  - Déplacer **Feedback** + **Report a bug** + **Help (?)** vers une **icône overflow** (`…`) qui ouvre un popmenu, ou vers le **Settings drawer** comme nouveaux onglets (Feedback / Help & Shortcuts / Submit a bug).
+  - **Settings (⚙)** sort de la topbar : il y a déjà l'entrée dans le footer de la sidebar (pattern handoff). Garder une seule entrée.
+  - Décider du sort du raccourci `?` clavier : il devrait rester (legend) mais le bouton dédié dans la topbar disparaît.
+- **Fichiers touchés** : [src/components/topbar.js](src/components/topbar.js), [styles/layout.css](styles/layout.css), potentiellement [src/components/settings-drawer.js](src/components/settings-drawer.js) pour ajouter les onglets Feedback/Bug/Help, ou un nouveau composant `popmenu.js`.
+- **Complexité** : **S** (1 jour)
+- **Dépendances** : Lots 4 + 5 (pills installés). Peut être traité en parallèle de Lot 8 (Contexts) — c'est de la chrome.
+- **Origine** : feedback utilisateur 2026-04-28 — "c'est le bordel dans la topbar".
+
 ### Vue d'ensemble — séquencement
 
 ```
