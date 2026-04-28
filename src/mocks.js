@@ -11,15 +11,6 @@ export const recentSessions = [
     postCount: 3,
     contextId: "ctx-acme",
   },
-  {
-    id: "s-founder-stories",
-    name: "Founder stories — monthly cadence",
-    lastActivity: "yesterday",
-    sourceCount: 3,
-    ideaCount: 4,
-    postCount: 1,
-    contextId: null,
-  },
 ];
 
 export const templateStarters = [
@@ -673,20 +664,3 @@ export const notificationPrefs = {
     approvals: false,
   },
 };
-
-// Map from the dashboard's "Context" select value to a default context id +
-// human-readable name. Lives next to the context fixtures so adding a new
-// kind only touches mocks.js.
-const NEW_PROJECT_CONTEXT_MAP = {
-  voice: { id: "ctx-founder-voice", name: "My voice profile" },
-  brief: { id: "ctx-acme", name: "My strategy brief" },
-  brand: { id: "ctx-acme", name: "My brand theme" },
-};
-
-export function contextIdForNewProject(value) {
-  return NEW_PROJECT_CONTEXT_MAP[value]?.id || "";
-}
-
-export function contextNameFor(value) {
-  return NEW_PROJECT_CONTEXT_MAP[value]?.name || "Your context";
-}

@@ -8,7 +8,11 @@
 // notify().
 //
 // Public API:
-//   startWizard(sessionId, { stages, onComplete })  → kick off the flow
+//   startWizard(sessionId, { stages, onComplete, skipMemorize? })
+//                                                    → kick off the flow.
+//                                                       skipMemorize=true: bypass
+//                                                       the save/name prompts
+//                                                       (used by section edits).
 //   isActive(sessionId)                              → boolean
 //   getState(sessionId)                              → current state or null
 //   answer(sessionId, value, custom?)                → advance to next step
@@ -37,13 +41,15 @@ const completionHandlers = new Map(); // sessionId → fn (called once on memori
 
 // ---- Public API ------------------------------------------------------------
 
-export function startWizard(sessionId, { stages, onComplete }) {
+export function startWizard(sessionId, { stages, onComplete, skipMemorize = false }) {
   states.set(sessionId, {
     stages,
     stageIdx: 0,
     step: "0",
     history: [], // [{ stage, step, role: 'ai'|'user', text, contentHtml? }] — replayed on each render
     awaitingMemorize: false,
+    awaitingMemorizeName: false, // true while we wait for the user to type a context name
+    skipMemorize, // when true, completion fires immediately after the last stage (used by section edits)
     isPending: false, // true while a "thinking" notice is displayed between steps
   });
   if (onComplete) completionHandlers.set(sessionId, onComplete);
@@ -71,7 +77,8 @@ export function exit(sessionId) {
 }
 
 // Skip the rest of the current stage and jump to the next one. If this was
-// the last stage, swap into the memorize step.
+// the last stage, either swap into the memorize step or, when skipMemorize is
+// set (section-edit flows), fire completion immediately.
 export function skipStage(sessionId) {
   const state = states.get(sessionId);
   if (!state) return;
@@ -79,26 +86,61 @@ export function skipStage(sessionId) {
   state.stageIdx += 1;
   state.step = "0";
   if (state.stageIdx >= state.stages.length) {
+    if (state.skipMemorize) {
+      finishImmediate(sessionId);
+      return;
+    }
     state.awaitingMemorize = true;
   }
   notify(sessionId);
+}
+
+// Fire onComplete + clean up. Used when skipMemorize is set so the wizard
+// doesn't prompt the user about saving on a single-stage edit.
+function finishImmediate(sessionId) {
+  const onComplete = completionHandlers.get(sessionId);
+  states.delete(sessionId);
+  completionHandlers.delete(sessionId);
+  notify(sessionId);
+  if (onComplete) onComplete({ savedAsContext: false });
 }
 
 export function answer(sessionId, value, custom = null) {
   const state = states.get(sessionId);
   if (!state) return;
 
-  // Memorize step is the only thing left after all stages — handle here.
-  if (state.awaitingMemorize) {
-    state.history.push({
-      role: "user",
-      text: value === "save" ? "Yes, save it" : "Just this session",
-    });
+  // Memorize → name prompt branch. The user has confirmed they want to save
+  // this context globally; we now expect a typed name in `custom` (the only
+  // input row in the picker uses customPlaceholder).
+  if (state.awaitingMemorizeName) {
+    const typed = (custom || (typeof value === "string" ? value : "") || "").trim();
+    const finalName = typed || "Untitled context";
+    state.history.push({ role: "user", text: finalName });
     const onComplete = completionHandlers.get(sessionId);
     states.delete(sessionId);
     completionHandlers.delete(sessionId);
     notify(sessionId);
-    if (onComplete) onComplete({ savedAsContext: value === "save" });
+    if (onComplete) onComplete({ savedAsContext: true, name: finalName });
+    return;
+  }
+
+  // Memorize step is the only thing left after all stages — handle here.
+  if (state.awaitingMemorize) {
+    if (value === "save") {
+      // Pivot to the name prompt; don't fire onComplete yet.
+      state.history.push({ role: "user", text: "Yes, save it" });
+      state.awaitingMemorize = false;
+      state.awaitingMemorizeName = true;
+      notify(sessionId);
+      return;
+    }
+    // value === "session" — local context, no name needed.
+    state.history.push({ role: "user", text: "Just this session" });
+    const onComplete = completionHandlers.get(sessionId);
+    states.delete(sessionId);
+    completionHandlers.delete(sessionId);
+    notify(sessionId);
+    if (onComplete) onComplete({ savedAsContext: false });
     return;
   }
 
@@ -109,10 +151,15 @@ export function answer(sessionId, value, custom = null) {
   const next = script.handleAnswer(state, value, custom);
 
   if (next === "done") {
-    // Advance to the next stage. If none left, swap into the memorize step.
+    // Advance to the next stage. If none left, swap into the memorize step
+    // (or fire completion immediately when skipMemorize is set).
     state.stageIdx += 1;
     state.step = "0";
     if (state.stageIdx >= state.stages.length) {
+      if (state.skipMemorize) {
+        finishImmediate(sessionId);
+        return;
+      }
       state.awaitingMemorize = true;
     }
     notify(sessionId);
@@ -160,6 +207,18 @@ export function renderChrome(sessionId) {
     return {
       body: historyHtml + analyzingNoticeHtml(),
       picker: null,
+    };
+  }
+
+  if (state.awaitingMemorizeName) {
+    return {
+      body:
+        historyHtml +
+        chatTurn({
+          role: "ai",
+          text: "What should I call this context?",
+        }),
+      picker: MEMORIZE_NAME_PICKER,
     };
   }
 
@@ -218,6 +277,17 @@ const MEMORIZE_PICKER = {
   handler: "wizard-answer",
   title: "Want me to remember this context for next time?",
   stepIndicator: "Save context",
+};
+
+// Custom-input-only picker — items=[] + customPlaceholder makes the input row
+// the only thing the user can submit. Enter sends the typed value as `custom`
+// in answer(sid, "other", value); the wizard captures it as the context name.
+const MEMORIZE_NAME_PICKER = {
+  items: [],
+  handler: "wizard-answer",
+  customPlaceholder: "Name this context (e.g. “Founder voice”)…",
+  title: "What should I call this context?",
+  stepIndicator: "Name context",
 };
 
 // ---- Voice script ----------------------------------------------------------

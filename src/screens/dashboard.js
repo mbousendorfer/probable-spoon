@@ -4,7 +4,8 @@ import { renderTopbar } from "../components/topbar.js?v=23";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=20";
-import { recentSessions, templateStarters, ideas, contextIdForNewProject, contextNameFor } from "../mocks.js?v=22";
+import { recentSessions, templateStarters, ideas } from "../mocks.js?v=22";
+import { getContexts, getContextById } from "../contexts-store.js?v=20";
 import { setHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 import { getSources, subscribeSources } from "../sources-stream.js?v=20";
@@ -31,7 +32,11 @@ import {
 function readQuery() {
   const params = parseHashParams();
   return {
-    ctx: params.get("ctx") || "none",
+    // ctx is now a context id ("ctx-acme"), or "" for "no context yet — AI
+    // will help create one". Legacy values ("none"/"voice"/"brief"/"brand")
+    // are normalized to "" since the magic mapping was dropped along with
+    // the /analyse routes.
+    ctx: params.get("ctx") || "",
     title: params.get("title") || "",
     view: params.get("view") || "sources",
   };
@@ -76,8 +81,12 @@ export function renderDashboard(_params, target) {
 }
 
 function renderNewProjectCard(q) {
-  // The "Context" select encodes whether a context is pre-attached or created on the fly.
-  const ctxOpt = (value, label) => `<option value="${value}" ${q.ctx === value ? "selected" : ""}>${label}</option>`;
+  // Context select — either "" (no context, AI walks the user through creation)
+  // or the id of an existing global context. Templates / direct param can
+  // pre-select a value; otherwise we default to "" (no context).
+  const selected = q.ctx || "";
+  const ctxOpt = (value, label) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
+  const globals = getContexts();
 
   return html`
     <div class="ap-card dashboard__new-project">
@@ -94,9 +103,8 @@ function renderNewProjectCard(q) {
       <div class="ap-form-field">
         <label>Context</label>
         <select class="ap-native-select" data-new-project-context>
-          ${raw(ctxOpt("none", "No context — create one for this project"))}
-          ${raw(ctxOpt("voice", "Use my voice profile"))} ${raw(ctxOpt("brief", "Use my strategy brief"))}
-          ${raw(ctxOpt("brand", "Use my brand theme"))}
+          ${raw(ctxOpt("", "No context — Archie will help me create one"))}
+          ${raw(globals.map((c) => ctxOpt(c.id, c.name)).join(""))}
         </select>
       </div>
       <button type="button" class="ap-button primary orange" data-new-project-create>New chat</button>
@@ -235,14 +243,12 @@ function bindDashboard(root) {
       const template = templateStarters.find((t) => t.id === templateBtn.dataset.templateId);
       if (template) {
         const nameInput = root.querySelector("[data-new-project-name]");
-        const contextSelect = root.querySelector("[data-new-project-context]");
         const title = `${template.name} project`;
         if (nameInput) nameInput.value = title;
-        if (contextSelect) contextSelect.value = template.id === "tpl-launch" ? "brand" : "voice";
-        setQuery({
-          title,
-          ctx: contextSelect?.value || "voice",
-        });
+        // Templates only pre-fill the chat name; context choice stays at the
+        // user's current selection (defaulting to "" — no context yet, AI will
+        // walk the user through creation).
+        setQuery({ title });
       }
       return;
     }
@@ -255,15 +261,18 @@ function bindDashboard(root) {
       // from the conversation content once it has enough material.
       const typed = nameInput?.value.trim() || "";
       const title = typed || defaultChatName();
-      const contextValue = contextSelect?.value || "none";
-      const contextId = contextIdForNewProject(contextValue);
+      // contextSelect.value is now either "" (no context — AI will walk the
+      // user through creation in-session) or the id of an existing global
+      // context. No magic-value mapping anymore.
+      const contextId = contextSelect?.value || "";
       const qs = new URLSearchParams({ tab: "posts", title });
       if (contextId) qs.set("contextId", contextId);
       // Hand-off pattern (mirrors pendingDraftIdeaId): the session screen
       // reads + clears this flag on mount and triggers the right start flow.
+      const ctx = contextId ? getContextById(contextId) : null;
       setHandoff("pendingStartFlow", {
         hasContext: !!contextId,
-        contextName: contextNameFor(contextValue),
+        contextName: ctx?.name || "Your context",
       });
       navigate(`/session/new?${qs.toString()}`);
       return;
@@ -354,7 +363,9 @@ function bindDashboard(root) {
 
   root.addEventListener("change", (event) => {
     if (event.target.matches("[data-new-project-context]")) {
-      setQuery({ ctx: event.target.value || "none" });
+      // Empty value = "no context yet — Archie will help create one".
+      // Anything else is a global context id that gets attached on submit.
+      setQuery({ ctx: event.target.value });
       return;
     }
     if (event.target.matches("[data-content-sort]")) {

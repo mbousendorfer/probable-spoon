@@ -3,12 +3,13 @@ import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=23";
 import {
   getSessionById,
-  getContextById,
-  contextComponentsFor,
-  contexts as allContexts,
   socialAccounts,
   recentSessions,
+  voiceAnalysis,
+  strategyBrief,
+  brandTheme,
 } from "../mocks.js?v=22";
+import { getContextById, getContexts, addContext, updateContext } from "../contexts-store.js?v=20";
 import { isNewUser } from "../user-mode.js?v=20";
 import {
   getThread,
@@ -55,13 +56,31 @@ function readQuery() {
     populated: params.get("populated") === "1" || params.get("populated") === "true",
     title: params.get("title") || "",
     contextId: params.get("contextId") || "",
-    detached: params.get("detached") === "1" || params.get("detached") === "true",
+    // Local-context flag — set when the user finishes the wizard with
+    // "Just this session", or forks from a global. Mutually exclusive with
+    // contextId. The actual voice/brief/brand bundle is the standard mocked
+    // one (the proto doesn't track per-session context divergence).
+    localContext: params.get("localContext") === "1" || params.get("localContext") === "true",
     postsFilter: params.get("postsFilter") || "all",
     postsNetwork: params.get("postsNetwork") || "all",
     focusIdea: params.get("focusIdea") || "",
     focusPost: params.get("focusPost") || "",
     focusSource: params.get("focusSource") || "",
     view: params.get("view") || "sources",
+  };
+}
+
+// Synthetic local-context object used when the session has localContext=1.
+// Same shape as the global contexts in the store; id is derived from the
+// session id so accordion logic still gets a stable id to key on.
+function makeLocalContext(sessionId) {
+  return {
+    id: `local:${sessionId}`,
+    name: "Local context",
+    updatedAt: "just now",
+    voice: voiceAnalysis,
+    brief: strategyBrief,
+    brand: brandTheme,
   };
 }
 
@@ -102,16 +121,23 @@ export function renderSession(params, target) {
   };
   renderTopbar({ crumb: session.name });
 
-  // In "populated=1" mode we pretend the session has the default context
-  // attached so the UI can demo the populated Context tab.
-  const attachedContext = q.detached
-    ? null
+  // Resolution priority — URL state always wins over the mock seed so
+  // wizard-driven changes (fork to local, save as new global) take effect
+  // immediately without needing to mutate the mock object:
+  //  1. URL localContext=1 → synthesized inline bundle (fork or wizard "session-only")
+  //  2. URL contextId       → getContextById (wizard "save as global", or
+  //                                            initial nav with explicit param)
+  //  3. session.contextId   → mock seed (initial state for s-acme-launch etc.)
+  //  4. URL populated=1     → first global (legacy demo flag)
+  //  5. null                → transient creation phase (wizard active, neither set)
+  const attachedContext = q.localContext
+    ? makeLocalContext(session.id)
     : q.contextId
       ? getContextById(q.contextId)
       : session.contextId
         ? getContextById(session.contextId)
         : q.populated
-          ? allContexts[0]
+          ? getContexts()[0]
           : null;
   const hasContext = !!attachedContext;
 
@@ -296,6 +322,68 @@ function askWhatToKnow(sessionId, filename) {
     onPick: (text) => sendMessage(sessionId, text),
     onCustom: (text) => sendMessage(sessionId, text),
     onSkip: () => {},
+  });
+}
+
+// Section-edit scope picker — shown when the user clicks "Edit via chat" on
+// a section of a global context. Two outcomes: update the global everywhere,
+// or fork the session to a local copy and edit there. Local-context edits
+// skip this step entirely.
+function startEditScopePicker(session, section, ctxId) {
+  const sectionTitle = section === "voice" ? "Voice" : section === "brief" ? "Strategy brief" : "Brand theme";
+  inlineQuestion.ask(session.id, {
+    intro: `Editing the ${sectionTitle.toLowerCase()} — should this update the global context, or just this chat?`,
+    title: "Where should this edit apply?",
+    stepLabel: "Edit scope",
+    items: [
+      {
+        value: "global",
+        label: "Update everywhere",
+        caption: "Other chats using this context will see the changes too.",
+        icon: "ap-icon-globe",
+      },
+      {
+        value: "local",
+        label: "Just this chat",
+        caption: "Forks a local copy. Other chats keep the original.",
+        icon: "ap-icon-bolden",
+      },
+    ],
+    onPick: (scope) => {
+      if (scope === "local") {
+        // Fork: clear the global ref + flip the local-context flag. The URL
+        // change re-renders the Context tab; on next paint the section-edit
+        // wizard sees an already-local context and doesn't ask again.
+        setQuery({ contextId: "", localContext: "1" });
+        // Wait one tick so the URL/state settles before launching the wizard.
+        setTimeout(() => startSectionEdit(session, section, { scope: "local", contextId: "" }), 0);
+        return;
+      }
+      // scope === "global"
+      startSectionEdit(session, section, { scope: "global", contextId: ctxId });
+    },
+    onSkip: () => {},
+  });
+}
+
+// Single-stage wizard for editing one section of an attached context.
+// skipMemorize is set so the wizard doesn't prompt save/name on completion;
+// for global edits we bump updatedAt on the store so consumers see a
+// "freshly updated" signal. Local edits don't need any persistence — the
+// underlying voice/brief/brand mocks are shared (proto convention).
+function startSectionEdit(session, section, { scope, contextId }) {
+  sidebarWizard.startWizard(session.id, {
+    stages: [section],
+    skipMemorize: true,
+    onComplete: () => {
+      const sectionTitle = section === "voice" ? "Voice" : section === "brief" ? "Strategy brief" : "Brand theme";
+      if (scope === "global" && contextId) {
+        updateContext(contextId, { updatedAt: "just now" });
+        postAssistantMessage(session.id, `${sectionTitle} updated everywhere this context is used.`);
+      } else {
+        postAssistantMessage(session.id, `${sectionTitle} updated for this chat only.`);
+      }
+    },
   });
 }
 
@@ -692,7 +780,26 @@ function wireAssistantPanel(root, session, attachedContext) {
       if (pendingStart.hasContext) {
         startActionPickerFlow(session.id, { contextName: pendingStart.contextName });
       } else {
-        startContextBuildFlow(session.id);
+        startContextBuildFlow(session.id, {
+          // The session owns the URL state and the contexts-store; on wizard
+          // completion we either push a new global + attach it (URL contextId)
+          // or just flag the session as having a local context (URL localContext).
+          // Either way the URL change triggers a re-render so the Context tab
+          // immediately repaints with the resolved bundle.
+          onPersist: ({ savedAsContext, name }) => {
+            if (savedAsContext) {
+              const created = addContext({
+                name: name || "Untitled context",
+                voice: voiceAnalysis,
+                brief: strategyBrief,
+                brand: brandTheme,
+              });
+              setQuery({ contextId: created.id, localContext: "" });
+            } else {
+              setQuery({ contextId: "", localContext: "1" });
+            }
+          },
+        });
       }
     }, 200);
   }
@@ -1206,43 +1313,29 @@ function renderDraftTurn(message) {
   `;
 }
 
-// Context tab — single-context view. A session attaches at most one context;
-// the tab shows its three components (Voice, Brief, Brand) as collapsible
-// sections, or a CTA to attach/create one if none is attached yet.
+// Context tab — single-context view. Every session has a context (global or
+// local). The tab shows its three components (Voice, Brief, Brand) as
+// collapsible sections, each with an "Edit via chat" button. While the
+// creation wizard is running and neither contextId nor localContext flag is
+// set yet, attachedContext is null and we show a transient placeholder.
 
 function renderContextTab(attachedContext) {
   if (attachedContext) return renderAttachedContext(attachedContext);
-  return renderNoContext();
+  return renderTransientPlaceholder();
 }
 
-function renderNoContext() {
+function renderTransientPlaceholder() {
+  // Only reachable during the brief window between session mount and the
+  // sidebar wizard pushing its first prompt. The wizard chrome takes over the
+  // assistant panel; the workspace tabs stay quiet.
   return html`
     <div class="session__context">
       <div class="stack-sm">
-        <h2 class="text-title">No context attached</h2>
+        <h2 class="text-title">Setting up your context…</h2>
         <p class="muted">
-          A context bundles your Voice, Strategy brief, and Brand theme. Attach one so Archie's suggestions stay
-          on-message.
+          Archie is asking you a few questions in the chat to set up your Voice, Strategy brief, and Brand theme. Reply
+          there to continue.
         </p>
-      </div>
-      <div class="session__context-picker">
-        <h3 class="text-section">Attach existing</h3>
-        <div class="stack-sm">
-          ${raw(
-            allContexts
-              .map(
-                (context) => `
-                  <button type="button" class="ap-card session__context-option" data-attach-context="${context.id}">
-                    <span class="session__context-option-title">${context.name}</span>
-                    <span class="muted">${contextComponentsFor(context).join(" · ")} · Updated ${context.updatedAt}</span>
-                    <i class="ap-icon-arrow-right"></i>
-                  </button>
-                `,
-              )
-              .join(""),
-          )}
-        </div>
-        <a class="ap-link small" href="#" data-manage-contexts>Manage all contexts in Settings →</a>
       </div>
     </div>
   `;
@@ -1257,13 +1350,28 @@ function renderAttachedContext(context) {
 
   const items = components
     .map((c, i) => {
+      // Section header gets an "Edit via chat" button on every component, even
+      // missing ones — the wizard will gather the data on edit. The button
+      // sits inside the accordion summary so it stays visible whether the
+      // accordion is open or collapsed.
+      const editBtn = `
+        <button
+          type="button"
+          class="ap-button stroked grey session__context-edit"
+          data-edit-context-section="${c.key}"
+        >
+          <i class="ap-icon-pen"></i>
+          <span>Edit via chat</span>
+        </button>
+      `;
       if (!c.data) {
         return `
           <div class="session__context-missing">
             <div class="stack-sm grow">
               <span class="text-section">${c.title}</span>
-              <span class="muted">Not yet analyzed.</span>
+              <span class="muted">Not yet captured.</span>
             </div>
+            ${editBtn}
           </div>
         `;
       }
@@ -1271,7 +1379,8 @@ function renderAttachedContext(context) {
         <details class="ap-accordion session__accordion" ${i === 0 ? "open" : ""}>
           <summary class="ap-accordion-header">
             <i class="ap-icon-chevron-down ap-accordion-toggle"></i>
-            <span>${c.title}</span>
+            <span class="grow">${c.title}</span>
+            ${editBtn}
           </summary>
           <div class="ap-accordion-content">
             ${renderComponentBody(c.key, c.data)}
@@ -1281,18 +1390,19 @@ function renderAttachedContext(context) {
     })
     .join("");
 
+  // Header copy reflects whether the context is global (named, reusable) or
+  // local (lives only in this chat). No Detach / Edit-name buttons under the
+  // new model — context lifecycle is fixed once the chat starts.
+  const isLocal = String(context.id || "").startsWith("local:");
+  const subline = isLocal
+    ? "Local to this chat · not saved as a global."
+    : `Updated ${context.updatedAt || "recently"}.`;
+
   return html`
     <div class="session__context">
-      <div class="row-between">
-        <div class="stack-sm">
-          <h2 class="text-title">${context.name}</h2>
-          <p class="muted">Updated ${context.updatedAt}.</p>
-        </div>
-        <div class="row">
-          <button type="button" class="ap-button transparent grey" data-detach-context>
-            <span>Detach</span>
-          </button>
-        </div>
+      <div class="stack-sm">
+        <h2 class="text-title">${context.name}</h2>
+        <p class="muted">${subline}</p>
       </div>
       <div class="stack-sm">${raw(items)}</div>
     </div>
@@ -1648,31 +1758,22 @@ function bindSession(root, session) {
         openSettingsDrawer({ section: "contexts" });
         return;
       }
-      const attachContext = event.target.closest("[data-attach-context]");
-      if (attachContext) {
-        setQuery({ tab: "context", contextId: attachContext.dataset.attachContext, detached: "", populated: "" });
+      // Edit a single section (Voice / Brief / Brand) via conversation.
+      // For a global context, ask the user whether to update everywhere or
+      // fork to local first; for a local context, jump straight in.
+      const editSection = event.target.closest("[data-edit-context-section]");
+      if (editSection) {
+        const section = editSection.dataset.editContextSection;
+        const ctxId = readQuery().contextId || session.contextId || "";
+        const isGlobal = !!ctxId && !String(ctxId).startsWith("local:");
+        if (isGlobal) {
+          startEditScopePicker(session, section, ctxId);
+        } else {
+          startSectionEdit(session, section, { scope: "local", contextId: ctxId });
+        }
         return;
       }
-      if (event.target.closest("[data-detach-context]")) {
-        // Capture which context was attached BEFORE detaching so the Undo
-        // toast action can re-attach it. Falls back gracefully if the
-        // session had no contextId (then nothing to undo).
-        const prevContextId = readQuery().contextId || session.contextId || "";
-        const prevContext = prevContextId ? getContextById(prevContextId) : null;
-        setQuery({ tab: "context", detached: "1", contextId: "", populated: "" });
-        const label = prevContext?.name ? `${prevContext.name} detached` : "Context detached";
-        showToast(label, {
-          action: prevContextId
-            ? {
-                label: "Undo",
-                onClick: () => {
-                  setQuery({ tab: "context", contextId: prevContextId, detached: "", populated: "" });
-                },
-              }
-            : undefined,
-        });
-        return;
-      }
+
       // --- Assistant panel ---
       const promptBtn = event.target.closest("[data-assistant-prompt]");
       if (promptBtn && input) {

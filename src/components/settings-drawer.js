@@ -19,7 +19,8 @@ const OVERLAY_ID = "settingsDrawer";
 // user gets toast feedback (see FIND-02). Preferences and Notifications use
 // the working-copy + Save pattern because they're forms with multiple fields
 // where intermediate states aren't meaningful.
-import { contexts, contextComponentsFor, socialAccounts, generationPrefs, notificationPrefs } from "../mocks.js?v=22";
+import { contextComponentsFor, socialAccounts, generationPrefs, notificationPrefs } from "../mocks.js?v=22";
+import { getContexts } from "../contexts-store.js?v=20";
 import { getConnectors, findConnector, setConnectorStatus } from "../connectors-store.js?v=20";
 
 // ─── State ───────────────────────────────────────────────────────────────
@@ -140,13 +141,13 @@ function renderConnectorRow(c) {
 }
 
 function renderContextsSection() {
-  const all = contexts || [];
+  const all = getContexts();
   return html`
     <header class="settings-drawer__section-header">
       <div>
         <h3 class="settings-drawer__section-title">Contexts</h3>
         <p class="settings-drawer__section-sub">
-          Reusable bundles of voice, brief, and brand to keep posts on-message.
+          Saved bundles of voice, brief, and brand. Create or edit one from inside any chat.
         </p>
       </div>
     </header>
@@ -155,9 +156,10 @@ function renderContextsSection() {
         ? `
             <div class="settings-drawer__empty">
               <div class="settings-drawer__empty-icon"><i class="ap-icon-headset lg"></i></div>
-              <h4 class="settings-drawer__empty-title">No contexts yet</h4>
+              <h4 class="settings-drawer__empty-title">No saved contexts yet</h4>
               <p class="settings-drawer__empty-body">
-                Context creation is not available in this prototype version.
+                Start a new chat — Archie will walk you through capturing a Voice, Strategy brief, and Brand theme,
+                then offer to save it here.
               </p>
             </div>
           `
