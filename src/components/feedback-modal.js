@@ -3,6 +3,10 @@
 // toggle its visibility. No persistence — submitting shows a success flash
 // and resets on close.
 
+import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
+
+const MODAL_ID = "feedback";
+
 let backdrop, modal, textArea, featureArea, submitBtn, textAreaError;
 let initialized = false;
 // Stays false until the user clicks Submit once. Avoids yelling at
@@ -104,6 +108,7 @@ function onKeydown(event) {
 
 export function open() {
   if (!initialized) init();
+  requestOpen(MODAL_ID, close);
   backdrop.hidden = false;
   backdrop.classList.add("open");
   modal.classList.add("open");
@@ -119,6 +124,7 @@ export function close() {
   modal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("has-modal");
   reset();
+  notifyClose(MODAL_ID);
 }
 
 export function init() {

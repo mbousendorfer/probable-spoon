@@ -13,6 +13,9 @@
 //   });
 
 import { recentSessions } from "../mocks.js?v=22";
+import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
+
+const MODAL_ID = "chatPicker";
 import { renderPicker, bindWizardKeyboard, unbindWizardKeyboard } from "../screens/_analyse-common.js?v=24";
 
 let backdrop, modal, body;
@@ -78,6 +81,7 @@ function bindKeyboard() {
 
 export function open(opts = {}) {
   if (!initialized) init();
+  requestOpen(MODAL_ID, close);
   pendingPick = typeof opts.onPick === "function" ? opts.onPick : null;
   renderBody();
   backdrop.hidden = false;
@@ -97,6 +101,7 @@ export function close() {
   modal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("has-modal");
   pendingPick = null;
+  notifyClose(MODAL_ID);
 }
 
 export function init() {

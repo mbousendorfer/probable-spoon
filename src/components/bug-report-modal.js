@@ -15,6 +15,9 @@
 // modal then closes itself. Nothing is actually posted.
 
 import { escapeHtml } from "../utils.js?v=20";
+import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
+
+const MODAL_ID = "bugReport";
 
 let backdrop, modal, submitBtn, problemInput, actionInput, problemError;
 let categoriesEl, previewEl, dropzoneFallback, dropzone, fileInput;
@@ -246,6 +249,7 @@ function onKeydown(event) {
 
 export function open() {
   if (!initialized) init();
+  requestOpen(MODAL_ID, close);
   backdrop.hidden = false;
   backdrop.classList.add("open");
   modal.classList.add("open");
@@ -273,6 +277,7 @@ export function close() {
   modal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("has-modal");
   reset();
+  notifyClose(MODAL_ID);
 }
 
 export function init() {

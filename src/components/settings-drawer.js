@@ -9,6 +9,9 @@
 
 import { html, raw, escapeHtml } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
+import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
+
+const OVERLAY_ID = "settingsDrawer";
 import {
   contexts,
   contextComponentsFor,
@@ -529,6 +532,9 @@ function closeConfirm() {
 
 export function open(opts = {}) {
   if (!initialized) init();
+  // Use attemptClose so an unsaved-changes confirmation isn't silently
+  // skipped when another modal asks the coordinator to close us.
+  requestOpen(OVERLAY_ID, attemptClose);
   if (opts.section && SECTIONS.find((s) => s.id === opts.section)) {
     state.activeSection = opts.section;
   }
@@ -563,6 +569,7 @@ export function close() {
   // Reset working copies so a fresh open shows fresh state.
   revertWorkingCopies();
   state.activeSection = "connectors";
+  notifyClose(OVERLAY_ID);
 }
 
 function attemptClose() {

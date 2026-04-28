@@ -11,6 +11,9 @@
 import { html, raw, escapeHtml } from "../utils.js?v=20";
 import { iconFor } from "../file-kinds.js?v=20";
 import { connectors, connectorDocs } from "../mocks.js?v=22";
+import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
+
+const MODAL_ID = "addSource";
 import {
   classifyFile,
   startFileUpload,
@@ -570,6 +573,7 @@ function onKeydown(event) {
 
 export function open(opts = {}) {
   if (!initialized) init();
+  requestOpen(MODAL_ID, close);
   state.activeTab = opts.tab && TABS.find((t) => t.id === opts.tab) ? opts.tab : "upload";
   state.browsingConnectorId = null;
   state.inlineError = "";
@@ -609,6 +613,7 @@ export function close() {
     unsubscribeUploads();
     unsubscribeUploads = null;
   }
+  notifyClose(MODAL_ID);
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────
