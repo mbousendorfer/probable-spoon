@@ -1,6 +1,7 @@
 import { navigate } from "../router.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=23";
 import { brandTheme } from "../mocks.js?v=22";
+import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 import {
   wizardChrome,
   chatTurn,
@@ -26,17 +27,39 @@ const SUMMARY_PICKER = {
   customPlaceholder: "Something else — type your answer…",
 };
 
+// Read the user-entered brand URL from the hash, falling back to the seed
+// mock value. Persisting it in the URL means "Start over" / "No — try
+// another URL" come back to the input pre-filled instead of resetting to
+// the mock seed (FIND-10).
+function readBrandUrl() {
+  return parseHashParams().get("brandUrl") || brandTheme.url;
+}
+
+function setBrandUrl(value) {
+  const params = parseHashParams();
+  const next = { step: params.get("step") || "0" };
+  for (const k of ["stages", "name", "contextId"]) {
+    const v = params.get(k);
+    if (v) next[k] = v;
+  }
+  if (value) next.brandUrl = value;
+  setHashQuery("/analyse/brand", next);
+}
+
 export function renderAnalyseBrand(_params, target) {
   renderTopbar({ crumb: "Set brand theme" });
 
   const step = getStep("0");
-  const descriptor = renderStep(step);
+  const brandUrl = readBrandUrl();
+  const descriptor = renderStep(step, brandUrl);
 
   target.innerHTML = wizardChrome(descriptor);
   scrollChatToLatest(target);
 
   target.addEventListener("click", (event) => {
     if (event.target.closest("[data-brand-analyze]")) {
+      const input = target.querySelector("[data-brand-url]");
+      if (input?.value.trim()) setBrandUrl(input.value.trim());
       setStep("1");
       return;
     }
@@ -45,6 +68,7 @@ export function renderAnalyseBrand(_params, target) {
       return;
     }
     if (event.target.closest("[data-brand-restart]")) {
+      // Keep the captured URL — restart should re-edit, not wipe.
       setStep("0");
       return;
     }
@@ -54,6 +78,7 @@ export function renderAnalyseBrand(_params, target) {
         unbindWizardKeyboard();
         advanceContextStage("brand");
       } else {
+        // Same: re-edit the URL, don't reset.
         setStep("0");
       }
       return;
@@ -64,13 +89,14 @@ export function renderAnalyseBrand(_params, target) {
     }
   });
 
-  // URL step: submit on Enter inside the input.
+  // URL step: capture + submit on Enter inside the input.
   if (step === "0") {
     const input = target.querySelector("[data-brand-url]");
     if (input) {
       input.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
           event.preventDefault();
+          if (input.value.trim()) setBrandUrl(input.value.trim());
           setStep("1");
         }
       });
@@ -99,7 +125,7 @@ export function renderAnalyseBrand(_params, target) {
   });
 }
 
-function renderStep(step) {
+function renderStep(step, brandUrl = brandTheme.url) {
   // At step 0 the intake AI bubble holds an active URL input + "Analyze
   // brand" button. Once the user has submitted, replay a stripped-down
   // version of the intake turn (no input) so the prompt stays in the thread
@@ -113,7 +139,7 @@ function renderStep(step) {
             <label>Brand URL</label>
             <div class="ap-input-group">
               <i class="ap-icon-web"></i>
-              <input type="url" placeholder="https://yourbrand.com" value="${brandTheme.url}" data-brand-url />
+              <input type="url" placeholder="https://yourbrand.com" value="${brandUrl}" data-brand-url />
             </div>
           </div>
           <button type="button" class="ap-button primary orange" data-brand-analyze>
@@ -139,7 +165,7 @@ function renderStep(step) {
     role: "ai",
     text: "Where's your brand? I'll pull colors, imagery, buttons, and personality straight from your site.",
   });
-  const urlAnswer = chatTurn({ role: "user", text: brandTheme.url });
+  const urlAnswer = chatTurn({ role: "user", text: brandUrl });
   const previewAi = chatTurn({
     role: "ai",
     text: "Here's your brand theme.",
