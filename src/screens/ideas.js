@@ -1,5 +1,5 @@
 import { html } from "../utils.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=24";
+import { renderTopbar } from "../components/topbar.js?v=26";
 
 // Ideas library view — placeholder. The full page (kind filter rail, search,
 // sort, masonry IdeaCard grid) ships in Lot 7.

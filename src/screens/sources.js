@@ -1,5 +1,5 @@
 import { html } from "../utils.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=24";
+import { renderTopbar } from "../components/topbar.js?v=26";
 
 // Sources view — placeholder. Promoted to a top-level route in Lot 2.3 so the
 // sidebar nav has a target. The actual page (header + filter rail + drop zone +

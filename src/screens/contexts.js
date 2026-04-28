@@ -1,5 +1,5 @@
 import { html } from "../utils.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=24";
+import { renderTopbar } from "../components/topbar.js?v=26";
 
 // Contexts view — placeholder. The full page (ContextCard grid + multi-context
 // drawer with rail + AI-assisted wizard) ships in Lot 8.

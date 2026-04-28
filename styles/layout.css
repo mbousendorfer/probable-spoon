@@ -69,6 +69,73 @@
   min-width: 0;
 }
 
+/* Drafts / Ideas topbar pills — only visible on /session/:id. The .is-on
+   variant uses the orange accent so the user has a visual confirmation
+   that the panel is mirroring their click. Badge sits inline with the
+   label so the count never moves. */
+.app-topbar__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  padding: 6px var(--ref-spacing-xs);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-pill);
+  font-family: inherit;
+  font-size: var(--ref-font-size-xs);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-100);
+  cursor: pointer;
+  transition: all var(--ref-animation-short) var(--app-ease-out);
+}
+
+.app-topbar__pill i {
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-grey-80);
+}
+
+.app-topbar__pill:hover,
+.app-topbar__pill:focus-visible {
+  border-color: var(--ref-color-grey-40);
+  outline: none;
+}
+
+.app-topbar__pill.is-on {
+  background: var(--ref-color-orange-10);
+  border-color: var(--ref-color-orange-100);
+  color: var(--ref-color-orange-150);
+}
+
+.app-topbar__pill.is-on i {
+  color: var(--ref-color-orange-100);
+}
+
+.app-topbar__pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--app-radius-pill);
+  background: var(--ref-color-orange-100);
+  color: var(--ref-color-white);
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-extra-bold);
+}
+
+.app-topbar__pill.is-on .app-topbar__pill-count {
+  background: var(--ref-color-orange-150);
+}
+
+.app-topbar__divider {
+  display: inline-block;
+  width: 1px;
+  height: 24px;
+  margin: 0 var(--ref-spacing-xxs);
+  background: var(--app-border-soft);
+}
+
 .app-topbar__feedback {
   display: inline-flex;
   align-items: center;
