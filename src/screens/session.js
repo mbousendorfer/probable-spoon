@@ -1053,31 +1053,31 @@ function renderPostCard(post, q = {}) {
 
           ${raw(imageBlock)} ${raw(engagement)}
 
-          <footer class="posts__card-footer">
-            <button class="posts__card-action" type="button">
+          <!-- Footer is a non-interactive LinkedIn-style preview of the
+               engagement bar. Buttons that did nothing on click previously
+               (FIND-06) — converted to spans so it's clear they're decoration. -->
+          <footer class="posts__card-footer" aria-hidden="true">
+            <span class="posts__card-action">
               <i class="ap-icon-thumb-up"></i>
               <span>Like</span>
-            </button>
-            <button class="posts__card-action" type="button">
+            </span>
+            <span class="posts__card-action">
               <i class="ap-icon-single-chat-bubble"></i>
               <span>Comment</span>
-            </button>
-            <button class="posts__card-action" type="button">
+            </span>
+            <span class="posts__card-action">
               <i class="ap-icon-repost"></i>
               <span>Repost</span>
-            </button>
-            <button class="posts__card-action" type="button">
+            </span>
+            <span class="posts__card-action">
               <i class="ap-icon-paper-plane"></i>
               <span>Send</span>
-            </button>
+            </span>
           </footer>
         </article>
       </div>
 
       <div class="posts__row-actions" aria-label="Post actions">
-        <button type="button" class="ap-icon-button stroked" aria-label="Edit post">
-          <i class="ap-icon-pen"></i>
-        </button>
         <button
           type="button"
           class="ap-icon-button stroked"

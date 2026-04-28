@@ -323,6 +323,9 @@
   gap: var(--ref-spacing-xs);
 }
 
+/* Non-interactive LinkedIn-style engagement bar (Like/Comment/Repost/Send).
+ * Was previously a row of buttons that did nothing on click — now spans
+ * (FIND-06). No cursor / hover / active state to avoid implying interactivity. */
 .posts__card-action {
   display: inline-flex;
   align-items: center;
@@ -334,23 +337,7 @@
   font-family: inherit;
   font-size: var(--ref-font-size-sm);
   color: var(--sys-text-color-light);
-  cursor: pointer;
   font-weight: var(--ref-font-weight-bold);
-}
-
-.posts__card-action {
-  transition:
-    background-color var(--ref-animation-short) var(--app-ease-out),
-    color var(--ref-animation-short) var(--app-ease-out);
-}
-
-.posts__card-action:hover {
-  background: var(--app-surface-subtle);
-  color: var(--ref-color-grey-150);
-}
-
-.posts__card-action:active {
-  background: var(--ref-color-grey-10);
 }
 
 /* Empty state inside the feed */
