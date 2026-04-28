@@ -610,7 +610,12 @@ body.has-modal {
   width: 100%;
   aspect-ratio: 4 / 3;
   border-radius: var(--ref-border-radius-md);
-  background: linear-gradient(90deg, #eceff3 25%, #f6f8fb 50%, #eceff3 75%);
+  background: linear-gradient(
+    90deg,
+    var(--ref-color-grey-10) 25%,
+    var(--ref-color-grey-05) 50%,
+    var(--ref-color-grey-10) 75%
+  );
   background-size: 200% 100%;
   animation: gen-image-pulse 1.2s linear infinite;
 }

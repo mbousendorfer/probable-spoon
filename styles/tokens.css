@@ -1,44 +1,90 @@
 /* App-specific tokens not provided by the DS.
-   Everything else comes from ds/desktop_variables.css. */
+   Everything else comes from ds/desktop_variables.css.
+
+   Naming: --app-* (never --ref-* / --sys-* / --comp-* — those are DS-owned).
+   When porting handoff designs, prefer DS tokens first; fall back to these
+   only for handoff-specific values that don't exist in the DS. */
 :root {
-  /* Surface aliases used across screens */
+  /* ── Surface aliases (used across screens) ─────────────────────────── */
   --app-bg: var(--ref-color-grey-bg);
   --app-surface: var(--ref-color-white);
   --app-surface-subtle: var(--ref-color-grey-05);
   --app-border: var(--ref-color-grey-20);
   --app-border-soft: var(--ref-color-grey-10);
 
-  /* Radius (DS only ships sm/md/lg — we keep one larger value for big cards
-     and a pill value for status/chips). */
-  --app-radius-sm: var(--sys-border-radius-sm);
-  --app-radius-md: var(--sys-border-radius-md);
-  --app-radius-lg: var(--sys-border-radius-lg);
-  --app-radius-xl: 12px;
+  /* Sidebar canvas — handoff uses #F2F3F5 (one tone darker than --ref-color-grey-bg).
+     No exact DS equivalent (closest is --ref-color-grey-05 = #F5F5F7). Kept as
+     app token so the cool-slate sidebar tone stays consistent across screens. */
+  --app-color-sidebar-bg: #f2f3f5;
+
+  /* ── Radius (DS only ships sm=4 / md=4 / lg=8 — handoff uses 4/6/8/10/12/16
+     across composer / cards / modals). Keep DS values as the default; expose
+     handoff-specific radii as app tokens. ──────────────────────────────── */
+  --app-radius-sm: var(--sys-border-radius-sm); /* 4 */
+  --app-radius-md: var(--sys-border-radius-md); /* 4 */
+  --app-radius-lg: var(--sys-border-radius-lg); /* 8 */
+  --app-radius-button-sm: 6px; /* handoff small buttons / icon-buttons */
+  --app-radius-starter: 10px; /* handoff starter cards */
+  --app-radius-card: 12px; /* handoff source/idea/post/context cards */
+  --app-radius-xl: 12px; /* alias kept for back-compat with existing screens */
+  --app-radius-modal: 16px; /* handoff composer + modals */
   --app-radius-pill: 999px;
   --app-radius-circle: 50%;
 
-  /* Elevation — popover/modal shadows. The DS doesn't expose these as
-     reference tokens; we keep them here so cards/popovers/modals can
-     share a consistent depth language. */
+  /* ── Elevation — popover / modal / card shadows ────────────────────── */
+  /* Subtle shadow under existing components (was the archie default). */
   --app-shadow-subtle: 0 1px 2px rgba(33, 46, 68, 0.06);
   --app-shadow-popover-md: 0 8px 24px rgba(33, 46, 68, 0.12);
   --app-shadow-popover-lg: 0 12px 32px rgba(33, 46, 68, 0.12);
   --app-shadow-drawer-left: -8px 0 32px rgba(33, 46, 68, 0.12);
 
-  /* Easing curves — pair with --ref-animation-* durations from the DS.
-     The DS ships durations but no easing tokens, so we add the ones used
-     across hover/active/success animations here. */
+  /* Handoff card shadow — soft cool-slate, two-layer. Matches the
+     `--shadow-card` in design_handoff_studio/source/colors_and_type.css. */
+  --app-shadow-card: 0 1px 2px rgba(52, 69, 99, 0.08), 0 4px 8px -2px rgba(52, 69, 99, 0.06);
+
+  /* Handoff modal shadow — deeper, single-layer. */
+  --app-shadow-modal: 0 10px 40px rgba(33, 46, 68, 0.16);
+
+  /* Handoff orange hover lift — used on starter cards and AI surfaces. */
+  --app-shadow-orange-hover: 0 2px 6px rgba(255, 103, 38, 0.08);
+
+  /* ── Easing curves — paired with --ref-animation-* durations ──────── */
+  /* Existing app curves (kept). */
   --app-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --app-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* App chrome sizing */
+  /* Handoff "standard" curve — used for sidebar collapse, drawer slide,
+     scrim fade. Matches the `--ease-standard` in handoff colors_and_type.css. */
+  --app-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ── App chrome sizing ────────────────────────────────────────────── */
   --app-topbar-height: 56px;
 
-  /* Stacking — kept centralized so adding a new layer doesn't silently
-     collide. admin-chip sits on top intentionally so the dev mode toggle
-     stays visible above any modal. */
+  /* Sidebar widths — handoff: 260px expanded ↔ 56px collapsed. */
+  --app-sidebar-width: 260px;
+  --app-sidebar-width-collapsed: 56px;
+
+  /* Right panel widths — handoff: 460px default, 420 below 1300px, 380 below 1100px. */
+  --app-right-panel-width: 460px;
+
+  /* ── Typography overrides for handoff-specific sizes ──────────────── */
+  /* Handoff message body uses 15px / line-height 1.55 — between DS body (14/18)
+     and DS subtitle (16/20). Defined here so chat surfaces share the value. */
+  --app-text-message-size: 15px;
+  --app-text-message-line: 1.55;
+
+  /* Handoff empty-state hero ("What are we creating today?") — 30/800.
+     DS scale tops out at marketing (24/800/36). Kept as app token. */
+  --app-text-hero-size: 30px;
+  --app-text-hero-line: 36px;
+  --app-text-hero-weight: 800;
+
+  /* ── Stacking — kept centralized so adding a new layer doesn't
+     silently collide. admin-chip sits on top intentionally so the dev
+     mode toggle stays visible above any modal. ──────────────────────── */
   --app-z-content: 5;
   --app-z-overlay: 10;
+  --app-z-right-panel: 15;
   --app-z-modal-backdrop: 50;
   --app-z-modal: 60;
   --app-z-modal-stacked-backdrop: 70;
