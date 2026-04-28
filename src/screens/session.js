@@ -61,8 +61,12 @@ import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 
 function readQuery() {
   const params = parseHashParams();
+  // Posts tab dropped at Lot 4.4 (Q4). Legacy `?tab=posts` URLs land on
+  // Content + auto-open the right panel Drafts in renderSession below.
+  const rawTab = params.get("tab");
+  const tab = !rawTab || rawTab === "posts" ? "content" : rawTab;
   return {
-    tab: params.get("tab") || "posts",
+    tab,
     populated: params.get("populated") === "1" || params.get("populated") === "true",
     title: params.get("title") || "",
     contextId: params.get("contextId") || "",
@@ -705,6 +709,11 @@ function wireAssistantPanel(root, session, attachedContext) {
   updateThinkingChip(session.id);
 
   // Subscribe to the assistant thread.
+  // When a NEW draft message lands we auto-open the right panel in Drafts
+  // mode pinned to that batch — matches the handoff App.jsx "if the reply
+  // has a batch, set activeBatchRef and switch to drafts" rule (§ State
+  // Management → send transitions).
+  let lastDraftMessageId = null;
   const offThread = subscribe(session.id, (messages) => {
     const thread = getThreadEl();
     if (thread) {
@@ -712,6 +721,11 @@ function wireAssistantPanel(root, session, attachedContext) {
       thread.scrollTop = thread.scrollHeight;
     }
     updateThinkingChip(session.id);
+    const latestDraft = [...messages].reverse().find((m) => m.variant === "draft");
+    if (latestDraft && latestDraft.id !== lastDraftMessageId) {
+      lastDraftMessageId = latestDraft.id;
+      openDraftsPanel({ sessionId: session.id, messageId: latestDraft.id });
+    }
   });
 
   // Subscribe to the right-panel state — when the active batch flips or the
@@ -1013,10 +1027,14 @@ function renderWorkspaceTabs(q) {
     `;
   };
 
+  // Posts tab dropped at Lot 4.4 (Q4) — the right-panel Drafts surface is now
+  // the canonical place to review, edit, and schedule a batch. The tab body
+  // renderer (renderPopulatedPosts) is kept in this file as dead code for
+  // one release in case we need to fall back; future cleanup deletes it.
   return html`
     <div class="ap-tabs session__tabs">
       <div class="ap-tabs-nav">
-        ${raw(tab("posts", "ap-icon-megaphone", "Posts"))} ${raw(tab("content", "ap-icon-feature-library", "Content"))}
+        ${raw(tab("content", "ap-icon-feature-library", "Content"))}
         ${raw(tab("context", "ap-icon-headset", "Context"))}
       </div>
     </div>
@@ -1026,17 +1044,12 @@ function renderWorkspaceTabs(q) {
 function renderTab(q, attachedContext, isRealSession, session) {
   if (q.tab === "context") return renderContextTab(attachedContext);
 
+  // Posts tab dropped at Lot 4.4 — readQuery() rewrites legacy ?tab=posts
+  // to ?tab=content so this branch only fires if a future flow re-introduces
+  // the literal value, in which case we fall through to Content gracefully.
   if (q.tab === "posts") {
-    // Show the populated view if this is a real session, if there's a focused
-    // post (e.g. just navigated here), or if the posts store already has posts
-    // (a draft was generated for this session).
     const hasPosts = getPosts(session.id).length > 0;
     if (isRealSession || q.focusPost || hasPosts) return renderPopulatedPosts(q, session.id);
-    return renderEmptyState({
-      icon: "ap-icon-megaphone",
-      title: "No posts yet",
-      body: "Generate a post from an idea, or draft one from scratch in the assistant on the left.",
-    });
   }
 
   if (q.tab === "content") {
