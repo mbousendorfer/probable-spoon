@@ -139,3 +139,192 @@
   line-height: var(--sys-text-style-body-line-height);
   color: var(--ref-color-grey-80);
 }
+
+/* ── Drafts mode ──────────────────────────────────────────────────────
+   Sub-header (orange-tinted gradient) holds the title + counts +
+   Regenerate ghost; below sits a full-width primary "Schedule N posts"
+   CTA (disabled when selectedCount = 0). Body groups BatchCards by
+   network, each group with a small label + count chip. */
+
+.rpanel-drafts {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.rpanel-drafts__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-sm) var(--ref-spacing-md);
+  background: linear-gradient(180deg, var(--ref-color-orange-10) 0%, var(--ref-color-white) 100%);
+  border-bottom: 1px solid var(--app-border-soft);
+}
+
+.rpanel-drafts__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+}
+
+.rpanel-drafts__title {
+  font-size: var(--sys-text-style-h3-size);
+  font-weight: 800;
+  line-height: var(--sys-text-style-h3-line-height);
+  color: var(--ref-color-grey-150);
+}
+
+.rpanel-drafts__sub {
+  font-size: 11px;
+  color: var(--ref-color-grey-60);
+  margin-top: 2px;
+}
+
+/* Schedule N posts — full-width primary CTA inside the orange-tinted
+   sub-header. .ap-button is a 36px row by default; force the spread. */
+.ap-button.rpanel-drafts__schedule {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Body: scrolling group stack. */
+.rpanel-drafts__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--ref-spacing-sm) var(--ref-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-md);
+}
+
+.rpanel-drafts__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.rpanel-drafts__group-head {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  font-size: var(--ref-font-size-xs);
+  font-weight: var(--ref-font-weight-extra-bold);
+  color: var(--ref-color-grey-100);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rpanel-drafts__group-head i {
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-grey-80);
+}
+
+.rpanel-drafts__group-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--app-radius-pill);
+  background: var(--ref-color-grey-10);
+  color: var(--ref-color-grey-100);
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-extra-bold);
+  letter-spacing: 0;
+}
+
+.rpanel-drafts__group-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+/* ── BatchCard ────────────────────────────────────────────────────── */
+
+.rpanel-batch-card {
+  background: var(--app-surface);
+  border: 1.5px solid var(--app-border-soft);
+  border-radius: var(--app-radius-starter);
+  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+  transition: border-color var(--ref-animation-short) var(--app-ease-standard);
+}
+
+.rpanel-batch-card.is-selected {
+  border-color: var(--ref-color-orange-100);
+  box-shadow: 0 0 0 3px var(--ref-color-orange-10);
+}
+
+.rpanel-batch-card.is-over {
+  border-color: var(--ref-color-red-100);
+}
+
+.rpanel-batch-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+}
+
+/* Orange checkbox — handoff §2.5. Hand-rolled to match the orange-100
+   selected state since the DS .ap-checkbox-container renders blue. */
+.rpanel-batch-card__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  background: var(--app-surface);
+  border: 1.5px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background-color var(--ref-animation-short),
+    border-color var(--ref-animation-short);
+}
+
+.rpanel-batch-card__check.is-on {
+  background: var(--ref-color-orange-100);
+  border-color: var(--ref-color-orange-100);
+}
+
+.rpanel-batch-card__check.is-on i {
+  color: var(--ref-color-white);
+  font-size: var(--sys-icon-css-xs);
+}
+
+.rpanel-batch-card__network {
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-grey-100);
+}
+
+.rpanel-batch-card__network-name {
+  font-size: 11px;
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-100);
+}
+
+.rpanel-batch-card__count {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-60);
+}
+
+.rpanel-batch-card__count.is-over {
+  color: var(--ref-color-red-100);
+}
+
+.rpanel-batch-card__body {
+  font-size: var(--ref-font-size-xs);
+  line-height: 17px;
+  color: var(--ref-color-grey-150);
+  white-space: pre-wrap;
+}

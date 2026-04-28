@@ -1,7 +1,7 @@
 import { route, setAfterRender, start } from "./router.js?v=21";
 import { initTopbar, renderTopbar } from "./components/topbar.js?v=24";
 import { initSidebar, renderSidebar } from "./components/sidebar.js?v=22";
-import { init as initRightPanel } from "./components/right-panel.js?v=20";
+import { init as initRightPanel } from "./components/right-panel.js?v=21";
 import { initUserModeChip } from "./components/user-mode-chip.js?v=20";
 import { init as initBugReportModal } from "./components/bug-report-modal.js?v=21";
 import { init as initFeedbackModal } from "./components/feedback-modal.js?v=24";
