@@ -25,7 +25,9 @@ const SECTIONS = voiceAnalysis.sections;
 const INTAKE_PICKER = {
   items: [
     { value: "yes", label: "Yes, analyze my writing", icon: "ap-icon-check" },
-    { value: "no", label: "Not yet — skip for now", icon: "ap-icon-arrow-right" },
+    // "no" exits the entire context wizard (handler navigates back to /).
+    // Label reflects that scope — see FIND-09.
+    { value: "no", label: "Skip voice analysis", icon: "ap-icon-arrow-right" },
   ],
   handler: "voice-answer",
   customPlaceholder: "Something else — type your answer…",
