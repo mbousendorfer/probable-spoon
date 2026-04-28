@@ -10,7 +10,7 @@ import { init as initChatPickerModal } from "./components/chat-picker-modal.js?v
 import { init as initAddSourceModal } from "./components/add-source-modal.js?v=21";
 import { init as initConfirmModal } from "./components/confirm-modal.js?v=20";
 import { renderDashboard } from "./screens/dashboard.js?v=41";
-import { renderSession } from "./screens/session.js?v=51";
+import { renderSession } from "./screens/session.js?v=52";
 import { renderSources } from "./screens/sources.js?v=21";
 import { renderIdeas } from "./screens/ideas.js?v=21";
 import { renderContexts } from "./screens/contexts.js?v=21";

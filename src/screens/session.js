@@ -1328,12 +1328,16 @@ function renderChoiceTurn(message) {
   `;
 }
 
-// Structured "Drafted N posts" result — mirrors the extraction turn chrome.
+// Network → icon mapping — used both in the Drafts summary card network row
+// and (later) by the Drafts work-surface in Lot 4. Keep the slug list aligned
+// with mocks.socialAccounts so the visual surfaces never miss a network.
 const NETWORK_ICON = {
   linkedin: "ap-icon-linkedin",
   twitter: "ap-icon-twitter-official",
   x: "ap-icon-twitter-official",
   instagram: "ap-icon-instagram",
+  facebook: "ap-icon-facebook",
+  tiktok: "ap-icon-tiktok-official",
 };
 
 function networkLabel(network) {
@@ -1342,43 +1346,48 @@ function networkLabel(network) {
   return network.charAt(0).toUpperCase() + network.slice(1);
 }
 
+// In-thread Drafts summary card — handoff §2.1 spec. Replaces the previous
+// accordion-style "Drafted N posts" turn with a flat horizontal card:
+//
+//   [ pen icon tile ]  N drafts ready  [pill]    View drafts ›
+//                      [network logos] Across N networks · review, edit…
+//
+// Click anywhere on the card → currently navigates to the Posts tab. In
+// Lot 4 this rewires to setActiveBatchRef + open the right-panel Drafts
+// surface (the actual editable BatchCards land there, never inline).
 function renderDraftTurn(message) {
-  const openAttr = message.open === false ? "" : " open";
-  const count = message.count ?? (message.drafts ? message.drafts.length : 0);
-
-  const miniCards = (message.drafts || [])
-    .map(
-      (d) => `
-        <div class="ap-card draft-turn__post-card">
-          <div class="draft-turn__post-header">
-            <i class="${NETWORK_ICON[d.network] || "ap-icon-megaphone"}" aria-hidden="true"></i>
-            <span>${networkLabel(d.network)}</span>
-          </div>
-          <p class="draft-turn__post-preview">${d.preview || ""}</p>
-          <a href="#" class="ap-link standalone small" data-go-to-posts>
-            <span>View in Posts</span>
-            <i class="ap-icon-external-link"></i>
-          </a>
-        </div>
-      `,
-    )
+  const drafts = message.drafts || [];
+  const count = message.count ?? drafts.length;
+  const networks = [...new Set(drafts.map((d) => d.network).filter(Boolean))];
+  const networkIcons = networks
+    .map((n) => `<i class="${NETWORK_ICON[n] || "ap-icon-megaphone"}" title="${networkLabel(n)}"></i>`)
     .join("");
+  const networkCount = networks.length;
+  const networkLabelText =
+    networkCount === 0
+      ? "review, edit, and schedule"
+      : `Across ${networkCount} ${networkCount === 1 ? "network" : "networks"} · review, edit, and schedule`;
 
   return `
     <div class="chat-turn chat-turn--ai chat-turn--extraction">
-      <details class="assistant-notice assistant-notice--mermaid"${openAttr}>
-        <summary class="assistant-notice__toggle">
-          <span class="ap-status mermaid">Drafted ${count} post${count === 1 ? "" : "s"}</span>
-          <i class="ap-icon-chevron-down assistant-notice__chevron"></i>
-        </summary>
-        <div class="extraction-turn__detail">
-          <div class="extraction-turn__analyzed-row">
-            <strong>From idea</strong>
-            <span>${message.ideaTitle || ""}</span>
-          </div>
-          ${miniCards}
-        </div>
-      </details>
+      <button type="button" class="drafts-card" data-drafts-card-message="${message.id || ""}" data-go-to-posts>
+        <span class="drafts-card__icon" aria-hidden="true">
+          <i class="ap-icon-pen"></i>
+        </span>
+        <span class="drafts-card__main">
+          <span class="drafts-card__title">
+            ${count} draft${count === 1 ? "" : "s"} ready
+          </span>
+          <span class="drafts-card__sub">
+            ${networks.length ? `<span class="drafts-card__nets">${networkIcons}</span>` : ""}
+            <span class="drafts-card__sub-text">${networkLabelText}</span>
+          </span>
+        </span>
+        <span class="drafts-card__cta">
+          View drafts
+          <i class="ap-icon-chevron-right"></i>
+        </span>
+      </button>
     </div>
   `;
 }
