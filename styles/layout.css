@@ -135,6 +135,45 @@
   overflow-y: auto;
 }
 
+/* Placeholder screens for routes whose full implementation lands later. */
+.screen--placeholder {
+  align-items: center;
+  justify-content: center;
+  padding: var(--ref-spacing-xxxl) var(--ref-spacing-xl);
+}
+
+.screen__placeholder {
+  max-width: 480px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.screen__placeholder-eyebrow {
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-extra-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ref-color-grey-60);
+}
+
+.screen__placeholder-title {
+  margin: 0;
+  font-family: var(--sys-text-style-h1-font-family);
+  font-size: var(--sys-text-style-h1-size);
+  line-height: var(--sys-text-style-h1-line-height);
+  font-weight: var(--sys-text-style-h1-weight);
+  color: var(--ref-color-grey-150);
+}
+
+.screen__placeholder-sub {
+  margin: 0;
+  font-size: var(--sys-text-style-body-size);
+  line-height: var(--sys-text-style-body-line-height);
+  color: var(--ref-color-grey-80);
+}
+
 /* ---------- Utility layout helpers ---------- */
 
 .stack {

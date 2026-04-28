@@ -55,6 +55,11 @@ export function initSidebar() {
       navigate("/session/new");
       return;
     }
+    const navItem = event.target.closest("[data-sidebar-nav]");
+    if (navItem) {
+      navigate(navItem.dataset.sidebarNav);
+      return;
+    }
     const sessionRow = event.target.closest("[data-sidebar-session]");
     if (sessionRow) {
       navigate(`/session/${sessionRow.dataset.sidebarSession}`);
@@ -155,6 +160,8 @@ export function renderSidebar() {
       <span>New conversation</span>
     </button>
 
+    <nav class="app-sidebar__nav" aria-label="Library">${raw(renderNav(path))}</nav>
+
     <div class="app-sidebar__list" aria-label="Recent conversations">${raw(renderRecentList(activeSessionId))}</div>
 
     <div class="app-sidebar__foot">
@@ -170,6 +177,37 @@ export function renderSidebar() {
       </div>
     </div>
   `;
+}
+
+// Library nav — 4 items pointing at the dashboard + the standalone Sources /
+// Ideas / Contexts views. The active item is derived from the path prefix so
+// /session/* still highlights "Chats". The full views land in Lots 6/7/8;
+// today the targets are placeholders.
+const NAV = [
+  {
+    path: "/",
+    icon: "ap-icon-double-chat-bubbles",
+    label: "Chats",
+    match: (p) => p === "/" || p.startsWith("/session/"),
+  },
+  { path: "/sources", icon: "ap-icon-folder", label: "Sources", match: (p) => p === "/sources" },
+  { path: "/ideas", icon: "ap-icon-sparkles", label: "Ideas", match: (p) => p === "/ideas" },
+  { path: "/contexts", icon: "ap-icon-target", label: "Contexts", match: (p) => p === "/contexts" },
+];
+
+function renderNav(path) {
+  return NAV.map(
+    (item) => `
+      <button
+        type="button"
+        class="app-sidebar__nav-item ${item.match(path) ? "is-active" : ""}"
+        data-sidebar-nav="${item.path}"
+      >
+        <i class="${item.icon}"></i>
+        <span>${item.label}</span>
+      </button>
+    `,
+  ).join("");
 }
 
 function renderRecentList(activeSessionId) {

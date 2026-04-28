@@ -98,6 +98,56 @@
   box-shadow: var(--app-shadow-orange-hover);
 }
 
+/* ── Nav ────────────────────────────────────────────────────────────── */
+
+.app-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--ref-spacing-xs) var(--ref-spacing-xs);
+}
+
+.app-sidebar__nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xxs) var(--ref-spacing-xs);
+  background: transparent;
+  border: 0;
+  border-radius: var(--app-radius-button-sm);
+  font-family: inherit;
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-100);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--ref-animation-short) var(--app-ease-out),
+    color var(--ref-animation-short) var(--app-ease-out);
+}
+
+.app-sidebar__nav-item i {
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-grey-80);
+}
+
+.app-sidebar__nav-item:hover,
+.app-sidebar__nav-item:focus-visible {
+  background: var(--ref-color-grey-10);
+  color: var(--ref-color-grey-150);
+  outline: none;
+}
+
+.app-sidebar__nav-item.is-active {
+  background: var(--app-surface);
+  color: var(--ref-color-grey-150);
+  box-shadow: var(--app-shadow-subtle);
+}
+
+.app-sidebar__nav-item.is-active i {
+  color: var(--ref-color-orange-100);
+}
+
 /* ── List ───────────────────────────────────────────────────────────── */
 
 .app-sidebar__list {
