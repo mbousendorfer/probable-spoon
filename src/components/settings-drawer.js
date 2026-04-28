@@ -20,14 +20,8 @@ const OVERLAY_ID = "settingsDrawer";
 // user gets toast feedback (see FIND-02). Preferences and Notifications use
 // the working-copy + Save pattern because they're forms with multiple fields
 // where intermediate states aren't meaningful.
-import {
-  contexts,
-  contextComponentsFor,
-  connectors,
-  socialAccounts,
-  generationPrefs,
-  notificationPrefs,
-} from "../mocks.js?v=22";
+import { contexts, contextComponentsFor, socialAccounts, generationPrefs, notificationPrefs } from "../mocks.js?v=22";
+import { getConnectors, findConnector, setConnectorStatus } from "../connectors-store.js?v=20";
 
 // ─── State ───────────────────────────────────────────────────────────────
 
@@ -115,7 +109,7 @@ function renderConnectorsSection() {
       <p class="settings-drawer__section-sub">Sources Archie pulls knowledge from when generating posts.</p>
     </header>
     <ul class="settings-drawer__rows" data-rows="connectors">
-      ${raw(connectors.map(renderConnectorRow).join(""))}
+      ${raw(getConnectors().map(renderConnectorRow).join(""))}
     </ul>
   `;
 }
@@ -600,25 +594,19 @@ function onClick(event) {
     return;
   }
 
-  // Connectors connect/disconnect — instant flip on the imported mock.
-  // Toast confirms the action so the user sees feedback before any close.
+  // Connectors connect/disconnect — go through connectors-store so the
+  // add-source modal stays in sync (FIND-01). Toast confirms the action.
   const connectorBtn = event.target.closest("[data-connector-toggle]");
   if (connectorBtn) {
     const id = connectorBtn.dataset.connectorToggle;
-    const c = connectors.find((x) => x.id === id);
+    const c = findConnector(id);
     if (c) {
       const wasConnected = c.status === "connected";
-      if (wasConnected) {
-        c.status = "disconnected";
-        delete c.account;
-        delete c.lastSync;
-      } else {
-        c.status = "connected";
-        c.account = "matt@archie.io";
-        c.lastSync = "just now";
-      }
+      const updated = wasConnected
+        ? setConnectorStatus(id, { status: "disconnected", account: null, lastSync: null })
+        : setConnectorStatus(id, { status: "connected", account: "matt@archie.io", lastSync: "just now" });
       renderContent();
-      showToast(`${c.name} ${wasConnected ? "disconnected" : "connected"}`);
+      showToast(`${updated.name} ${wasConnected ? "disconnected" : "connected"}`);
     }
     return;
   }

@@ -10,7 +10,13 @@
 
 import { html, raw, escapeHtml } from "../utils.js?v=20";
 import { iconFor } from "../file-kinds.js?v=20";
-import { connectors, connectorDocs } from "../mocks.js?v=22";
+import { connectorDocs } from "../mocks.js?v=22";
+import {
+  getConnectors,
+  findConnector,
+  setConnectorStatus,
+  subscribe as subscribeConnectors,
+} from "../connectors-store.js?v=20";
 import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
 
 const MODAL_ID = "addSource";
@@ -27,6 +33,7 @@ import {
 let backdrop, modal, tabsEl, contentEl, footerEl, fileInput;
 let initialized = false;
 let unsubscribeUploads = null;
+let unsubscribeConnectors = null;
 let inlineErrorTimeout = null;
 
 const TABS = [
@@ -220,7 +227,7 @@ function renderConnectorsTab() {
   if (state.browsingConnectorId) return renderConnectorBrowse();
   return html`
     <ul class="add-source__connectors">
-      ${raw(connectors.map(renderConnectorRow).join(""))}
+      ${raw(getConnectors().map(renderConnectorRow).join(""))}
     </ul>
   `;
 }
@@ -246,7 +253,7 @@ function renderConnectorRow(c) {
 }
 
 function renderConnectorBrowse() {
-  const c = connectors.find((x) => x.id === state.browsingConnectorId);
+  const c = findConnector(state.browsingConnectorId);
   const docs = connectorDocs[state.browsingConnectorId] || [];
   const sel = state.selections[state.browsingConnectorId] || new Set();
   const selectedCount = sel.size;
@@ -465,14 +472,18 @@ function onClick(event) {
     return;
   }
 
-  // Connector connect
+  // Connector connect — go through connectors-store so the settings drawer
+  // stays in sync (FIND-01).
   const connectBtn = event.target.closest("[data-connector-connect]");
   if (connectBtn) {
-    const c = connectors.find((x) => x.id === connectBtn.dataset.connectorConnect);
-    if (c) {
-      c.status = "connected";
-      c.account = c.account || "matt@archie.io";
-      c.lastSync = "just now";
+    const id = connectBtn.dataset.connectorConnect;
+    const existing = findConnector(id);
+    if (existing) {
+      setConnectorStatus(id, {
+        status: "connected",
+        account: existing.account || "matt@archie.io",
+        lastSync: "just now",
+      });
       renderContent();
     }
     return;
@@ -500,7 +511,7 @@ function onClick(event) {
   if (event.target.closest("[data-connector-import]")) {
     const cid = state.browsingConnectorId;
     if (!cid) return;
-    const c = connectors.find((x) => x.id === cid);
+    const c = findConnector(cid);
     const docs = connectorDocs[cid] || [];
     const sel = state.selections[cid] || new Set();
     if (sel.size === 0) return;
@@ -599,6 +610,16 @@ export function open(opts = {}) {
       renderFooter();
     });
   }
+  // Subscribe to connector changes too — if the user toggles a connector in
+  // the settings drawer while this modal is open, the Connectors tab needs
+  // to repaint to match. (FIND-01.)
+  if (!unsubscribeConnectors) {
+    unsubscribeConnectors = subscribeConnectors(() => {
+      if (state.activeTab === "connectors" && !state.browsingConnectorId) {
+        renderContent();
+      }
+    });
+  }
   render();
 }
 
@@ -612,6 +633,10 @@ export function close() {
   if (unsubscribeUploads) {
     unsubscribeUploads();
     unsubscribeUploads = null;
+  }
+  if (unsubscribeConnectors) {
+    unsubscribeConnectors();
+    unsubscribeConnectors = null;
   }
   notifyClose(MODAL_ID);
 }
