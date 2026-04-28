@@ -451,15 +451,18 @@
 }
 
 .session__composer-card {
-  border-radius: var(--app-radius-xl);
+  border-radius: var(--app-radius-modal);
   display: flex;
   flex-direction: column;
 }
 
+/* Composer input shell — handoff calls for radius 16, 1.5px border, 12px
+   pad, white bg. Border softens to grey-10 (matches the rest of the
+   chrome) and lifts to electric-blue-100 on focus. */
 .session__composer-input {
   background: var(--app-surface);
-  border: 1px solid var(--ref-color-grey-20);
-  border-radius: var(--app-radius-md);
+  border: 1.5px solid var(--app-border-soft);
+  border-radius: var(--app-radius-modal);
   padding: var(--ref-spacing-xs);
   display: flex;
   flex-direction: column;
@@ -499,18 +502,52 @@
   gap: var(--ref-spacing-xs);
 }
 
-/* Send button — DS primary orange sized as an icon-only square (Figma 35:773).
-   Qualified with .ap-button to raise specificity to (0,2,0) — matches the DS
-   .ap-button.primary selector, and wins via later source order. */
+/* Send button — handoff spec: 32×32 square (radius 8), brand orange, white
+   arrow icon. Qualified with .ap-button to raise specificity to (0,2,0) so
+   it wins against the default DS .ap-button.primary box-model. The DS
+   ships --comp-button-height: 36px on .ap-button, so we override both
+   height and min-height to land on the handoff size. */
 .ap-button.session__composer-send {
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
   padding: 0;
+  border-radius: var(--sys-border-radius-lg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+/* Composer hint — small caption below the composer card listing the
+   keyboard shortcuts. Mirrors the handoff `.composer-hint` block. */
+.session__composer-hint {
+  margin-top: var(--ref-spacing-xxs);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxxs);
+  padding: 0 var(--ref-spacing-xxs);
+  font-size: 11px;
+  line-height: var(--ref-font-line-height-xs);
+  color: var(--ref-color-grey-60);
+}
+
+.session__composer-hint kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--app-radius-sm);
+  background: var(--ref-color-grey-05);
+  border: 1px solid var(--app-border-soft);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-80);
 }
 
 /* Thinking counter (Figma 25:1181) — 12px loader + bold xs caption.

@@ -266,6 +266,10 @@ function renderAssistantPanel(session, attachedContext) {
             <span>${session.name}</span>
             <i class="ap-icon-chevron-down"></i>
           </button>
+          <div class="session__composer-hint">
+            <kbd>↵</kbd> to send · <kbd>Shift</kbd>+<kbd>↵</kbd> for new line · <kbd>⌘</kbd>+<kbd>↵</kbd> sends from
+            anywhere
+          </div>
         </div>
       </div>
     </aside>
