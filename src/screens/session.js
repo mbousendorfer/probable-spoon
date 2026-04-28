@@ -40,6 +40,7 @@ import { open as openGenerateImageModal } from "../components/generate-image-mod
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=22";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=21";
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=21";
+import { classifyFile, startFileUpload } from "../sources-stream.js?v=22";
 import { showToast } from "../components/toast.js?v=20";
 import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
@@ -843,6 +844,59 @@ function wireAssistantPanel(root, session, attachedContext) {
         });
       }
     }, 200);
+  }
+
+  // Drag-and-drop a file anywhere on the assistant panel → kicks off the
+  // upload pipeline directly (no modal). Matches the handoff "drop a file
+  // anywhere to add it as a source" hint shown under the composer. Files
+  // that don't classify (wrong extension, too big) fall back to the Add
+  // Source modal so the user gets the explicit error UX.
+  const aside = root.querySelector(".session__assistant");
+  if (aside) {
+    let dragDepth = 0;
+    aside.addEventListener("dragenter", (event) => {
+      if (!event.dataTransfer || !Array.from(event.dataTransfer.types || []).includes("Files")) return;
+      event.preventDefault();
+      dragDepth += 1;
+      aside.classList.add("is-drop-target");
+    });
+    aside.addEventListener("dragover", (event) => {
+      if (!event.dataTransfer || !Array.from(event.dataTransfer.types || []).includes("Files")) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    });
+    aside.addEventListener("dragleave", () => {
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (dragDepth === 0) aside.classList.remove("is-drop-target");
+    });
+    aside.addEventListener("drop", (event) => {
+      if (!event.dataTransfer || !event.dataTransfer.files?.length) return;
+      event.preventDefault();
+      dragDepth = 0;
+      aside.classList.remove("is-drop-target");
+      const files = Array.from(event.dataTransfer.files);
+      let started = 0;
+      let firstReject = null;
+      for (const file of files) {
+        const classification = classifyFile(file);
+        if (classification.ok) {
+          startFileUpload(file, classification);
+          started += 1;
+        } else if (!firstReject) {
+          firstReject = classification.reason;
+        }
+      }
+      if (started > 0) {
+        showToast(
+          started === 1 ? `Uploading "${files[0].name}"…` : `Uploading ${started} file${started === 1 ? "" : "s"}…`,
+        );
+      }
+      if (firstReject) {
+        // Fall back to the modal so the user sees the explicit error UX
+        // and can retry with a supported file.
+        openAddSourceModal({ tab: "upload" });
+      }
+    });
   }
 
   currentUnsubscribe = () => {

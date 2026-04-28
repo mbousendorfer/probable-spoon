@@ -70,6 +70,16 @@
   scroll-behavior: smooth;
 }
 
+/* Drop target — shown when a file is dragged over the assistant panel.
+   The aside fades to a subtle orange tint and gets an inner dashed
+   border so the drop target reads at a glance. */
+.session__assistant.is-drop-target {
+  background: var(--ref-color-orange-10);
+  outline: 2px dashed var(--ref-color-orange-100);
+  outline-offset: -8px;
+  transition: background-color var(--ref-animation-short) var(--app-ease-standard);
+}
+
 /* ── Empty-state hero ─────────────────────────────────────────────────
    Centred hero block shown inside .session__assistant-thread when the
    conversation has no user message yet. 2x2 starter grid lets the user
