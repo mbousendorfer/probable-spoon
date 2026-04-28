@@ -10,8 +10,16 @@
 import { html, raw, escapeHtml } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
 import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
+import { showToast } from "./toast.js?v=20";
 
 const OVERLAY_ID = "settingsDrawer";
+
+// Note: Connectors and Social accounts use an instant-save model — clicking
+// Connect / Disconnect mutates the source array directly, no working copy
+// and no Save button. That's intentional: the action IS the save, and the
+// user gets toast feedback (see FIND-02). Preferences and Notifications use
+// the working-copy + Save pattern because they're forms with multiple fields
+// where intermediate states aren't meaningful.
 import {
   contexts,
   contextComponentsFor,
@@ -593,12 +601,14 @@ function onClick(event) {
   }
 
   // Connectors connect/disconnect — instant flip on the imported mock.
+  // Toast confirms the action so the user sees feedback before any close.
   const connectorBtn = event.target.closest("[data-connector-toggle]");
   if (connectorBtn) {
     const id = connectorBtn.dataset.connectorToggle;
     const c = connectors.find((x) => x.id === id);
     if (c) {
-      if (c.status === "connected") {
+      const wasConnected = c.status === "connected";
+      if (wasConnected) {
         c.status = "disconnected";
         delete c.account;
         delete c.lastSync;
@@ -608,6 +618,7 @@ function onClick(event) {
         c.lastSync = "just now";
       }
       renderContent();
+      showToast(`${c.name} ${wasConnected ? "disconnected" : "connected"}`);
     }
     return;
   }
@@ -643,19 +654,22 @@ function onClick(event) {
     return;
   }
 
-  // Social accounts toggle
+  // Social accounts toggle — same instant-save model as connectors.
   const socialBtn = event.target.closest("[data-social-toggle]");
   if (socialBtn) {
     const id = socialBtn.dataset.socialToggle;
     const a = socialAccounts.find((x) => x.id === id);
     if (a) {
-      if (a.status === "connected") {
+      const wasConnected = a.status === "connected";
+      if (wasConnected) {
         a.status = "disconnected";
       } else {
         a.status = "connected";
         if (!a.handle) a.handle = "@archie";
       }
       renderContent();
+      const label = a.platformLabel || a.platform || "Account";
+      showToast(`${label} ${wasConnected ? "disconnected" : "connected"}`);
     }
     return;
   }
