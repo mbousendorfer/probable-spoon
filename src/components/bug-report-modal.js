@@ -16,12 +16,15 @@
 
 import { escapeHtml } from "../utils.js?v=20";
 
-let backdrop, modal, submitBtn, problemInput, actionInput;
+let backdrop, modal, submitBtn, problemInput, actionInput, problemError;
 let categoriesEl, previewEl, dropzoneFallback, dropzone, fileInput;
 let previewImg, fileNameEl, autoBadge, capturingBadge, captureFailedBadge, contextBar;
 let selectedCategory = null;
 let screenshotDataUrl = null;
 let initialized = false;
+// Stays false until the user clicks Submit once. Avoids yelling at
+// people who haven't tried yet.
+let hasAttemptedSubmit = false;
 
 const CATEGORY_LABELS = {
   visual: "Visual glitch",
@@ -69,7 +72,8 @@ const HTML = `
 
       <div class="bug-field">
         <label for="bugProblemInput">What went wrong? <span class="bug-field__required">*</span></label>
-        <textarea class="bug-textarea" id="bugProblemInput" rows="3" placeholder="e.g. The calendar didn't open, the button did nothing, or the state reset unexpectedly..."></textarea>
+        <textarea class="bug-textarea" id="bugProblemInput" rows="3" placeholder="e.g. The calendar didn't open, the button did nothing, or the state reset unexpectedly..." aria-describedby="bugProblemError"></textarea>
+        <p class="form-field-error" id="bugProblemError" role="alert" hidden>Please describe what went wrong before submitting.</p>
       </div>
 
       <div class="bug-field">
@@ -152,11 +156,17 @@ function reset() {
   categoriesEl.querySelectorAll(".bug-category-chip").forEach((c) => c.classList.remove("selected"));
   actionInput.value = "";
   problemInput.value = "";
-  problemInput.classList.remove("invalid");
+  setProblemInvalid(false);
   submitBtn.disabled = false;
   submitBtn.textContent = "Submit bug report";
   clearScreenshot();
   contextBar.innerHTML = "";
+  hasAttemptedSubmit = false;
+}
+
+function setProblemInvalid(invalid) {
+  problemInput.classList.toggle("invalid", invalid);
+  if (problemError) problemError.hidden = !invalid;
 }
 
 // html2canvas is loaded on first capture, not at page load. If it fails
@@ -274,6 +284,7 @@ export function init() {
   modal = document.getElementById("bugReportModal");
   submitBtn = document.getElementById("submitBugReportBtn");
   problemInput = document.getElementById("bugProblemInput");
+  problemError = document.getElementById("bugProblemError");
   actionInput = document.getElementById("bugActionInput");
   categoriesEl = document.getElementById("bugCategories");
   previewEl = document.getElementById("bugScreenshotPreview");
@@ -343,18 +354,23 @@ export function init() {
   });
 
   problemInput.addEventListener("input", () => {
-    if (problemInput.value.trim()) problemInput.classList.remove("invalid");
+    if (problemInput.value.trim()) setProblemInvalid(false);
+  });
+  // Re-validate on blur, but only after the user has tried once.
+  problemInput.addEventListener("blur", () => {
+    if (hasAttemptedSubmit) setProblemInvalid(!problemInput.value.trim());
   });
 
   // Submit — no backend; mock a round-trip and show the success panel.
   submitBtn.addEventListener("click", async () => {
+    hasAttemptedSubmit = true;
     const problem = problemInput.value.trim();
     if (!problem) {
-      problemInput.classList.add("invalid");
+      setProblemInvalid(true);
       focusSafe(problemInput);
       return;
     }
-    problemInput.classList.remove("invalid");
+    setProblemInvalid(false);
     submitBtn.disabled = true;
     submitBtn.innerHTML = `<span class="bug-report-modal__submit-spinner" aria-hidden="true"></span>Submitting…`;
     // In a real app we'd post { category, action, problem, screenshot, context }.

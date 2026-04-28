@@ -240,6 +240,13 @@ body.has-modal {
   box-shadow: 0 0 0 3px var(--ref-color-red-10);
 }
 
+/* Inline error text under invalid fields. */
+.form-field-error {
+  margin: var(--ref-spacing-xxs) 0 0;
+  font-size: var(--ref-font-size-xs);
+  color: var(--ref-color-red-100);
+}
+
 /* ── Bug report: dropzone + preview ──────────────────────── */
 
 .bug-report-dropzone {
