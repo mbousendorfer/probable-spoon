@@ -4,20 +4,22 @@ import { renderTopbar } from "../components/topbar.js?v=23";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=20";
-import { recentSessions, templateStarters, ideas } from "../mocks.js?v=22";
+import { recentSessions, templateStarters } from "../mocks.js?v=22";
 import { getContexts, getContextById } from "../contexts-store.js?v=20";
 import { setHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 import { getSources, subscribeSources } from "../sources-stream.js?v=21";
+import { getIdeas, subscribe as subscribeLibrary } from "../library.js?v=22";
 import { isNewUser } from "../user-mode.js?v=20";
-import { renderSourceCard } from "../components/source-card.js?v=24";
-import { renderIdeaCard } from "../components/idea-card.js?v=23";
+import { renderSourceCard } from "../components/source-card.js?v=25";
+import { renderIdeaCard } from "../components/idea-card.js?v=24";
 import {
   contentState,
   renderContentWorkspace as renderSharedContentWorkspace,
   rerenderContentWorkspaceBody,
   renderContentEmptyState,
-} from "../components/content-workspace.js?v=22";
+} from "../components/content-workspace.js?v=23";
+import { wireLibraryActions, renderSourcesBulkBar, renderIdeasBulkBar } from "../library-actions.js?v=20";
 
 // Dashboard — one URL (#/), state variants encoded in URL params so URLs
 // like "Projects · Ideas" stay shareable.
@@ -49,6 +51,17 @@ function setQuery(next) {
 // Cleared and reset on every renderDashboard so subscriptions don't pile up
 // across navigations.
 let unsubscribeSources = null;
+let unsubscribeLibrary = null;
+// Controller for the dashboard's click + change listeners (matches the
+// session.js pattern). Re-created on every renderDashboard call so old
+// listeners don't stack on the stable #app element.
+let dashboardListenerController = null;
+
+// Library selection — module-local Sets shared with library-actions.js.
+// Cleared on every fresh renderDashboard so navigation away clears the
+// selection (mirrors the session-screen previousSessionId guard).
+const sourceSelection = new Set();
+const ideaSelection = new Set();
 
 export function renderDashboard(_params, target) {
   renderTopbar();
@@ -58,6 +71,14 @@ export function renderDashboard(_params, target) {
     unsubscribeSources();
     unsubscribeSources = null;
   }
+  if (unsubscribeLibrary) {
+    unsubscribeLibrary();
+    unsubscribeLibrary = null;
+  }
+  if (dashboardListenerController) dashboardListenerController.abort();
+  dashboardListenerController = new AbortController();
+  sourceSelection.clear();
+  ideaSelection.clear();
 
   target.innerHTML = html`
     <section class="screen screen--split dashboard">
@@ -71,9 +92,37 @@ export function renderDashboard(_params, target) {
 
   bindDashboard(target);
 
+  // Library-action wiring (selection toggles, bulk Extract / Delete, per-row
+  // "…" menu actions). Same module the in-session Content tab uses, so the
+  // two surfaces share behavior. The dashboard implicitly operates on the
+  // default session's library (ideas are session-scoped under the hood).
+  wireLibraryActions(target, {
+    sessionId: defaultLibrarySessionId(),
+    sourceSelection,
+    ideaSelection,
+    onRerender: () => {
+      // Body-only repaint when possible (preserves search input focus);
+      // fall back to a full panel rebuild when the body doesn't exist
+      // (e.g. transition between empty and populated states).
+      if (target.querySelector("[data-content-body]")) {
+        rerenderContentBody(target);
+      } else {
+        const main = target.querySelector(".dashboard__main");
+        if (main) main.innerHTML = renderProjectsPanel(readQuery());
+      }
+    },
+    signal: dashboardListenerController.signal,
+  });
+
   // Re-render only the Content panel when the sources stream changes — keeps
   // the sidebar and the workspace tabs steady while uploads progress.
   unsubscribeSources = subscribeSources(() => {
+    if (isNewUser()) return;
+    const main = target.querySelector(".dashboard__main");
+    if (main) main.innerHTML = renderProjectsPanel(readQuery());
+  });
+  // Same for library changes (extract more / delete ideas / etc).
+  unsubscribeLibrary = subscribeLibrary(defaultLibrarySessionId(), () => {
     if (isNewUser()) return;
     const main = target.querySelector(".dashboard__main");
     if (main) main.innerHTML = renderProjectsPanel(readQuery());
@@ -199,11 +248,22 @@ function renderProjectsPanel(q) {
   return html` <div class="dashboard__panel">${raw(renderContentSection(q))}</div> `;
 }
 
+// The dashboard's library implicitly browses the default session's content
+// (mirrors the existing "click source/idea → navigate to session" behavior).
+// Bulk extract / delete operate on this session id so the dashboard and the
+// in-session Content tab share state.
+function defaultLibrarySessionId() {
+  return recentSessions[0]?.id || "new";
+}
+
 function renderContentSection(q) {
+  const sid = defaultLibrarySessionId();
   const sources = getSources();
+  const ideas = getIdeas(sid);
   // Same Content workspace as the in-session Content tab: header with count
-  // meta + the dashboard-only "+ Add source" button, search + sort toolbar,
-  // By source / All ideas tabs, body of cards.
+  // meta + the "+ Add source" button, search + sort toolbar, By source /
+  // All ideas tabs, body of cards. Selection state + bulk bars are shared
+  // via library-actions.js so behavior is identical across surfaces.
   const addSourceButton = `
     <button type="button" class="ap-button stroked blue" data-dashboard-add-source>
       <i class="ap-icon-plus"></i>
@@ -214,7 +274,18 @@ function renderContentSection(q) {
     return renderContentEmptyState({ actionHtml: addSourceButton });
   }
   const view = q.view === "ideas" ? "ideas" : "sources";
-  return renderSharedContentWorkspace({ sources, ideas, view, headerActions: addSourceButton });
+  const sourceSel = view === "sources" ? sourceSelection : null;
+  const ideaSel = view === "ideas" ? ideaSelection : null;
+  return renderSharedContentWorkspace({
+    sources,
+    ideas,
+    view,
+    headerActions: addSourceButton,
+    sourceSelection: sourceSel,
+    sourcesBulkBar: sourceSel && sourceSel.size > 0 ? renderSourcesBulkBar(sourceSel.size) : "",
+    ideaSelection: ideaSel,
+    ideasBulkBar: ideaSel && ideaSel.size > 0 ? renderIdeasBulkBar(ideaSel.size) : "",
+  });
 }
 
 // ---- Wiring -------------------------------------------------------------------
@@ -370,11 +441,7 @@ function bindDashboard(root) {
     }
     if (event.target.matches("[data-content-sort]")) {
       contentState.sort = event.target.value;
-      rerenderContentWorkspaceBody(root, {
-        sources: getSources(),
-        ideas,
-        view: readQuery().view === "ideas" ? "ideas" : "sources",
-      });
+      rerenderContentBody(root);
     }
   });
 
@@ -386,12 +453,27 @@ function bindDashboard(root) {
     }
     if (event.target.matches("[data-content-search]")) {
       contentState.q = event.target.value;
-      rerenderContentWorkspaceBody(root, {
-        sources: getSources(),
-        ideas,
-        view: readQuery().view === "ideas" ? "ideas" : "sources",
-      });
+      rerenderContentBody(root);
     }
+  });
+}
+
+// Body-only repaint helper: same options the initial render uses so the
+// search input keeps focus while typing. Threads selection + bulk-bar
+// state through so the bar reflects the current Set sizes.
+function rerenderContentBody(root) {
+  const sid = defaultLibrarySessionId();
+  const view = readQuery().view === "ideas" ? "ideas" : "sources";
+  const sourceSel = view === "sources" ? sourceSelection : null;
+  const ideaSel = view === "ideas" ? ideaSelection : null;
+  rerenderContentWorkspaceBody(root, {
+    sources: getSources(),
+    ideas: getIdeas(sid),
+    view,
+    sourceSelection: sourceSel,
+    sourcesBulkBar: sourceSel && sourceSel.size > 0 ? renderSourcesBulkBar(sourceSel.size) : "",
+    ideaSelection: ideaSel,
+    ideasBulkBar: ideaSel && ideaSel.size > 0 ? renderIdeasBulkBar(ideaSel.size) : "",
   });
 }
 

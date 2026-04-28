@@ -14,11 +14,67 @@
 // Processing sources stay non-selectable — there's nothing to extract from
 // or delete cleanly while the upload is mid-flight.
 //
+// Each processed source row also exposes a `…` menu (right-most) with
+// per-row Extract more / Delete shortcuts so single-source operations
+// don't require entering selection mode. The menu state is owned here
+// (mirrors the idea-card more-menu pattern); callers wire the actual
+// actions via [data-source-extract-one] / [data-source-delete-one].
+//
 // Source shape: { id, filename, kind, status, ideaCount, addedAt, ... }
 
 import { iconFor } from "../file-kinds.js?v=20";
 
-// version-bumped to ?v=24 by callers (FIND-S2 selectable rows)
+// ── Overflow menu — one open at a time ─────────────────────────────────
+//
+// Document-level listeners; ES modules execute once per page so this
+// installs exactly once even though the card is rendered many times.
+
+function closeAllSourceMoreMenus(exceptMenu) {
+  document.querySelectorAll(".source-card__more-menu:not([hidden])").forEach((menu) => {
+    if (menu === exceptMenu) return;
+    menu.hidden = true;
+    const controllingBtn = document.querySelector(`[aria-controls="${menu.id}"]`);
+    if (controllingBtn) controllingBtn.setAttribute("aria-expanded", "false");
+  });
+}
+
+function toggleSourceMoreMenu(triggerBtn) {
+  const menuId = triggerBtn.getAttribute("aria-controls");
+  const menu = menuId ? document.getElementById(menuId) : null;
+  if (!menu) return;
+  const willOpen = menu.hidden;
+  closeAllSourceMoreMenus(willOpen ? menu : null);
+  menu.hidden = !willOpen;
+  triggerBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+}
+
+document.addEventListener("click", (event) => {
+  // Open / close the more menu
+  const moreBtn = event.target.closest("[data-source-more]");
+  if (moreBtn) {
+    event.preventDefault();
+    toggleSourceMoreMenu(moreBtn);
+    return;
+  }
+  // Per-row Extract / Delete — close the menu after click; the actual
+  // action is handled by screen-level delegators on the same data-* hooks.
+  if (event.target.closest("[data-source-extract-one]") || event.target.closest("[data-source-delete-one]")) {
+    closeAllSourceMoreMenus();
+    // Don't preventDefault — let the screen handler run.
+    return;
+  }
+  // Clicks inside an open menu shouldn't bubble-close it
+  if (event.target.closest(".source-card__more-menu")) return;
+  // Anywhere else — close every open menu
+  closeAllSourceMoreMenus();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeAllSourceMoreMenus();
+});
+
+// ── Card renderer ──────────────────────────────────────────────────────
+
 export function renderSourceCard(source, allIdeas = [], { selectable = false, isSelected = false } = {}) {
   const isProcessing = source.status === "Processing";
   const totalIdeas =
@@ -74,6 +130,41 @@ export function renderSourceCard(source, allIdeas = [], { selectable = false, is
       `
       : "";
 
+  // Per-row "…" menu — only on processed sources; processing sources can't
+  // be extracted from or cleanly deleted yet.
+  const menuId = `source-more-${source.id}`;
+  const moreMenu = !isProcessing
+    ? `
+      <div class="source-card__more-wrap">
+        <button
+          type="button"
+          class="ap-icon-button transparent source-card__more"
+          data-source-more="${source.id}"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-controls="${menuId}"
+          aria-label="More actions"
+        >
+          <i class="ap-icon-more"></i>
+        </button>
+        <ul class="source-card__more-menu" id="${menuId}" role="menu" hidden>
+          <li role="none">
+            <button type="button" role="menuitem" class="source-card__more-item" data-source-extract-one="${source.id}">
+              <i class="ap-icon-sparkles"></i>
+              <span>Extract more ideas</span>
+            </button>
+          </li>
+          <li role="none">
+            <button type="button" role="menuitem" class="source-card__more-item source-card__more-item--danger" data-source-delete-one="${source.id}">
+              <i class="ap-icon-trash"></i>
+              <span>Delete</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    `
+    : "";
+
   const selectedClass = isSelected ? " source-card--selected" : "";
 
   return `
@@ -89,6 +180,7 @@ export function renderSourceCard(source, allIdeas = [], { selectable = false, is
       <div class="source-card__actions">
         ${askButton}
         ${processingPill}
+        ${moreMenu}
       </div>
     </article>
   `;

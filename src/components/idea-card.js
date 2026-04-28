@@ -114,12 +114,30 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeAllIdeaMoreMenus();
 });
 
-export function renderIdeaCard(idea, allSources = []) {
+export function renderIdeaCard(idea, allSources = [], { selectable = false, isSelected = false } = {}) {
   const sourceIds = idea.sourceIds || [];
   const sources = sourceIds.map((id) => allSources.find((s) => s.id === id)).filter(Boolean);
   const potential = potentialFor(idea.confidence || 0);
   const pinLabel = idea.pinned ? "Unpin idea" : "Pin idea";
   const panelId = `idea-sources-${idea.id}`;
+
+  // Leading checkbox — rendered when the workspace is in selection mode.
+  // Same DS .ap-checkbox-container pattern as source-card; the sibling <i>
+  // is what the DS draws as the visual box (input is visually hidden).
+  const selectCheckbox = selectable
+    ? `
+      <label class="ap-checkbox-container idea-card__check" aria-label="Select idea: ${idea.title}">
+        <input
+          type="checkbox"
+          data-idea-select="${idea.id}"
+          ${isSelected ? "checked" : ""}
+        />
+        <i></i>
+      </label>
+    `
+    : "";
+
+  const selectedClass = isSelected ? " idea-card--selected" : "";
 
   const sourceChips = sources
     .map(
@@ -164,9 +182,10 @@ export function renderIdeaCard(idea, allSources = []) {
     : '<span class="idea-card__sources-toggle idea-card__sources-toggle--empty"></span>';
 
   return `
-    <article class="idea-card" data-idea-id="${idea.id}" data-sources-open="false">
+    <article class="idea-card${selectedClass}" data-idea-id="${idea.id}" data-sources-open="false">
       <div class="idea-card__inner">
         <div class="idea-card__signals">
+          ${selectCheckbox}
           <span class="ap-status ${potential.color} idea-card__potential">${potential.label}</span>
         </div>
 

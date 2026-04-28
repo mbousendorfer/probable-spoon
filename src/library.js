@@ -115,6 +115,22 @@ export function appendExtractedIdeas(sessionId, sources) {
   return created;
 }
 
+// Bulk-delete ideas by id. Used by the "All ideas" view's bulk-action bar.
+// Returns the number of ideas actually removed (no-op for unknown ids).
+export function removeIdeas(sessionId, ideaIds) {
+  if (!Array.isArray(ideaIds) || ideaIds.length === 0) return 0;
+  const set = new Set(ideaIds);
+  const ideas = ideasMap.get(sessionId);
+  if (!ideas) return 0;
+  const before = ideas.length;
+  for (let i = ideas.length - 1; i >= 0; i -= 1) {
+    if (set.has(ideas[i].id)) ideas.splice(i, 1);
+  }
+  const removed = before - ideas.length;
+  if (removed > 0) notify(sessionId);
+  return removed;
+}
+
 // Drop every idea whose ONLY source was one of the deleted sources. Ideas
 // that draw from multiple sources lose just the deleted reference and stay
 // in the list — half their context is still around.

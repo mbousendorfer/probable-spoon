@@ -9,26 +9,30 @@
 //
 // Public API:
 //   contentState                                — { q, sort } shared state
-//   renderContentWorkspace({ sources, ideas, view, headerActions, selection, bulkBar })
+//   renderContentWorkspace({ sources, ideas, view, headerActions,
+//                            sourceSelection, sourcesBulkBar,
+//                            ideaSelection, ideasBulkBar })
 //                                                — full HTML render
-//   rerenderContentWorkspaceBody(root, { sources, ideas, view, selection, bulkBar })
+//   rerenderContentWorkspaceBody(root, { ...same options... })
 //                                                — partial re-render (body
 //                                                  + counter pills + bulk bar)
 //                                                  so the search input keeps
 //                                                  focus
 //
-// `selection` is an optional Set<sourceId>. When provided, source cards on
-// the By-source view render in selectable mode (leading checkbox; selected
-// cards highlight). `bulkBar` is the HTML of the sticky action bar shown at
-// the top of the body when selection is non-empty (caller-built so it can
-// own its own data-* hooks and copy).
+// `sourceSelection` / `ideaSelection` are optional Set<id>. When provided,
+// the matching cards render in selectable mode (leading checkbox; selected
+// cards highlight). `sourcesBulkBar` / `ideasBulkBar` are the HTML of the
+// sticky action bar shown at the top of each view's body when the matching
+// selection is non-empty. Both bars are caller-built so they can own their
+// own data-* hooks and copy (see library-actions.renderSourcesBulkBar /
+// renderIdeasBulkBar).
 //
 // Caller wires its own input/change listeners and calls
 // rerenderContentWorkspaceBody(...) on each tick.
 
 import { html, raw } from "../utils.js?v=20";
-import { renderSourceCard } from "./source-card.js?v=24";
-import { renderIdeaCard } from "./idea-card.js?v=23";
+import { renderSourceCard } from "./source-card.js?v=25";
+import { renderIdeaCard } from "./idea-card.js?v=24";
 
 export const contentState = { q: "", sort: "potential" };
 
@@ -90,7 +94,7 @@ function renderBySourceBody(sources, allIdeas, search, selection = null) {
     .join("")}</div>`;
 }
 
-function renderAllIdeasBody(ideas, allSources, search) {
+function renderAllIdeasBody(ideas, allSources, search, selection = null) {
   if (ideas.length === 0) {
     return renderEmptyState({
       icon: "ap-icon-sparkles",
@@ -98,7 +102,10 @@ function renderAllIdeasBody(ideas, allSources, search) {
       body: search ? `No idea matches "${search}". Try a different term.` : "No ideas yet.",
     });
   }
-  return `<div class="dashboard__ideas-grid">${ideas.map((i) => renderIdeaCard(i, allSources)).join("")}</div>`;
+  const selectable = !!selection;
+  return `<div class="dashboard__ideas-grid">${ideas
+    .map((i) => renderIdeaCard(i, allSources, { selectable, isSelected: selectable && selection.has(i.id) }))
+    .join("")}</div>`;
 }
 
 // ─── Toolbar (search + sort + view tabs) ─────────────────────────────────
@@ -155,17 +162,29 @@ function renderContentToolbar(view, sourcesCount, ideasCount) {
 // `view` — 'sources' | 'ideas'
 // `headerActions` — optional HTML injected to the right of the count meta
 //                   (e.g. "+ Add source" button on the dashboard)
-// `selection` — optional Set<sourceId> enabling per-row checkboxes
-// `bulkBar`   — optional HTML rendered at the top of the body, sticky, when
-//               the caller wants to surface bulk actions on the selection
-export function renderContentWorkspace({ sources, ideas, view, headerActions = "", selection = null, bulkBar = "" }) {
+// `sourceSelection` / `ideaSelection` — optional Set<id> enabling per-row
+//                   checkboxes on the matching view.
+// `sourcesBulkBar` / `ideasBulkBar` — optional HTML rendered above the
+//                   matching view's cards, sticky, when the caller wants
+//                   to surface bulk actions for that selection.
+export function renderContentWorkspace({
+  sources,
+  ideas,
+  view,
+  headerActions = "",
+  sourceSelection = null,
+  sourcesBulkBar = "",
+  ideaSelection = null,
+  ideasBulkBar = "",
+}) {
   const search = contentState.q;
   const { filteredSources, filteredIdeas } = filterContent(sources, ideas, search);
   const sortedIdeas = sortIdeas(filteredIdeas, contentState.sort);
-  const body =
-    view === "sources"
-      ? renderBySourceBody(filteredSources, ideas, search, selection)
-      : renderAllIdeasBody(sortedIdeas, sources, search);
+  const isSources = view === "sources";
+  const cardsHtml = isSources
+    ? renderBySourceBody(filteredSources, ideas, search, sourceSelection)
+    : renderAllIdeasBody(sortedIdeas, sources, search, ideaSelection);
+  const activeBulkBar = isSources ? sourcesBulkBar : ideasBulkBar;
   return html`
     <section class="content-workspace">
       <header class="content-workspace__header">
@@ -182,8 +201,8 @@ export function renderContentWorkspace({ sources, ideas, view, headerActions = "
         ${raw(renderContentToolbar(view, filteredSources.length, filteredIdeas.length))}
       </header>
       <div class="content-workspace__body" data-content-body>
-        <div class="content-workspace__bulk-slot" data-bulk-slot>${raw(bulkBar)}</div>
-        ${raw(body)}
+        <div class="content-workspace__bulk-slot" data-bulk-slot>${raw(activeBulkBar)}</div>
+        ${raw(cardsHtml)}
       </div>
     </section>
   `;
@@ -191,19 +210,23 @@ export function renderContentWorkspace({ sources, ideas, view, headerActions = "
 
 // Patches the body + counter pills in place. Preserves search input focus
 // and cursor position because the input itself is left untouched.
-export function rerenderContentWorkspaceBody(root, { sources, ideas, view, selection = null, bulkBar = "" }) {
+export function rerenderContentWorkspaceBody(
+  root,
+  { sources, ideas, view, sourceSelection = null, sourcesBulkBar = "", ideaSelection = null, ideasBulkBar = "" },
+) {
   const search = contentState.q;
   const { filteredSources, filteredIdeas } = filterContent(sources, ideas, search);
   const sortedIdeas = sortIdeas(filteredIdeas, contentState.sort);
   const body = root.querySelector("[data-content-body]");
   if (body) {
-    const cardsHtml =
-      view === "sources"
-        ? renderBySourceBody(filteredSources, ideas, search, selection)
-        : renderAllIdeasBody(sortedIdeas, sources, search);
-    // Re-render preserving the bulk-slot — useful so the slot's reference
-    // stays stable when only the cards change.
-    body.innerHTML = `<div class="content-workspace__bulk-slot" data-bulk-slot>${bulkBar}</div>${cardsHtml}`;
+    const isSources = view === "sources";
+    const cardsHtml = isSources
+      ? renderBySourceBody(filteredSources, ideas, search, sourceSelection)
+      : renderAllIdeasBody(sortedIdeas, sources, search, ideaSelection);
+    const activeBulkBar = isSources ? sourcesBulkBar : ideasBulkBar;
+    // Re-render preserving the bulk-slot wrapper so partial repaints don't
+    // recreate the sticky reference node.
+    body.innerHTML = `<div class="content-workspace__bulk-slot" data-bulk-slot>${activeBulkBar}</div>${cardsHtml}`;
   }
   // Update counter pills in place — don't rebuild the tab buttons.
   root.querySelectorAll("[data-content-view]").forEach((t) => {

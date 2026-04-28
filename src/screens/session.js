@@ -19,30 +19,22 @@ import {
   subscribe,
   submitAssistantChoice,
 } from "../assistant.js?v=21";
-import {
-  getSources,
-  getIdeas,
-  subscribe as subscribeLibrary,
-  addSource,
-  appendExtractedIdeas,
-  removeIdeasForSources,
-} from "../library.js?v=21";
-import { removeSources as streamRemoveSources } from "../sources-stream.js?v=21";
-import { open as openConfirmModal } from "../components/confirm-modal.js?v=20";
+import { getSources, getIdeas, subscribe as subscribeLibrary, addSource } from "../library.js?v=22";
+import { wireLibraryActions, renderSourcesBulkBar, renderIdeasBulkBar } from "../library-actions.js?v=20";
 import { getPosts, attachImageToDraft, subscribe as subscribePostsStore } from "../posts-store.js?v=20";
 import { startDraftFlow, executeDraft } from "../draft-flow.js?v=20";
 import { startContextBuildFlow, startActionPickerFlow, handleActionPick } from "../start-flow.js?v=23";
 import * as sidebarWizard from "../sidebar-wizard.js?v=30";
 import * as inlineQuestion from "../inline-question.js?v=20";
 import { renderPicker, bindWizardKeyboard, unbindWizardKeyboard } from "./_analyse-common.js?v=24";
-import { renderSourceCard } from "../components/source-card.js?v=24";
-import { renderIdeaCard } from "../components/idea-card.js?v=23";
+import { renderSourceCard } from "../components/source-card.js?v=25";
+import { renderIdeaCard } from "../components/idea-card.js?v=24";
 import {
   contentState,
   renderContentWorkspace as renderSharedContentWorkspace,
   rerenderContentWorkspaceBody,
   renderContentEmptyState,
-} from "../components/content-workspace.js?v=22";
+} from "../components/content-workspace.js?v=23";
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
@@ -91,15 +83,17 @@ function getActiveSessionIdFromHash() {
   return m ? m[1] : "new";
 }
 
-// Source-list selection — module-local Set keyed by source id. Used by the
-// bulk-action bar in the Content tab. Cleared whenever the user navigates
-// to a different session id (renderSession resets it via the
-// previousSessionId guard); persists across tab switches within the same
-// session and across "Cancel"-able UI flows.
+// Library selection — module-local Sets, mutated in place by
+// library-actions.js. One Set per kind (sources / ideas) so the matching
+// bulk bar shows up only when its view is active. Cleared whenever the
+// user navigates to a different session id; persists across tab + view
+// switches within the same session.
 const sourceSelection = new Set();
+const ideaSelection = new Set();
 let previousSessionId = null;
 function clearSelection() {
   sourceSelection.clear();
+  ideaSelection.clear();
 }
 
 // Unsubscribe fn for the assistant thread + library subscriptions.
@@ -935,18 +929,20 @@ function renderTab(q, attachedContext, isRealSession, session) {
       return renderContentEmptyState({ actionHtml: addSourceButton });
     }
     const view = q.view === "ideas" ? "ideas" : "sources";
-    // Selection is only meaningful on the By-source view. Keep the Set
-    // live (passed in directly) so renderSourceCard can read isSelected
-    // for each row.
-    const selection = view === "sources" ? sourceSelection : null;
-    const bulkBar = selection && selection.size > 0 ? renderBulkBar(selection.size) : "";
+    // Selections are only relevant when their respective view is shown.
+    // Keep both Sets live (passed in directly) so render*Card can read
+    // isSelected for each row.
+    const sourceSel = view === "sources" ? sourceSelection : null;
+    const ideaSel = view === "ideas" ? ideaSelection : null;
     return renderSharedContentWorkspace({
       sources: libSources,
       ideas: libIdeas,
       view,
       headerActions: addSourceButton,
-      selection,
-      bulkBar,
+      sourceSelection: sourceSel,
+      sourcesBulkBar: sourceSel && sourceSel.size > 0 ? renderSourcesBulkBar(sourceSel.size) : "",
+      ideaSelection: ideaSel,
+      ideasBulkBar: ideaSel && ideaSel.size > 0 ? renderIdeasBulkBar(ideaSel.size) : "",
     });
   }
 
@@ -966,37 +962,17 @@ function rerenderContentWorkspace(root, session) {
   const q = readQuery();
   if (q.tab !== "content") return;
   const view = q.view === "ideas" ? "ideas" : "sources";
-  const selection = view === "sources" ? sourceSelection : null;
-  const bulkBar = selection && selection.size > 0 ? renderBulkBar(selection.size) : "";
+  const sourceSel = view === "sources" ? sourceSelection : null;
+  const ideaSel = view === "ideas" ? ideaSelection : null;
   rerenderContentWorkspaceBody(root, {
     sources: getSources(session.id),
     ideas: getIdeas(session.id),
     view,
-    selection,
-    bulkBar,
+    sourceSelection: sourceSel,
+    sourcesBulkBar: sourceSel && sourceSel.size > 0 ? renderSourcesBulkBar(sourceSel.size) : "",
+    ideaSelection: ideaSel,
+    ideasBulkBar: ideaSel && ideaSel.size > 0 ? renderIdeasBulkBar(ideaSel.size) : "",
   });
-}
-
-// Sticky bar shown at the top of the source list when N sources are
-// selected. Three buttons: Extract more ideas, Delete (red), Cancel.
-function renderBulkBar(count) {
-  const noun = count === 1 ? "source" : "sources";
-  return `
-    <div class="content-workspace__bulk-bar" role="region" aria-label="Bulk actions">
-      <span class="content-workspace__bulk-count">${count} ${noun} selected</span>
-      <div class="content-workspace__bulk-actions">
-        <button type="button" class="ap-button stroked blue" data-bulk-extract>
-          <i class="ap-icon-sparkles"></i>
-          <span>Extract more ideas</span>
-        </button>
-        <button type="button" class="ap-button stroked danger" data-bulk-delete>
-          <i class="ap-icon-trash"></i>
-          <span>Delete</span>
-        </button>
-        <button type="button" class="ap-button transparent grey" data-bulk-cancel>Cancel</button>
-      </div>
-    </div>
-  `;
 }
 
 function renderEmptyState({ icon, title, body }) {
@@ -1519,6 +1495,18 @@ function bindSession(root, session) {
   currentListenerController = new AbortController();
   const { signal } = currentListenerController;
 
+  // Library actions (selection toggles, bulk Extract/Delete, per-row "…"
+  // menu) are wired through the shared library-actions module so the
+  // dashboard and the in-session Content tab behave identically.
+  wireLibraryActions(root, {
+    sessionId: session.id,
+    sourceSelection,
+    ideaSelection,
+    getSources: () => getSources(session.id),
+    onRerender: () => rerenderContentWorkspace(root, session),
+    signal,
+  });
+
   const input = root.querySelector("#assistantInput");
 
   // The assistant aside (and its attach menu) gets replaced wholesale on
@@ -1707,63 +1695,10 @@ function bindSession(root, session) {
         return;
       }
 
-      // --- Source selection + bulk actions ---
-      // Per-row checkbox toggle. We don't preventDefault because the native
-      // checkbox flip is the visible feedback; the click handler just keeps
-      // the module-local Set in sync and repaints the bar.
-      const selectBox = event.target.closest("[data-source-select]");
-      if (selectBox) {
-        const id = selectBox.dataset.sourceSelect;
-        if (selectBox.checked) sourceSelection.add(id);
-        else sourceSelection.delete(id);
-        rerenderContentWorkspace(root, session);
-        return;
-      }
-
-      // Cancel — clears the selection, removing the bulk bar.
-      if (event.target.closest("[data-bulk-cancel]")) {
-        clearSelection();
-        rerenderContentWorkspace(root, session);
-        return;
-      }
-
-      // Extract more ideas — additive, never destructive. library.js
-      // handles the chat-side narration (pending → extraction turn).
-      if (event.target.closest("[data-bulk-extract]")) {
-        const ids = Array.from(sourceSelection);
-        const allSources = getSources(session.id);
-        const targets = allSources.filter((s) => ids.includes(s.id) && s.status !== "Processing");
-        if (targets.length === 0) {
-          showToast("Nothing to extract — selected sources are still processing.");
-          return;
-        }
-        appendExtractedIdeas(session.id, targets);
-        clearSelection();
-        rerenderContentWorkspace(root, session);
-        return;
-      }
-
-      // Delete — confirm dialog, then drop sources from the global stream
-      // and clean up per-session ideas whose only source was deleted.
-      if (event.target.closest("[data-bulk-delete]")) {
-        const ids = Array.from(sourceSelection);
-        if (ids.length === 0) return;
-        const noun = ids.length === 1 ? "source" : "sources";
-        openConfirmModal({
-          title: `Delete ${ids.length} ${noun}?`,
-          body: `This removes the file${ids.length === 1 ? "" : "s"} and any ideas that came only from ${ids.length === 1 ? "it" : "them"}. Ideas backed by other sources stay.`,
-          confirmLabel: `Delete ${ids.length} ${noun}`,
-          danger: true,
-          onConfirm: () => {
-            removeIdeasForSources(session.id, ids);
-            const removed = streamRemoveSources(ids);
-            clearSelection();
-            rerenderContentWorkspace(root, session);
-            showToast(`${removed} ${removed === 1 ? "source" : "sources"} deleted`);
-          },
-        });
-        return;
-      }
+      // Source / idea selection + bulk + per-row "…" menu actions are all
+      // dispatched by library-actions.wireLibraryActions (attached below
+      // with the same abort signal) so we don't duplicate the dispatch
+      // here. See library-actions.js for the full hook list.
 
       // "Ask" inside a source card → open the chat picker (same UX as
       // Draft Post), then show the askWhatToKnow inline question in the
