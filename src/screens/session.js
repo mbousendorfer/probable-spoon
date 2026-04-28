@@ -37,6 +37,7 @@ import {
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
+import { open as openAddSourceModal } from "../components/add-source-modal.js?v=20";
 import { showToast } from "../components/toast.js?v=20";
 import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
@@ -929,13 +930,23 @@ function renderTab(q, attachedContext, isRealSession, session) {
   if (q.tab === "content") {
     const libSources = getSources(session.id);
     const libIdeas = getIdeas(session.id);
+    // Same "+ Add source" CTA as the dashboard. data-session-add-source
+    // (not data-add-source) so it doesn't collide with the assistant's
+    // attach-menu shortcuts that pick a kind directly.
+    const addSourceButton = `
+      <button type="button" class="ap-button stroked blue" data-session-add-source>
+        <i class="ap-icon-plus"></i>
+        <span>Add source</span>
+      </button>
+    `;
     if (libSources.length === 0 && libIdeas.length === 0) {
-      return renderContentEmptyState();
+      return renderContentEmptyState({ actionHtml: addSourceButton });
     }
     return renderSharedContentWorkspace({
       sources: libSources,
       ideas: libIdeas,
       view: q.view === "ideas" ? "ideas" : "sources",
+      headerActions: addSourceButton,
     });
   }
 
@@ -1662,6 +1673,13 @@ function bindSession(root, session) {
       if (contentViewBtn) {
         event.preventDefault();
         setQuery({ tab: "content", view: contentViewBtn.dataset.contentView, focusIdea: "" });
+        return;
+      }
+
+      // "+ Add source" in the Content tab header (mirrors the dashboard's
+      // dashboardAddSource button — same modal, same global flow).
+      if (event.target.closest("[data-session-add-source]")) {
+        openAddSourceModal();
         return;
       }
 
