@@ -96,51 +96,54 @@ export function skipStage(sessionId) {
 }
 
 // Fire onComplete + clean up. Used when skipMemorize is set so the wizard
-// doesn't prompt the user about saving on a single-stage edit.
+// doesn't prompt the user about saving on a single-stage edit. The caller
+// distinguishes section-edit completions from creation by passing
+// skipMemorize=true at startWizard.
 function finishImmediate(sessionId) {
   const onComplete = completionHandlers.get(sessionId);
   states.delete(sessionId);
   completionHandlers.delete(sessionId);
   notify(sessionId);
-  if (onComplete) onComplete({ savedAsContext: false });
+  if (onComplete) onComplete({ name: null });
 }
 
 export function answer(sessionId, value, custom = null) {
   const state = states.get(sessionId);
   if (!state) return;
 
-  // Memorize → name prompt branch. The user has confirmed they want to save
-  // this context globally; we now expect a typed name in `custom` (the only
-  // input row in the picker uses customPlaceholder).
+  // Name prompt branch — user picked "Name it"; we now expect a typed name
+  // in `custom` (the only input row in the picker uses customPlaceholder).
+  // If they leave it blank, `name: null` falls back to the caller's default.
   if (state.awaitingMemorizeName) {
     const typed = (custom || (typeof value === "string" ? value : "") || "").trim();
-    const finalName = typed || "Untitled context";
-    state.history.push({ role: "user", text: finalName });
+    state.history.push({ role: "user", text: typed || "(skipped — use default name)" });
     const onComplete = completionHandlers.get(sessionId);
     states.delete(sessionId);
     completionHandlers.delete(sessionId);
     notify(sessionId);
-    if (onComplete) onComplete({ savedAsContext: true, name: finalName });
+    if (onComplete) onComplete({ name: typed || null });
     return;
   }
 
-  // Memorize step is the only thing left after all stages — handle here.
+  // Memorize step — every wizard run produces a saved global context now
+  // (the local-context concept was removed). Two paths: "name" pivots into
+  // the name prompt; "default" fires onComplete with no name so the caller
+  // can pick its own default (typically the session title).
   if (state.awaitingMemorize) {
-    if (value === "save") {
-      // Pivot to the name prompt; don't fire onComplete yet.
-      state.history.push({ role: "user", text: "Yes, save it" });
+    if (value === "name") {
+      state.history.push({ role: "user", text: "Yes, name it" });
       state.awaitingMemorize = false;
       state.awaitingMemorizeName = true;
       notify(sessionId);
       return;
     }
-    // value === "session" — local context, no name needed.
-    state.history.push({ role: "user", text: "Just this session" });
+    // value === "default" — auto-name; caller falls back to the chat title.
+    state.history.push({ role: "user", text: "Use default name" });
     const onComplete = completionHandlers.get(sessionId);
     states.delete(sessionId);
     completionHandlers.delete(sessionId);
     notify(sessionId);
-    if (onComplete) onComplete({ savedAsContext: false });
+    if (onComplete) onComplete({ name: null });
     return;
   }
 
@@ -228,7 +231,7 @@ export function renderChrome(sessionId) {
         historyHtml +
         chatTurn({
           role: "ai",
-          text: "Want me to remember this context for next time?",
+          text: "Saving this context so you can reuse it. Want to name it, or use the chat's title as the default?",
         }),
       picker: MEMORIZE_PICKER,
     };
@@ -269,13 +272,16 @@ function notify(sessionId) {
 
 // ---- Pickers ---------------------------------------------------------------
 
+// Two-option memorize picker — every wizard run saves a global context
+// (the local-context concept was removed). User chooses whether to name
+// the context or accept a sensible default (the session/chat title).
 const MEMORIZE_PICKER = {
   items: [
-    { value: "save", label: "Yes, save it", icon: "ap-icon-rounded-check" },
-    { value: "session", label: "Just this session", icon: "ap-icon-arrow-right" },
+    { value: "name", label: "Name it", icon: "ap-icon-pen" },
+    { value: "default", label: "Use the chat title", icon: "ap-icon-arrow-right" },
   ],
   handler: "wizard-answer",
-  title: "Want me to remember this context for next time?",
+  title: "Saving this context so you can reuse it. Name it, or use the chat title?",
   stepIndicator: "Save context",
 };
 

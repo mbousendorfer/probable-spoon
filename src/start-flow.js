@@ -6,39 +6,34 @@
 //   startContextBuildFlow(sessionId, { onPersist })
 //     Flow A — no context attached. Hands off to sidebar-wizard.js which
 //     renders the numbered-option-row picker UX inside the assistant panel.
-//     The wizard walks the user through Voice/Brief/Brand, then asks
-//     "save globally vs just this session", then (if save) prompts for a
-//     name. `onPersist({ savedAsContext, name })` is called by the session
-//     (which owns setQuery + the contexts-store) to actually persist the
-//     choice — start-flow only orchestrates the chat side of the flow.
+//     The wizard walks the user through Voice/Brief/Brand, then offers a
+//     two-option memorize step (Name it / Use chat title). Every run
+//     produces a saved global — the local-context concept was removed.
+//     `onPersist({ name })` is called by the session (which owns setQuery
+//     + the contexts-store) to actually save the global. `name` is null
+//     when the user accepted the default; the session falls back to the
+//     chat title.
 //
 //   startActionPickerFlow(sessionId, { contextName })
 //     Flow B — context already attached. Skips the wizard and asks
 //     "what do you want to do?" with one chip per quick action.
 
 import { postAssistantMessage, postUserTurn, postAssistantChoice } from "./assistant.js?v=21";
-import * as sidebarWizard from "./sidebar-wizard.js?v=29";
+import * as sidebarWizard from "./sidebar-wizard.js?v=30";
 
 // ---- Flow A — Context-build sequence ------------------------------------
 
 export function startContextBuildFlow(sessionId, { onPersist } = {}) {
-  // Launch the full sidebar wizard — same numbered-option-row UX as the
-  // standalone /analyse routes, but rendered inside the assistant panel.
-  // On completion, the wizard fires onComplete with { savedAsContext, name? }
-  // and we post the closing chat turns into the regular thread.
   sidebarWizard.startWizard(sessionId, {
     stages: ["voice", "brief", "brand"],
-    onComplete: ({ savedAsContext, name }) => {
-      if (savedAsContext) {
-        postAssistantMessage(sessionId, `Saved as “${name}”. You can use it from any chat now.`);
-      } else {
-        postAssistantMessage(sessionId, "Got it — keeping this context attached to this chat only.");
-      }
+    onComplete: ({ name }) => {
+      // The session's onPersist resolves the final name (typed name OR
+      // chat-title fallback) and adds the global. We post the closing
+      // chat turns here using the resolved name.
+      const resolved = onPersist ? onPersist({ name }) : { name: name || "Untitled context" };
+      const finalName = resolved?.name || name || "Untitled context";
+      postAssistantMessage(sessionId, `Saved as “${finalName}”. You can use it from any chat now.`);
       postReadyToGo(sessionId);
-      // Hand the persistence decision back to the session so it can update
-      // the URL (`contextId` for global, `localContext` flag for local) and
-      // push the new context into the store.
-      if (onPersist) onPersist({ savedAsContext, name });
     },
   });
 }

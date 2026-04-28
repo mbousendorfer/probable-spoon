@@ -31,8 +31,8 @@ import { removeSources as streamRemoveSources } from "../sources-stream.js?v=21"
 import { open as openConfirmModal } from "../components/confirm-modal.js?v=20";
 import { getPosts, attachImageToDraft, subscribe as subscribePostsStore } from "../posts-store.js?v=20";
 import { startDraftFlow, executeDraft } from "../draft-flow.js?v=20";
-import { startContextBuildFlow, startActionPickerFlow, handleActionPick } from "../start-flow.js?v=22";
-import * as sidebarWizard from "../sidebar-wizard.js?v=29";
+import { startContextBuildFlow, startActionPickerFlow, handleActionPick } from "../start-flow.js?v=23";
+import * as sidebarWizard from "../sidebar-wizard.js?v=30";
 import * as inlineQuestion from "../inline-question.js?v=20";
 import { renderPicker, bindWizardKeyboard, unbindWizardKeyboard } from "./_analyse-common.js?v=24";
 import { renderSourceCard } from "../components/source-card.js?v=24";
@@ -66,31 +66,12 @@ function readQuery() {
     populated: params.get("populated") === "1" || params.get("populated") === "true",
     title: params.get("title") || "",
     contextId: params.get("contextId") || "",
-    // Local-context flag — set when the user finishes the wizard with
-    // "Just this session", or forks from a global. Mutually exclusive with
-    // contextId. The actual voice/brief/brand bundle is the standard mocked
-    // one (the proto doesn't track per-session context divergence).
-    localContext: params.get("localContext") === "1" || params.get("localContext") === "true",
     postsFilter: params.get("postsFilter") || "all",
     postsNetwork: params.get("postsNetwork") || "all",
     focusIdea: params.get("focusIdea") || "",
     focusPost: params.get("focusPost") || "",
     focusSource: params.get("focusSource") || "",
     view: params.get("view") || "sources",
-  };
-}
-
-// Synthetic local-context object used when the session has localContext=1.
-// Same shape as the global contexts in the store; id is derived from the
-// session id so accordion logic still gets a stable id to key on.
-function makeLocalContext(sessionId) {
-  return {
-    id: `local:${sessionId}`,
-    name: "Local context",
-    updatedAt: "just now",
-    voice: voiceAnalysis,
-    brief: strategyBrief,
-    brand: brandTheme,
   };
 }
 
@@ -148,24 +129,23 @@ export function renderSession(params, target) {
   }
   renderTopbar({ crumb: session.name });
 
-  // Resolution priority — URL state always wins over the mock seed so
-  // wizard-driven changes (fork to local, save as new global) take effect
-  // immediately without needing to mutate the mock object:
-  //  1. URL localContext=1 → synthesized inline bundle (fork or wizard "session-only")
-  //  2. URL contextId       → getContextById (wizard "save as global", or
+  // Resolution priority — URL state wins over the mock seed so wizard-
+  // driven changes (save as new global) take effect immediately without
+  // needing to mutate the mock object. Every chat references a single
+  // global context (the local-context concept was removed):
+  //  1. URL contextId       → getContextById (wizard "save as global", or
   //                                            initial nav with explicit param)
-  //  3. session.contextId   → mock seed (initial state for s-acme-launch etc.)
-  //  4. URL populated=1     → first global (legacy demo flag)
-  //  5. null                → transient creation phase (wizard active, neither set)
-  const attachedContext = q.localContext
-    ? makeLocalContext(session.id)
-    : q.contextId
-      ? getContextById(q.contextId)
-      : session.contextId
-        ? getContextById(session.contextId)
-        : q.populated
-          ? getContexts()[0]
-          : null;
+  //  2. session.contextId   → mock seed (initial state for s-acme-launch etc.)
+  //  3. URL populated=1     → first global (legacy demo flag)
+  //  4. null                → transient creation phase (wizard active, no
+  //                                            context yet)
+  const attachedContext = q.contextId
+    ? getContextById(q.contextId)
+    : session.contextId
+      ? getContextById(session.contextId)
+      : q.populated
+        ? getContexts()[0]
+        : null;
   const hasContext = !!attachedContext;
 
   target.innerHTML = html`
@@ -352,64 +332,49 @@ function askWhatToKnow(sessionId, filename) {
   });
 }
 
-// Section-edit scope picker — shown when the user clicks "Edit via chat" on
-// a section of a global context. Two outcomes: update the global everywhere,
-// or fork the session to a local copy and edit there. Local-context edits
-// skip this step entirely.
-function startEditScopePicker(session, section, ctxId) {
+// Confirm prompt before editing a section of a global context. Contexts
+// are now always shared — any edit propagates to every chat using the
+// context — so we surface that explicitly before launching the wizard.
+// Cancel quietly drops the request; Continue runs the section wizard.
+function startEditConfirmPrompt(session, section, ctxId) {
   const sectionTitle = section === "voice" ? "Voice" : section === "brief" ? "Strategy brief" : "Brand theme";
   inlineQuestion.ask(session.id, {
-    intro: `Editing the ${sectionTitle.toLowerCase()} — should this update the global context, or just this chat?`,
-    title: "Where should this edit apply?",
-    stepLabel: "Edit scope",
+    intro: `Editing the ${sectionTitle.toLowerCase()} will update this context across every chat using it.`,
+    title: "Continue editing?",
+    stepLabel: "Confirm",
     items: [
       {
-        value: "global",
-        label: "Update everywhere",
-        caption: "Other chats using this context will see the changes too.",
-        icon: "ap-icon-globe",
+        value: "continue",
+        label: "Continue",
+        caption: "Run the edit wizard. Changes propagate to all chats using this context.",
+        icon: "ap-icon-check",
       },
       {
-        value: "local",
-        label: "Just this chat",
-        caption: "Forks a local copy. Other chats keep the original.",
-        icon: "ap-icon-bolden",
+        value: "cancel",
+        label: "Cancel",
+        caption: "Don't make any changes.",
+        icon: "ap-icon-close",
       },
     ],
-    onPick: (scope) => {
-      if (scope === "local") {
-        // Fork: clear the global ref + flip the local-context flag. The URL
-        // change re-renders the Context tab; on next paint the section-edit
-        // wizard sees an already-local context and doesn't ask again.
-        setQuery({ contextId: "", localContext: "1" });
-        // Wait one tick so the URL/state settles before launching the wizard.
-        setTimeout(() => startSectionEdit(session, section, { scope: "local", contextId: "" }), 0);
-        return;
-      }
-      // scope === "global"
-      startSectionEdit(session, section, { scope: "global", contextId: ctxId });
+    onPick: (choice) => {
+      if (choice === "continue") startSectionEdit(session, section, ctxId);
     },
     onSkip: () => {},
   });
 }
 
 // Single-stage wizard for editing one section of an attached context.
-// skipMemorize is set so the wizard doesn't prompt save/name on completion;
-// for global edits we bump updatedAt on the store so consumers see a
-// "freshly updated" signal. Local edits don't need any persistence — the
-// underlying voice/brief/brand mocks are shared (proto convention).
-function startSectionEdit(session, section, { scope, contextId }) {
+// skipMemorize bypasses the save/name prompt — we're editing an existing
+// global, not creating a new one. On completion we bump the global's
+// updatedAt timestamp so the "Updated …" subline in consumers refreshes.
+function startSectionEdit(session, section, contextId) {
   sidebarWizard.startWizard(session.id, {
     stages: [section],
     skipMemorize: true,
     onComplete: () => {
       const sectionTitle = section === "voice" ? "Voice" : section === "brief" ? "Strategy brief" : "Brand theme";
-      if (scope === "global" && contextId) {
-        updateContext(contextId, { updatedAt: "just now" });
-        postAssistantMessage(session.id, `${sectionTitle} updated everywhere this context is used.`);
-      } else {
-        postAssistantMessage(session.id, `${sectionTitle} updated for this chat only.`);
-      }
+      if (contextId) updateContext(contextId, { updatedAt: "just now" });
+      postAssistantMessage(session.id, `${sectionTitle} updated everywhere this context is used.`);
     },
   });
 }
@@ -808,23 +773,24 @@ function wireAssistantPanel(root, session, attachedContext) {
         startActionPickerFlow(session.id, { contextName: pendingStart.contextName });
       } else {
         startContextBuildFlow(session.id, {
-          // The session owns the URL state and the contexts-store; on wizard
-          // completion we either push a new global + attach it (URL contextId)
-          // or just flag the session as having a local context (URL localContext).
-          // Either way the URL change triggers a re-render so the Context tab
-          // immediately repaints with the resolved bundle.
-          onPersist: ({ savedAsContext, name }) => {
-            if (savedAsContext) {
-              const created = addContext({
-                name: name || "Untitled context",
-                voice: voiceAnalysis,
-                brief: strategyBrief,
-                brand: brandTheme,
-              });
-              setQuery({ contextId: created.id, localContext: "" });
-            } else {
-              setQuery({ contextId: "", localContext: "1" });
-            }
+          // Every wizard run produces a saved global. `name` is null when
+          // the user picked "Use the chat title" at the memorize step; we
+          // fall back to the session title (or "Untitled context" if the
+          // chat itself is unnamed). The URL change to contextId triggers
+          // a re-render so the Context tab immediately repaints.
+          onPersist: ({ name }) => {
+            const fallback = (session.name || "").trim() || "Untitled context";
+            const finalName = (name || "").trim() || fallback;
+            const created = addContext({
+              name: finalName,
+              voice: voiceAnalysis,
+              brief: strategyBrief,
+              brand: brandTheme,
+            });
+            setQuery({ contextId: created.id });
+            // Hand the resolved name back so start-flow's confirmation
+            // message ("Saved as …") matches what's actually in the store.
+            return { name: finalName };
           },
         });
       }
@@ -1387,11 +1353,11 @@ function renderDraftTurn(message) {
   `;
 }
 
-// Context tab — single-context view. Every session has a context (global or
-// local). The tab shows its three components (Voice, Brief, Brand) as
-// collapsible sections, each with an "Edit via chat" button. While the
-// creation wizard is running and neither contextId nor localContext flag is
-// set yet, attachedContext is null and we show a transient placeholder.
+// Context tab — single-context view. Every session points at exactly one
+// global context. The tab shows its three components (Voice, Brief, Brand)
+// as collapsible sections, each with an "Edit via chat" button. While the
+// creation wizard is running and contextId isn't set yet, attachedContext
+// is null and we show a transient placeholder.
 
 function renderContextTab(attachedContext) {
   if (attachedContext) return renderAttachedContext(attachedContext);
@@ -1464,19 +1430,14 @@ function renderAttachedContext(context) {
     })
     .join("");
 
-  // Header copy reflects whether the context is global (named, reusable) or
-  // local (lives only in this chat). No Detach / Edit-name buttons under the
-  // new model — context lifecycle is fixed once the chat starts.
-  const isLocal = String(context.id || "").startsWith("local:");
-  const subline = isLocal
-    ? "Local to this chat · not saved as a global."
-    : `Updated ${context.updatedAt || "recently"}.`;
-
+  // Every context is global and shared. No Detach / fork affordances —
+  // edits propagate across every chat using the context (gated by a
+  // confirm prompt at edit time).
   return html`
     <div class="session__context">
       <div class="stack-sm">
         <h2 class="text-title">${context.name}</h2>
-        <p class="muted">${subline}</p>
+        <p class="muted">Updated ${context.updatedAt || "recently"} · shared across every chat using this context.</p>
       </div>
       <div class="stack-sm">${raw(items)}</div>
     </div>
@@ -1898,18 +1859,14 @@ function bindSession(root, session) {
         return;
       }
       // Edit a single section (Voice / Brief / Brand) via conversation.
-      // For a global context, ask the user whether to update everywhere or
-      // fork to local first; for a local context, jump straight in.
+      // Every context is global now — surface a confirm prompt because
+      // edits propagate across every chat using the context.
       const editSection = event.target.closest("[data-edit-context-section]");
       if (editSection) {
         const section = editSection.dataset.editContextSection;
         const ctxId = readQuery().contextId || session.contextId || "";
-        const isGlobal = !!ctxId && !String(ctxId).startsWith("local:");
-        if (isGlobal) {
-          startEditScopePicker(session, section, ctxId);
-        } else {
-          startSectionEdit(session, section, { scope: "local", contextId: ctxId });
-        }
+        if (!ctxId) return;
+        startEditConfirmPrompt(session, section, ctxId);
         return;
       }
 
