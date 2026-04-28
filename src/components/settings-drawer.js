@@ -9,14 +9,19 @@
 
 import { html, raw, escapeHtml } from "../utils.js?v=20";
 import { navigate } from "../router.js?v=20";
-import {
-  contexts,
-  contextComponentsFor,
-  connectors,
-  socialAccounts,
-  generationPrefs,
-  notificationPrefs,
-} from "../mocks.js?v=22";
+import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
+import { showToast } from "./toast.js?v=20";
+
+const OVERLAY_ID = "settingsDrawer";
+
+// Note: Connectors and Social accounts use an instant-save model — clicking
+// Connect / Disconnect mutates the source array directly, no working copy
+// and no Save button. That's intentional: the action IS the save, and the
+// user gets toast feedback (see FIND-02). Preferences and Notifications use
+// the working-copy + Save pattern because they're forms with multiple fields
+// where intermediate states aren't meaningful.
+import { contexts, contextComponentsFor, socialAccounts, generationPrefs, notificationPrefs } from "../mocks.js?v=22";
+import { getConnectors, findConnector, setConnectorStatus } from "../connectors-store.js?v=20";
 
 // ─── State ───────────────────────────────────────────────────────────────
 
@@ -104,7 +109,7 @@ function renderConnectorsSection() {
       <p class="settings-drawer__section-sub">Sources Archie pulls knowledge from when generating posts.</p>
     </header>
     <ul class="settings-drawer__rows" data-rows="connectors">
-      ${raw(connectors.map(renderConnectorRow).join(""))}
+      ${raw(getConnectors().map(renderConnectorRow).join(""))}
     </ul>
   `;
 }
@@ -529,6 +534,9 @@ function closeConfirm() {
 
 export function open(opts = {}) {
   if (!initialized) init();
+  // Use attemptClose so an unsaved-changes confirmation isn't silently
+  // skipped when another modal asks the coordinator to close us.
+  requestOpen(OVERLAY_ID, attemptClose);
   if (opts.section && SECTIONS.find((s) => s.id === opts.section)) {
     state.activeSection = opts.section;
   }
@@ -563,6 +571,7 @@ export function close() {
   // Reset working copies so a fresh open shows fresh state.
   revertWorkingCopies();
   state.activeSection = "connectors";
+  notifyClose(OVERLAY_ID);
 }
 
 function attemptClose() {
@@ -585,22 +594,19 @@ function onClick(event) {
     return;
   }
 
-  // Connectors connect/disconnect — instant flip on the imported mock.
+  // Connectors connect/disconnect — go through connectors-store so the
+  // add-source modal stays in sync (FIND-01). Toast confirms the action.
   const connectorBtn = event.target.closest("[data-connector-toggle]");
   if (connectorBtn) {
     const id = connectorBtn.dataset.connectorToggle;
-    const c = connectors.find((x) => x.id === id);
+    const c = findConnector(id);
     if (c) {
-      if (c.status === "connected") {
-        c.status = "disconnected";
-        delete c.account;
-        delete c.lastSync;
-      } else {
-        c.status = "connected";
-        c.account = "matt@archie.io";
-        c.lastSync = "just now";
-      }
+      const wasConnected = c.status === "connected";
+      const updated = wasConnected
+        ? setConnectorStatus(id, { status: "disconnected", account: null, lastSync: null })
+        : setConnectorStatus(id, { status: "connected", account: "matt@archie.io", lastSync: "just now" });
       renderContent();
+      showToast(`${updated.name} ${wasConnected ? "disconnected" : "connected"}`);
     }
     return;
   }
@@ -636,19 +642,22 @@ function onClick(event) {
     return;
   }
 
-  // Social accounts toggle
+  // Social accounts toggle — same instant-save model as connectors.
   const socialBtn = event.target.closest("[data-social-toggle]");
   if (socialBtn) {
     const id = socialBtn.dataset.socialToggle;
     const a = socialAccounts.find((x) => x.id === id);
     if (a) {
-      if (a.status === "connected") {
+      const wasConnected = a.status === "connected";
+      if (wasConnected) {
         a.status = "disconnected";
       } else {
         a.status = "connected";
         if (!a.handle) a.handle = "@archie";
       }
       renderContent();
+      const label = a.platformLabel || a.platform || "Account";
+      showToast(`${label} ${wasConnected ? "disconnected" : "connected"}`);
     }
     return;
   }

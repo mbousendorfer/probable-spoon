@@ -60,14 +60,6 @@ export function renderSourceCard(source, allIdeas = []) {
       <div class="source-card__actions">
         ${askButton}
         ${processingPill}
-        <button
-          type="button"
-          class="ap-icon-button transparent source-card__more"
-          data-source-more="${source.id}"
-          aria-label="More actions"
-        >
-          <i class="ap-icon-more"></i>
-        </button>
       </div>
     </article>
   `;

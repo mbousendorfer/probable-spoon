@@ -16,6 +16,9 @@
 // the picked image URL when the user confirms. No store, no persistence.
 
 import { escapeHtml } from "../utils.js?v=20";
+import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
+
+const MODAL_ID = "generateImage";
 
 let backdrop, modal, body, footer;
 let initialized = false;
@@ -345,6 +348,7 @@ export function init() {
 
 export function open(postId, onUse) {
   if (!initialized) init();
+  requestOpen(MODAL_ID, close);
   currentPostId = postId || null;
   onUseCallback = typeof onUse === "function" ? onUse : null;
 
@@ -377,4 +381,5 @@ export function close() {
   imageUrl = null;
   currentPostId = null;
   onUseCallback = null;
+  notifyClose(MODAL_ID);
 }

@@ -18,13 +18,13 @@ import {
 
 const SECTIONS = strategyBrief.sections;
 
+// "rework" was removed: both branches advanced to the next section
+// identically, so the option promised regeneration but didn't deliver.
+// Custom input remains for users who want to leave a comment. FIND-08.
 const SECTION_PICKER = {
-  items: [
-    { value: "good", label: "Looks good, continue", icon: "ap-icon-rounded-check" },
-    { value: "rework", label: "Needs work — regenerate this part", icon: "ap-icon-refresh" },
-  ],
+  items: [{ value: "good", label: "Looks good, continue", icon: "ap-icon-rounded-check" }],
   handler: "brief-answer",
-  customPlaceholder: "Something else — type your answer…",
+  customPlaceholder: "Tell me what to tweak about this section…",
 };
 
 const SUMMARY_PICKER = {

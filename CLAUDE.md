@@ -17,47 +17,102 @@ With Claude Code, the dev server auto-launches via `.claude/launch.json`.
 
 ## Architecture
 
-**Vanilla JS only** — no build step, no bundler. State lives in a Zustand vanilla store (`store.js`) with `store.subscribe(renderApp)` driving re-renders.
+**Vanilla JS only** — no build step, no bundler. Hash-based router (`src/router.js`) renders one of 7 routes into `#app` on `hashchange`. Each screen and modal owns its DOM and event delegation.
 
 ### Source layout
 
 ```
 src/
-  app.js              — entry point: imports, renderApp(), global event listeners
-  store.js            — Zustand store + selectors
-  utils.js            — shared helpers: icons map, escapeHtml, actionButton, pills, etc.
-  mock-generators.js  — deterministic mock data via seed hashing
-  views/              — view renderers (one file per workspace area)
-    sidebar.js          renderSidebar, renderSessionBar, renderWorkflowTabs
-    library.js          renderLibraryView, renderSourceCard, renderSelectionBar
-    brief.js            renderStrategyBriefView, renderBriefSection, renderBriefEntry*
-    posts.js            renderPostsView, renderDraftCard, renderPostsRail, previews
-    drawer.js           renderDrawer + initDrawer (DOM refs + listeners)
-    workspace.js        renderWorkspace, renderStepPlaceholder (router between views)
-  modals/             — self-contained modals (HTML injected at init)
-    session.js          create/rename session
-    feedback.js         feedback form
-    bug-report.js       bug report + screenshot capture
-    schedule.js         schedule posts
-    generate-image.js   AI image generation
+  app.js                — entry: registers routes, inits modals, calls start()
+  router.js             — hash router (route() / navigate() / start())
+  url-state.js          — parseHashParams() / setHashQuery() helpers
+  handoff.js            — single-use sessionStorage bridge across navigations
+  user-mode.js          — admin toggle "new" vs "returning" (localStorage key: archie-user-mode)
+  utils.js              — html / raw template tag helpers
+  file-kinds.js         — kind → DS icon class mapping for source files
+
+  mocks.js              — seed data: contexts, sessions, sources, ideas, posts,
+                          connectors, social accounts, generation/notification prefs
+
+  library.js            — per-session ideas store; getSources delegates to sources-stream
+  posts-store.js        — per-session drafts store
+  sources-stream.js     — global sources + uploads + state machine (uploading
+                          → processing → done) shared by every consumer
+  assistant.js          — per-session conversational thread (turns + reasoning chips)
+
+  draft-flow.js         — orchestrates "Draft post from idea" turn sequence
+  start-flow.js         — context-build wizard kick-off + action picker dispatch
+  inline-question.js    — single-question picker overlay inside session assistant panel
+  sidebar-wizard.js     — multi-stage analyse-style wizard inside assistant panel
+
+  screens/
+    dashboard.js          renderDashboard — route /
+    session.js            renderSession — route /session/:id (largest file)
+    analyse-hub.js        renderAnalyseHub — route /analyse
+    analyse-voice.js      renderAnalyseVoice — route /analyse/voice
+    analyse-brief.js      renderAnalyseBrief — route /analyse/brief
+    analyse-brand.js      renderAnalyseBrand — route /analyse/brand
+    analyse-summary.js    renderAnalyseSummary — route /analyse/summary
+    _analyse-common.js    bindWizardKeyboard, renderPicker, advanceContextStage
+
+  components/
+    topbar.js               persistent header (Home / Feedback / Bug / ? / Settings)
+    settings-drawer.js      right-anchored drawer, 5 tabs
+    add-source-modal.js     Upload / URL / Connectors tabs + connector browse
+    generate-image-modal.js prompt + style/mood chips, derive vs generate
+    bug-report-modal.js     auto-screenshot via html2canvas + form
+    feedback-modal.js       feature area select + textarea
+    chat-picker-modal.js    pick session for cross-session draft/ask
+    content-workspace.js    shared toolbar (search, sort, By Source / All Ideas)
+    source-card.js          dashboard + session Content tab
+    idea-card.js            same; owns its own Pin/Unpin more menu
+    toast.js                showToast() snackbar — DS .ap-snackbar wrapper
+    shortcut-legend.js      ? key dialog
+    user-mode-chip.js       admin floating chip — toggles new/returning + reload
 ```
 
-Each view module imports utilities from `utils.js` and selectors from `store.js`, and exports its render functions. Each modal exports `init()` (injects HTML + binds events) and `render(state)`.
+Each component module exports `init()` (injects HTML once into `<body>`) and `open()` / render functions. Screens render directly into `#app` via the router.
 
 ### State management
 
-- Single Zustand vanilla store in `src/store.js`, created via `createStore` from `https://esm.sh/zustand@5/vanilla`
-- State is persisted to `localStorage` under key `bigbet-library-prototype-v2`
-- Selectors exported as standalone functions: `getActiveSession`, `getSessionUi`, `getIdeaById`, `countIdeas`, `countPinnedIdeas`, `sortSessions`
-- All mutations go through `store.getState().actionName()` — actions are defined inline in the store creator
+**No external store library.** Four vanilla stores follow the same pattern:
 
-### View routing
+| Module              | Domain                                                      | Public API (top)                                                                                                                                                                                                                                    |
+| ------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `library.js`        | per-session ideas; sources delegate to sources-stream       | `getSources(sid)`, `getIdeas(sid)`, `subscribe(sid, fn)`, `addSource(sid, kind)`                                                                                                                                                                    |
+| `sources-stream.js` | global file uploads + URL/connector imports + state machine | `getSources()`, `getUploads()`, `subscribeSources(fn)`, `subscribeUploads(fn)`, `startFileUpload`, `startUrlImport`, `startConnectorImport`, `cancelUpload`, `pushScriptedSource`, `completeScriptedSource`                                         |
+| `posts-store.js`    | per-session drafts                                          | `getPosts(sid)`, `addPostDraft(sid, opts)`, `attachImageToDraft(sid, postId, url)`, `subscribe(sid, fn)`                                                                                                                                            |
+| `assistant.js`      | per-session conversational thread                           | `getThread(sid, opts)`, `subscribe(sid, fn)`, `sendMessage`, `postAssistantMessage`, `postSourceIntake`, `postExtractionResult`, `startPending`, `finishPending`, `postUserTurn`, `postAssistantChoice`, `submitAssistantChoice`, `postDraftResult` |
 
-`app.js` uses a tab-based model (`currentTab` in state). The `renderApp()` function calls `renderWorkspace()` from `views/workspace.js`, which dispatches to the per-tab view renderer (`renderLibraryView`, `renderPostsView`, `renderStrategyBriefView`, `renderStepPlaceholder`). Event delegation on container elements (`workspaceContent`, `assistantPanel`, `sessionSwitcher`) routes clicks via `data-*` attributes.
+Each store keeps a `Map(sessionId → state)` and a `Set<fn>` of subscribers, notified shallowly on every mutation. Module-level state seeds from `mocks.js` on first read (or stays empty in `isNewUser()` mode).
+
+`sources-stream` is the only **global** store. `library.js` subscribes to it and re-emits to per-session subscribers so any session's Content tab repaints when a source lands.
+
+**No localStorage persistence** of app state — only `archie-user-mode` (admin toggle) and the sessionStorage `handoff.*` keys (single-use bridges).
+
+### Routing & screens
+
+`router.js` is a tiny hash router. Routes are declared up-front in `app.js` and the matched handler renders into `#app`. After every render, `setAfterRender` cleans up wizard keyboard listeners if you've left an `/analyse/{voice,brief,brand}` route.
+
+URL state is encoded as hash query params (`#/session/:id?tab=posts&focusIdea=…`). Each screen owns its `readQuery()` defaults; mutations go through `setHashQuery()` from `url-state.js` which calls `navigate()`.
+
+### Cross-screen handoffs
+
+`handoff.js` exposes `setHandoff(key, payload)` / `consumeHandoff(key)` (atomic read + remove) / `hasHandoff(key)`. Used to pass intent across navigations:
+
+| Key                  | Set by                                  | Consumed by                                                           |
+| -------------------- | --------------------------------------- | --------------------------------------------------------------------- |
+| `pendingStartFlow`   | dashboard "New chat" button             | session.js mount → `startContextBuildFlow` or `startActionPickerFlow` |
+| `pendingDraftIdeaId` | dashboard idea card "Draft Post" button | session.js mount → `askProfileQuestion`                               |
+| `pendingAskSource`   | dashboard source card "Ask" button      | session.js mount → `askWhatToKnow`                                    |
 
 ### Module loading
 
-All JS imports use ES modules with `?v=N` cache-busting suffixes. External deps load from `esm.sh`. `package.json` exists only for the DS npm packages.
+ES modules with `?v=N` cache-busting suffixes (`from "./assistant.js?v=21"`). Bumping the suffix forces browsers to re-fetch. External deps from `esm.sh`. `package.json` exists only for the DS npm packages.
+
+### Admin chip (debug-only)
+
+`src/components/user-mode-chip.js` renders a floating "ADMIN · [first-time | returning] user · refresh" chip in the bottom-right. Click flips the mode in localStorage and reloads the page so every store re-seeds (or stays empty for "new"). Not part of the user-facing UI — kept for fast preview switching during demos.
 
 ## Design System — READ FIRST before UI/CSS work
 
@@ -74,8 +129,8 @@ This project is built on the official Agorapulse Design System (`@agorapulse/ui-
 4. **Prefer `--sys-*` over `--ref-*`** when a semantic token exists (text colors, border colors, component states).
 5. **Custom CSS only if nothing in the DS fits** — pick the right file:
    - `styles/ds-patches.css` when you need to **extend** a DS class with a missing variant (e.g. `.ap-status.yellow` because the DS only ships orange/red/green/blue/grey) or add a primitive the DS forgot (e.g. `.modal-backdrop`). This file is the only legitimate place to touch `.ap-*` selectors, and it should shrink as the DS evolves.
-   - `styles/app-components.css` for app-wide custom components with no DS equivalent (`.ai-notice`, `.search`, `.toolbar`, ...).
-   - `styles/views/<page>.css` for page-specific styling.
+   - `styles/screens/<screen>.css` for screen-specific styling (dashboard, session, analyse, posts, modals).
+   - `styles/components/<component>.css` for shared component styling (settings-drawer, add-source-modal).
    - **Never** redeclare a `.ap-*` class with overrides outside `ds-patches.css` — it defeats the DS and flips the cascade silently.
 6. **Validate before committing** — run `validate_css` on the ds-css MCP to catch hardcoded values that should be tokens.
 
@@ -105,11 +160,12 @@ styles/
   base.css               — resets, keyframes, app-wide DS token groupings
   layout.css             — app shell, topbar, sidebar, workspace chrome
   ds-patches.css         — patches on top of DS component classes
-  app-components.css     — custom components with no DS equivalent (ai-notice, search, toolbar, etc.)
-  responsive.css         — all @media / @container queries (loads last)
-  views/                 — feature/page-specific styles
-    session.css, assistant.css, library.css, sources.css, ideas.css,
-    brief.css, posts.css, previews.css, drawer.css, modals.css
+  chat.css               — composer + thread chrome (shared composer styles)
+  admin-chip.css         — admin user-mode floating chip
+  screens/               — feature/screen-specific styles
+    dashboard.css, session.css, posts.css, analyse.css, modals.css
+  components/            — shared component styles
+    settings-drawer.css, add-source-modal.css
 ```
 
 ### Token tiers
@@ -128,10 +184,19 @@ All `.ap-*` components come from the DS (`ds/css-ui/index.css`). Available: butt
 
 ## Key conventions
 
-- `index.html` is the single entry point — HTML markup only (~210 lines). CSS is in `styles/` and `ds/`.
-- Mock data is generated in `src/mock-generators.js` (deterministic via seed hashing) and seed data is defined in `src/store.js`.
-- Import paths use `?v=N` suffixes — keep them consistent when editing imports.
+- `index.html` is the single entry point — HTML markup only (~35 lines, mounts `#topbar` + `#app` + `#toastRegion`). All UI is rendered by JS.
+- Mock data lives in `src/mocks.js` (single seed source for sessions, sources, ideas, posts, contexts, connectors, social accounts, prefs).
+- Import paths use `?v=N` suffixes — keep them consistent when editing imports (bump the version when the consumer needs a fresh fetch).
+- Event wiring is **pure event delegation** with `data-*` attributes on the screen/modal root. No inline `onclick`, no per-element `addEventListener` for interactive children.
+
+## Audit & flow docs
+
+- `FLOW-AUDIT.md` (root) — exhaustive flow audit (44 surfaces, 189 elements, 38 flows, findings + Mermaid diagrams).
+- `audit-assets/` — Mermaid sources + SVG renders, drag-droppable into the Figma cartography (node `223-2046` of the Archie file).
+- `FLOW-CHANGELOG.md` (root, post-fix) — table commit ↔ FIND-XXX with Done / Skipped / Deferred status.
 
 ## MCP
 
 The `ds-css` MCP server provides design system tools: `validate_css`, `recommend_token`, `search_tokens`, `get_component`, `list_components`, `search_icons`, `get_text_style`, `get_layout_pattern`.
+
+The `plugin_figma_figma` MCP (when enabled) provides `use_figma`, `generate_diagram`, `get_design_context`, `get_screenshot`, etc., for design ↔ code workflows.

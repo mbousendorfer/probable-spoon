@@ -25,7 +25,9 @@ const SECTIONS = voiceAnalysis.sections;
 const INTAKE_PICKER = {
   items: [
     { value: "yes", label: "Yes, analyze my writing", icon: "ap-icon-check" },
-    { value: "no", label: "Not yet — skip for now", icon: "ap-icon-arrow-right" },
+    // "no" exits the entire context wizard (handler navigates back to /).
+    // Label reflects that scope — see FIND-09.
+    { value: "no", label: "Skip voice analysis", icon: "ap-icon-arrow-right" },
   ],
   handler: "voice-answer",
   customPlaceholder: "Something else — type your answer…",
@@ -41,13 +43,14 @@ const SOURCE_PICKER = {
   customPlaceholder: "Something else — type your answer…",
 };
 
+// "rework" was removed: both branches of the handler advanced to the next
+// section identically, so the option promised regeneration but didn't
+// deliver. Custom input remains available for users who want to comment
+// on a section before continuing. See FIND-08.
 const SECTION_PICKER = {
-  items: [
-    { value: "good", label: "Looks good, continue", icon: "ap-icon-rounded-check" },
-    { value: "rework", label: "Needs work — regenerate this part", icon: "ap-icon-refresh" },
-  ],
+  items: [{ value: "good", label: "Looks good, continue", icon: "ap-icon-rounded-check" }],
   handler: "voice-answer",
-  customPlaceholder: "Something else — type your answer…",
+  customPlaceholder: "Tell me what to tweak about this section…",
 };
 
 const SUMMARY_PICKER = {

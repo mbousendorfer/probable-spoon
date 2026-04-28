@@ -36,6 +36,7 @@ import {
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
+import { showToast } from "../components/toast.js?v=20";
 import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 
@@ -357,10 +358,7 @@ function askProfileQuestion(sessionId, ideaId) {
       caption: a.handle ? (a.kind ? `${a.kind} · ${a.handle}` : a.handle) : a.kind || "",
       imgSrc: a.logo,
     })),
-    onPick: (_accountId) => {
-      // pendingDraftAccountId was set here for a downstream consumer that
-      // never landed; startDraftFlow doesn't read it. Drop the orphan write
-      // and just kick off the flow.
+    onPick: () => {
       startDraftFlow(sessionId, ideaId);
     },
     onSkip: () => {
@@ -1055,31 +1053,31 @@ function renderPostCard(post, q = {}) {
 
           ${raw(imageBlock)} ${raw(engagement)}
 
-          <footer class="posts__card-footer">
-            <button class="posts__card-action" type="button">
+          <!-- Footer is a non-interactive LinkedIn-style preview of the
+               engagement bar. Buttons that did nothing on click previously
+               (FIND-06) — converted to spans so it's clear they're decoration. -->
+          <footer class="posts__card-footer" aria-hidden="true">
+            <span class="posts__card-action">
               <i class="ap-icon-thumb-up"></i>
               <span>Like</span>
-            </button>
-            <button class="posts__card-action" type="button">
+            </span>
+            <span class="posts__card-action">
               <i class="ap-icon-single-chat-bubble"></i>
               <span>Comment</span>
-            </button>
-            <button class="posts__card-action" type="button">
+            </span>
+            <span class="posts__card-action">
               <i class="ap-icon-repost"></i>
               <span>Repost</span>
-            </button>
-            <button class="posts__card-action" type="button">
+            </span>
+            <span class="posts__card-action">
               <i class="ap-icon-paper-plane"></i>
               <span>Send</span>
-            </button>
+            </span>
           </footer>
         </article>
       </div>
 
       <div class="posts__row-actions" aria-label="Post actions">
-        <button type="button" class="ap-icon-button stroked" aria-label="Edit post">
-          <i class="ap-icon-pen"></i>
-        </button>
         <button
           type="button"
           class="ap-icon-button stroked"
@@ -1584,12 +1582,6 @@ function bindSession(root, session) {
         return;
       }
 
-      // Source overflow menu → no-op for the prototype.
-      if (event.target.closest("[data-source-more]")) {
-        event.preventDefault();
-        return;
-      }
-
       // Idea-card source chips — navigate to the source within this session.
       const openSrc = event.target.closest("[data-source-open]");
       if (openSrc) {
@@ -1628,8 +1620,10 @@ function bindSession(root, session) {
 
       const tab = event.target.closest("[data-session-tab]");
       if (tab) {
-        // Clear focusIdea on any explicit tab switch.
-        setQuery({ tab: tab.dataset.sessionTab, focusIdea: "" });
+        // Clear focus markers on any explicit tab switch — they're scoped to
+        // the originating tab, leaving them set leaks pulse highlights when
+        // the user comes back.
+        setQuery({ tab: tab.dataset.sessionTab, focusIdea: "", focusPost: "", focusSource: "" });
         return;
       }
 
@@ -1683,7 +1677,23 @@ function bindSession(root, session) {
         return;
       }
       if (event.target.closest("[data-detach-context]")) {
+        // Capture which context was attached BEFORE detaching so the Undo
+        // toast action can re-attach it. Falls back gracefully if the
+        // session had no contextId (then nothing to undo).
+        const prevContextId = readQuery().contextId || session.contextId || "";
+        const prevContext = prevContextId ? getContextById(prevContextId) : null;
         setQuery({ tab: "context", detached: "1", contextId: "", populated: "" });
+        const label = prevContext?.name ? `${prevContext.name} detached` : "Context detached";
+        showToast(label, {
+          action: prevContextId
+            ? {
+                label: "Undo",
+                onClick: () => {
+                  setQuery({ tab: "context", contextId: prevContextId, detached: "", populated: "" });
+                },
+              }
+            : undefined,
+        });
         return;
       }
       const addComp = event.target.closest("[data-add-component]");

@@ -7,6 +7,10 @@
  * already used by other modals in this app.
  */
 
+import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
+
+const OVERLAY_ID = "shortcutLegend";
+
 const HTML = `
 <div class="app-modal-backdrop shortcut-legend__backdrop" id="shortcutLegendBackdrop" hidden></div>
 <aside
@@ -80,6 +84,7 @@ function init() {
 
 export function open() {
   if (!initialized) init();
+  requestOpen(OVERLAY_ID, close);
   backdrop.hidden = false;
   backdrop.classList.add("open");
   modal.classList.add("open");
@@ -94,6 +99,7 @@ export function close() {
   backdrop.hidden = true;
   modal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("has-modal");
+  notifyClose(OVERLAY_ID);
 }
 
 export function toggle() {

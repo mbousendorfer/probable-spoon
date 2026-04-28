@@ -3,8 +3,15 @@
 // toggle its visibility. No persistence — submitting shows a success flash
 // and resets on close.
 
-let backdrop, modal, textArea, featureArea, submitBtn;
+import { requestOpen, notifyClose } from "../modal-coordinator.js?v=20";
+
+const MODAL_ID = "feedback";
+
+let backdrop, modal, textArea, featureArea, submitBtn, textAreaError;
 let initialized = false;
+// Stays false until the user clicks Submit once. Avoids yelling at
+// people who haven't tried yet.
+let hasAttemptedSubmit = false;
 
 const HTML = `
 <div class="app-modal-backdrop feedback-modal__backdrop" id="feedbackBackdrop" hidden></div>
@@ -43,8 +50,9 @@ const HTML = `
     </div>
 
     <div class="ap-form-field">
-      <label for="feedbackText">Write a feedback</label>
-      <textarea id="feedbackText" class="feedback-modal__textarea" rows="5" placeholder="Write your feedback here..."></textarea>
+      <label for="feedbackText">Write a feedback <span class="bug-field__required">*</span></label>
+      <textarea id="feedbackText" class="feedback-modal__textarea" rows="5" placeholder="Write your feedback here..." aria-describedby="feedbackTextError"></textarea>
+      <p class="form-field-error" id="feedbackTextError" role="alert" hidden>Please write your feedback before sending.</p>
     </div>
 
     <p class="feedback-modal__thank-you">
@@ -80,9 +88,16 @@ function reset() {
   modal.classList.remove("success");
   textArea.value = "";
   textArea.classList.remove("invalid");
+  textAreaError.hidden = true;
   featureArea.value = "content-studio";
   submitBtn.disabled = false;
   submitBtn.textContent = "Send feedback";
+  hasAttemptedSubmit = false;
+}
+
+function setTextAreaInvalid(invalid) {
+  textArea.classList.toggle("invalid", invalid);
+  textAreaError.hidden = !invalid;
 }
 
 function onKeydown(event) {
@@ -93,6 +108,7 @@ function onKeydown(event) {
 
 export function open() {
   if (!initialized) init();
+  requestOpen(MODAL_ID, close);
   backdrop.hidden = false;
   backdrop.classList.add("open");
   modal.classList.add("open");
@@ -108,6 +124,7 @@ export function close() {
   modal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("has-modal");
   reset();
+  notifyClose(MODAL_ID);
 }
 
 export function init() {
@@ -118,6 +135,7 @@ export function init() {
   backdrop = document.getElementById("feedbackBackdrop");
   modal = document.getElementById("feedbackModal");
   textArea = document.getElementById("feedbackText");
+  textAreaError = document.getElementById("feedbackTextError");
   featureArea = document.getElementById("feedbackFeatureArea");
   submitBtn = document.getElementById("submitFeedbackBtn");
 
@@ -127,17 +145,23 @@ export function init() {
   document.addEventListener("keydown", onKeydown);
 
   textArea.addEventListener("input", () => {
-    if (textArea.value.trim()) textArea.classList.remove("invalid");
+    if (textArea.value.trim()) setTextAreaInvalid(false);
+  });
+  // Re-validate on blur, but only after the user has tried once — pre-submit
+  // blur shouldn't yell about a field they may still be planning to fill.
+  textArea.addEventListener("blur", () => {
+    if (hasAttemptedSubmit) setTextAreaInvalid(!textArea.value.trim());
   });
 
   submitBtn.addEventListener("click", async () => {
+    hasAttemptedSubmit = true;
     const text = textArea.value.trim();
     if (!text) {
-      textArea.classList.add("invalid");
+      setTextAreaInvalid(true);
       focusSafe(textArea);
       return;
     }
-    textArea.classList.remove("invalid");
+    setTextAreaInvalid(false);
     submitBtn.disabled = true;
     submitBtn.innerHTML = `<span class="feedback-modal__submit-spinner" aria-hidden="true"></span>Sending…`;
     await new Promise((r) => setTimeout(r, 1200));
