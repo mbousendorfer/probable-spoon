@@ -36,6 +36,7 @@ import {
 import { open as openGenerateImageModal } from "../components/generate-image-modal.js?v=20";
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=21";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=20";
+import { showToast } from "../components/toast.js?v=20";
 import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 
@@ -1676,7 +1677,23 @@ function bindSession(root, session) {
         return;
       }
       if (event.target.closest("[data-detach-context]")) {
+        // Capture which context was attached BEFORE detaching so the Undo
+        // toast action can re-attach it. Falls back gracefully if the
+        // session had no contextId (then nothing to undo).
+        const prevContextId = readQuery().contextId || session.contextId || "";
+        const prevContext = prevContextId ? getContextById(prevContextId) : null;
         setQuery({ tab: "context", detached: "1", contextId: "", populated: "" });
+        const label = prevContext?.name ? `${prevContext.name} detached` : "Context detached";
+        showToast(label, {
+          action: prevContextId
+            ? {
+                label: "Undo",
+                onClick: () => {
+                  setQuery({ tab: "context", contextId: prevContextId, detached: "", populated: "" });
+                },
+              }
+            : undefined,
+        });
         return;
       }
       const addComp = event.target.closest("[data-add-component]");
