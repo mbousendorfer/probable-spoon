@@ -1,5 +1,6 @@
 import { html, raw } from "../utils.js?v=20";
 import { getThread, subscribe as subscribeThread } from "../assistant.js?v=22";
+import { ideas as IDEAS } from "../mocks.js?v=23";
 
 // Global Right Panel — slides in from the right edge of the viewport, overlays
 // the session workspace, hosts two modes:
@@ -46,6 +47,23 @@ const NETWORK_LIMIT = {
   facebook: 63206,
   tiktok: 2200,
 };
+
+// Idea kind taxonomy — handoff Ideas filter rail (§ 2.6). Order is the order
+// shown in the chip row. The .kind selector also drives the per-kind tag
+// color so each kind reads at a glance.
+const IDEA_KINDS = [
+  { id: "all", label: "All" },
+  { id: "hook", label: "Hooks" },
+  { id: "stat", label: "Stats" },
+  { id: "quote", label: "Quotes" },
+  { id: "story", label: "Stories" },
+  { id: "insight", label: "Insights" },
+];
+
+// Ideas-mode local UI state — filter chip + search query. Resets each time
+// the panel reopens in Ideas mode.
+let ideasFilter = "all";
+let ideasQuery = "";
 
 let state = {
   mode: null, // 'drafts' | 'ideas' | null
@@ -151,9 +169,28 @@ export function init() {
       togglePostSelection(toggle.dataset.rpanelToggle);
       return;
     }
+    // Ideas filter chip.
+    const chip = event.target.closest("[data-rpanel-ideas-filter]");
+    if (chip) {
+      ideasFilter = chip.dataset.rpanelIdeasFilter;
+      renderPanel();
+      return;
+    }
+    // Use this idea → injects a templated prompt into the assistant composer.
+    const useBtn = event.target.closest("[data-rpanel-use-idea]");
+    if (useBtn) {
+      useIdea(useBtn.dataset.rpanelUseIdea);
+      return;
+    }
     // Schedule N posts — wired in Lot 9 once the modal exists.
     if (event.target.closest("[data-rpanel-schedule]")) {
       onSchedulePlaceholder();
+    }
+  });
+  el.addEventListener("input", (event) => {
+    if (event.target.matches("[data-rpanel-ideas-search]")) {
+      ideasQuery = event.target.value || "";
+      renderIdeasBodyOnly();
     }
   });
   document.addEventListener("keydown", (event) => {
@@ -246,7 +283,7 @@ function renderPanel() {
       </button>
     </div>
     <div class="app-right-panel__body">
-      ${state.mode === "drafts" ? raw(renderDraftsView()) : raw(renderIdeasEmpty())}
+      ${state.mode === "drafts" ? raw(renderDraftsView()) : raw(renderIdeasView())}
     </div>
   `;
 }
@@ -367,14 +404,105 @@ function renderDraftsEmpty() {
   `;
 }
 
-function renderIdeasEmpty() {
+// --- Ideas mode -------------------------------------------------------
+
+function renderIdeasView() {
   return html`
-    <div class="app-right-panel__empty">
-      <div class="app-right-panel__empty-icon"><i class="ap-icon-sparkles"></i></div>
-      <div class="app-right-panel__empty-title">No ideas yet</div>
-      <div class="app-right-panel__empty-sub">
-        The compact Ideas library lands here in Lot 5. Browse the full library from the sidebar in the meantime.
+    <div class="rpanel-ideas">
+      <div class="rpanel-ideas__head">
+        <div class="ap-input-group rpanel-ideas__search">
+          <i class="ap-icon-search"></i>
+          <input
+            type="search"
+            class="ap-input"
+            placeholder="Search ideas…"
+            value="${escapeAttr(ideasQuery)}"
+            data-rpanel-ideas-search
+          />
+        </div>
+        <div class="rpanel-ideas__filters" role="tablist">
+          ${raw(
+            IDEA_KINDS.map(
+              (k) => `
+                <button
+                  type="button"
+                  class="rpanel-ideas__filter ${ideasFilter === k.id ? "is-on" : ""}"
+                  data-rpanel-ideas-filter="${k.id}"
+                  role="tab"
+                  aria-selected="${ideasFilter === k.id}"
+                >${k.label}</button>
+              `,
+            ).join(""),
+          )}
+        </div>
       </div>
+      <div class="rpanel-ideas__body" data-rpanel-ideas-body>${raw(renderIdeasList())}</div>
     </div>
   `;
+}
+
+function renderIdeasList() {
+  const q = ideasQuery.trim().toLowerCase();
+  const list = IDEAS.filter((i) => ideasFilter === "all" || i.kind === ideasFilter).filter(
+    (i) => !q || (i.body || "").toLowerCase().includes(q) || (i.title || "").toLowerCase().includes(q),
+  );
+  if (list.length === 0) {
+    return html`<div class="rpanel-ideas__no-match">No ideas match.</div>`;
+  }
+  return list.map((i) => renderIdeaCompact(i)).join("");
+}
+
+function renderIdeasBodyOnly() {
+  const body = document.querySelector("[data-rpanel-ideas-body]");
+  if (body) body.innerHTML = renderIdeasList();
+}
+
+function renderIdeaCompact(idea) {
+  const kind = idea.kind || "insight";
+  const usedLabel = idea.used > 0 ? `Used ${idea.used}×` : "Unused";
+  const tags = (idea.tags || [])
+    .slice(0, 3)
+    .map((t) => `<span class="rpanel-ideas__tag">#${escapeText(t)}</span>`)
+    .join("");
+  return `
+    <article class="rpanel-ideas__card">
+      <header class="rpanel-ideas__card-head">
+        <span class="ap-tag rpanel-ideas__kind rpanel-ideas__kind--${kind}">${kind}</span>
+        <span class="rpanel-ideas__used">${usedLabel}</span>
+      </header>
+      ${idea.title ? `<div class="rpanel-ideas__card-title">${escapeText(idea.title)}</div>` : ""}
+      <p class="rpanel-ideas__card-body">${escapeText(idea.body || "")}</p>
+      ${tags ? `<div class="rpanel-ideas__tag-row">${tags}</div>` : ""}
+      <footer class="rpanel-ideas__card-foot">
+        <span class="rpanel-ideas__ref">${escapeText(idea.ref || "Generated")}</span>
+        <button type="button" class="ap-button stroked orange rpanel-ideas__use" data-rpanel-use-idea="${idea.id}">
+          <i class="ap-icon-arrow-up"></i>
+          <span>Use</span>
+        </button>
+      </footer>
+    </article>
+  `;
+}
+
+// Inject a templated prompt into the assistant composer of whichever session
+// is currently mounted. Closes the panel so the user lands back on the chat
+// surface ready to send / tweak.
+function useIdea(ideaId) {
+  const idea = IDEAS.find((i) => i.id === ideaId);
+  if (!idea) return;
+  const input = document.getElementById("assistantInput");
+  if (!input) return;
+  const text = `Build a batch of posts around this ${idea.kind || "idea"}:\n\n"${idea.body}"`;
+  input.value = text;
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+  closePanel();
+}
+
+function escapeText(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function escapeAttr(str) {
+  return escapeText(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }

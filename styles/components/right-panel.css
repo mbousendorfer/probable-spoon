@@ -328,3 +328,192 @@
   color: var(--ref-color-grey-150);
   white-space: pre-wrap;
 }
+
+/* ── Ideas mode ──────────────────────────────────────────────────────
+   Compact searchable Ideas library with kind filter chips. Each card
+   is small (a fraction of the IdeasLibraryView card) — Use button
+   injects a templated prompt into the assistant composer. */
+
+.rpanel-ideas {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.rpanel-ideas__head {
+  padding: var(--ref-spacing-sm) var(--ref-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+  border-bottom: 1px solid var(--app-border-soft);
+}
+
+.rpanel-ideas__search {
+  width: 100%;
+}
+
+.rpanel-ideas__search .ap-icon-search {
+  color: var(--ref-color-grey-60);
+}
+
+.rpanel-ideas__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxs);
+}
+
+.rpanel-ideas__filter {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px var(--ref-spacing-xs);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-surface);
+  color: var(--ref-color-grey-100);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: var(--ref-font-weight-bold);
+  cursor: pointer;
+  transition: all var(--ref-animation-short) var(--app-ease-out);
+}
+
+.rpanel-ideas__filter:hover,
+.rpanel-ideas__filter:focus-visible {
+  border-color: var(--ref-color-grey-40);
+  outline: none;
+}
+
+.rpanel-ideas__filter.is-on {
+  background: var(--ref-color-orange-10);
+  border-color: var(--ref-color-orange-100);
+  color: var(--ref-color-orange-150);
+}
+
+.rpanel-ideas__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--ref-spacing-xs) var(--ref-spacing-md) var(--ref-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.rpanel-ideas__no-match {
+  padding: var(--ref-spacing-md);
+  text-align: center;
+  font-size: var(--ref-font-size-xs);
+  color: var(--ref-color-grey-60);
+}
+
+.rpanel-ideas__card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-card);
+  padding: var(--ref-spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxs);
+}
+
+.rpanel-ideas__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xxs);
+}
+
+.rpanel-ideas__kind {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-extra-bold);
+}
+
+/* Per-kind palette — uses the existing tag color tokens. */
+.rpanel-ideas__kind--stat {
+  background: var(--comp-tag-blue-background-color);
+  color: var(--comp-tag-blue-text-color);
+  border: 1px solid var(--comp-tag-blue-border-color);
+}
+
+.rpanel-ideas__kind--quote {
+  background: var(--comp-tag-menthol-background-color);
+  color: var(--comp-tag-menthol-text-color);
+  border: 1px solid var(--comp-tag-menthol-border-color);
+}
+
+.rpanel-ideas__kind--hook {
+  background: var(--comp-tag-tag-orange-background-color);
+  color: var(--comp-tag-tag-orange-text-color);
+  border: 1px solid var(--comp-tag-tag-orange-border-color);
+}
+
+.rpanel-ideas__kind--story {
+  background: var(--comp-tag-grey-background-color);
+  color: var(--comp-tag-grey-text-color);
+  border: 1px solid var(--comp-tag-grey-border-color);
+}
+
+.rpanel-ideas__kind--insight {
+  background: var(--comp-tag-green-background-color);
+  color: var(--comp-tag-green-text-color);
+  border: 1px solid var(--comp-tag-green-border-color);
+}
+
+.rpanel-ideas__used {
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-60);
+}
+
+.rpanel-ideas__card-title {
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  line-height: 1.3;
+}
+
+.rpanel-ideas__card-body {
+  margin: 0;
+  font-size: var(--ref-font-size-xs);
+  line-height: 1.5;
+  color: var(--ref-color-grey-100);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rpanel-ideas__tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.rpanel-ideas__tag {
+  font-size: 10px;
+  color: var(--ref-color-grey-80);
+}
+
+.rpanel-ideas__card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+  margin-top: var(--ref-spacing-xxxs);
+}
+
+.rpanel-ideas__ref {
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-60);
+}
+
+.ap-button.rpanel-ideas__use {
+  height: auto;
+  min-height: 0;
+  padding: 4px 10px;
+  font-size: 11px;
+}

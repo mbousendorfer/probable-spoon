@@ -80,11 +80,21 @@ export const sources = [
   },
 ];
 
+// Idea model — Q1 hybrid:
+//   • Original archie fields (relevance/confidence/pinned/state/channels/
+//     sourceIds) preserved for the rich workspace UX
+//   • Handoff fields layered on top — `kind` (stat/quote/hook/story/insight)
+//     for filter rails, `tags` for chip rows, `used` for "Most used / Unused"
+//     sort, `ref` for the inline citation snippet shown on each card
 export const ideas = [
   {
     id: "idea-1",
     title: "The three constraints that killed our first launch",
     body: "A candid retro framed around the three bottlenecks we kept underestimating: scope, distribution, and onboarding.",
+    kind: "story",
+    tags: ["retro", "operator", "launch"],
+    used: 1,
+    ref: "p. 4 · offsite notes",
     rationale:
       "Concrete and personal — operator retros are the kind of post readers save and reread. Strong pull on discussion.",
     relevance: "High relevance",
@@ -100,6 +110,10 @@ export const ideas = [
     id: "idea-2",
     title: "Why we stopped writing quarterly OKRs",
     body: "Contrarian take grounded in the offsite notes. Frames OKRs as a lagging signal rather than a tool for focus.",
+    kind: "insight",
+    tags: ["okrs", "contrarian"],
+    used: 0,
+    ref: "p. 7 · offsite notes",
     rationale:
       "A contrarian frame on a rituals-heavy topic. High comment potential from teams with their own OKR scars.",
     relevance: "High relevance",
@@ -115,6 +129,10 @@ export const ideas = [
     id: "idea-3",
     title: "What a founder keynote looks like at 50 people",
     body: "Behind-the-scenes recap of the keynote, including the bits that got cut.",
+    kind: "story",
+    tags: ["bts", "founder"],
+    used: 0,
+    ref: "12:30 · keynote",
     rationale:
       "Behind-the-scenes posts earn trust fast — readers get a rare look at how the company actually operates.",
     relevance: "Medium relevance",
@@ -130,6 +148,10 @@ export const ideas = [
     id: "idea-4",
     title: "How we pick which roadmap items we talk about publicly",
     body: "An editorial rule of thumb the team actually uses.",
+    kind: "insight",
+    tags: ["editorial", "judgement"],
+    used: 2,
+    ref: "Generated",
     rationale:
       "Editorial restraint is under-used as an angle. Positions the team as thoughtful rather than hype-driven.",
     relevance: "Medium relevance",
@@ -145,6 +167,10 @@ export const ideas = [
     id: "idea-5",
     title: "The one founder story we won't tell (and why)",
     body: "A meta-post about editorial restraint.",
+    kind: "hook",
+    tags: ["meta", "founder"],
+    used: 0,
+    ref: "Generated",
     rationale:
       "Meta-post about judgement, not the story itself. Niche but memorable for founders in similar positions.",
     relevance: "Low relevance",
@@ -155,6 +181,42 @@ export const ideas = [
     pinned: false,
     sourceIds: ["src-1"],
     extractedAt: "2d ago",
+  },
+  {
+    id: "idea-6",
+    title: "Beta users saved 6.2 hours per week",
+    body: "73% of social media managers say context-switching between tools is their #1 blocker — up from 58% last year.",
+    kind: "stat",
+    tags: ["report", "pain-point"],
+    used: 3,
+    ref: "p. 9 · State of Social",
+    rationale: "Hard number with a year-over-year comparison — gives the post immediate credibility on LinkedIn.",
+    relevance: "High relevance",
+    relevanceColor: "orange",
+    confidence: 95,
+    channels: ["linkedin", "x"],
+    state: "New",
+    pinned: false,
+    sourceIds: ["src-1"],
+    extractedAt: "1d ago",
+  },
+  {
+    id: "idea-7",
+    title: '"Studio isn\'t about replacing the writer."',
+    body: "\"Studio isn't about replacing the writer — it's about removing the blank page.\"",
+    kind: "quote",
+    tags: ["positioning", "hero"],
+    used: 1,
+    ref: "04:12 · keynote",
+    rationale: "Crisp hero quote — works equally well as the lede or the close of a launch post.",
+    relevance: "High relevance",
+    relevanceColor: "orange",
+    confidence: 90,
+    channels: ["linkedin", "x", "instagram"],
+    state: "Pinned",
+    pinned: true,
+    sourceIds: ["src-2"],
+    extractedAt: "1d ago",
   },
 ];
 
