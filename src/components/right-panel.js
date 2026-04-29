@@ -158,7 +158,11 @@ export function init() {
     el.className = "app-right-panel";
     el.setAttribute("aria-label", "Drafts and ideas panel");
     el.hidden = true;
-    document.body.appendChild(el);
+    // Lot 17.d — mount inside #appShell so the panel becomes a grid cell
+    // (row 2, column 3). Falls back to <body> if the shell isn't there yet
+    // (shouldn't happen in normal boot order, but defensive).
+    const shell = document.getElementById("appShell") || document.body;
+    shell.appendChild(el);
   }
   el.addEventListener("click", (event) => {
     if (event.target.closest("[data-rpanel-close]")) {

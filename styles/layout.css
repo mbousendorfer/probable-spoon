@@ -1,7 +1,9 @@
 /* ---------- App shell ----------
-   Two-column grid : sidebar (left, full height) + content area (topbar + main).
-   The sidebar spans both rows so its border and footer extend full-height; the
-   topbar and main column live in the right cell. */
+   Grid layout : sidebar (col 1, full height) + topbar (row 1, spans rest) +
+   content area (row 2, col 2) + right panel (row 2, col 3 — only when open).
+   When the panel is open the grid grows a 3rd column so the panel sits in
+   the layout rather than overlaying the topbar / composer. The topbar
+   itself spans the full width above the panel — pills stay visible. */
 
 .app-shell {
   height: 100vh;
@@ -10,6 +12,7 @@
   grid-template-columns: var(--app-sidebar-width) minmax(0, 1fr);
   grid-template-rows: var(--app-topbar-height) 1fr;
   background: var(--app-bg);
+  transition: grid-template-columns var(--ref-animation-normal) var(--app-ease-standard);
 }
 
 .app-sidebar {
@@ -19,7 +22,7 @@
 
 .app-topbar {
   grid-row: 1;
-  grid-column: 2;
+  grid-column: 2 / -1;
 }
 
 .app-content {
@@ -30,10 +33,44 @@
   overflow: hidden;
 }
 
+/* Right panel — grid cell on row 2, column 3. Hidden until the
+   .is-right-panel-open class adds the column. */
+.app-right-panel {
+  grid-row: 2;
+  grid-column: 3;
+  min-height: 0;
+}
+
 /* Collapsed state — sidebar shrinks to icon-only width.
    (Toggle behavior wired in Lot 2.2.) */
 .app-shell.is-sidebar-collapsed {
   grid-template-columns: var(--app-sidebar-width-collapsed) minmax(0, 1fr);
+}
+
+.app-shell.is-right-panel-open {
+  grid-template-columns: var(--app-sidebar-width) minmax(0, 1fr) var(--app-right-panel-width);
+}
+
+.app-shell.is-right-panel-open.is-sidebar-collapsed {
+  grid-template-columns: var(--app-sidebar-width-collapsed) minmax(0, 1fr) var(--app-right-panel-width);
+}
+
+@media (max-width: 1300px) {
+  .app-shell.is-right-panel-open {
+    grid-template-columns: var(--app-sidebar-width) minmax(0, 1fr) 420px;
+  }
+  .app-shell.is-right-panel-open.is-sidebar-collapsed {
+    grid-template-columns: var(--app-sidebar-width-collapsed) minmax(0, 1fr) 420px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .app-shell.is-right-panel-open {
+    grid-template-columns: var(--app-sidebar-width) minmax(0, 1fr) 380px;
+  }
+  .app-shell.is-right-panel-open.is-sidebar-collapsed {
+    grid-template-columns: var(--app-sidebar-width-collapsed) minmax(0, 1fr) 380px;
+  }
 }
 
 /* ---------- Top bar ---------- */
