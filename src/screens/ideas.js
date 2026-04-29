@@ -1,5 +1,5 @@
 import { html, raw } from "../utils.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=31";
+import { renderTopbar } from "../components/topbar.js?v=32";
 import { renderIdeaCard } from "../components/idea-card.js?v=24";
 import { ideas as MOCK_IDEAS, sources as SOURCES } from "../mocks.js?v=24";
 import { isNewUser } from "../user-mode.js?v=20";

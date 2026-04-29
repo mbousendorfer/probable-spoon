@@ -96,10 +96,17 @@
   min-height: 0;
 }
 
+/* Lot 13 + 17.e — full-width assistant panel that fills the .session
+   flex column, so the inner grid (thread 1fr / suggestions auto /
+   composer auto) actually distributes height : the composer pins to
+   the bottom regardless of how short the thread is. */
 .session.session--solo > .session__assistant {
   width: 100%;
   max-width: none;
   border-right: 0;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
 }
 
 .session__assistant-thread {

@@ -106,38 +106,34 @@
   min-width: 0;
 }
 
-/* Context / Drafts / Ideas topbar pills — only visible on /session/:id.
-   The .is-on variant uses the orange accent so the user has a visual
-   confirmation that the panel is mirroring their click. Badge sits inline
-   with the label so the count never moves. */
-.app-topbar__pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ref-spacing-xxs);
-  padding: 6px var(--ref-spacing-xs);
-  background: var(--app-surface);
-  border: 1px solid var(--app-border-soft);
-  border-radius: var(--app-radius-pill);
-  font-family: inherit;
-  font-size: var(--ref-font-size-xs);
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-100);
-  cursor: pointer;
-  transition: all var(--ref-animation-short) var(--app-ease-out);
-}
+/* Context / Drafts / Ideas topbar pills — Lot 18 DS conformance.
+   Drafts + Ideas now use the DS .ap-button stroked variant directly
+   (no custom .app-topbar__pill class). The toggle between the two
+   color modifiers is driven by the panel's active mode :
+     inactive   → .ap-button stroked grey
+     drafts on  → .ap-button stroked orange
+     ideas on   → .ap-button stroked blue
+   The Drafts count badge uses .ap-counter normal orange (DS native).
+   Context pill is the only composed exception — it needs a 2-line
+   inner label, so it keeps a thin app-level wrapper class but starts
+   from .ap-button stroked grey. */
 
-/* Context pill — shaped a bit larger to fit the swatch + 2-line label. */
-.app-topbar__pill--context {
+.app-topbar__context-pill {
+  /* Override the DS button base padding/min-height so the 2-line label
+     fits without forcing the button to be 36px tall. */
   padding: 4px var(--ref-spacing-xs) 4px 8px;
+  min-height: 0;
+  height: auto;
   gap: var(--ref-spacing-xxs);
 }
 
-.app-topbar__pill--context.is-empty {
+.app-topbar__context-pill.is-empty .app-topbar__context-name {
   font-style: italic;
   color: var(--ref-color-grey-60);
+  font-weight: var(--ref-font-weight-bold);
 }
 
-.app-topbar__pill-swatch {
+.app-topbar__context-swatch {
   display: inline-block;
   width: 10px;
   height: 10px;
@@ -146,30 +142,30 @@
   background: var(--ref-color-grey-40);
 }
 
-.app-topbar__pill-swatch--orange {
+.app-topbar__context-swatch--orange {
   background: var(--ref-color-orange-100);
 }
-.app-topbar__pill-swatch--blue {
+.app-topbar__context-swatch--blue {
   background: var(--ref-color-electric-blue-100);
 }
-.app-topbar__pill-swatch--green {
+.app-topbar__context-swatch--green {
   background: var(--ref-color-green-100);
 }
-.app-topbar__pill-swatch--purple {
+.app-topbar__context-swatch--purple {
   background: var(--ref-color-purple-100);
 }
-.app-topbar__pill-swatch--red {
+.app-topbar__context-swatch--red {
   background: var(--ref-color-red-100);
 }
-.app-topbar__pill-swatch--yellow {
+.app-topbar__context-swatch--yellow {
   background: var(--ref-color-yellow-100);
 }
-.app-topbar__pill-swatch--slate,
-.app-topbar__pill-swatch--grey {
+.app-topbar__context-swatch--slate,
+.app-topbar__context-swatch--grey {
   background: var(--ref-color-grey-60);
 }
 
-.app-topbar__pill-label {
+.app-topbar__context-label {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -177,7 +173,7 @@
   min-width: 0;
 }
 
-.app-topbar__pill-eyebrow {
+.app-topbar__context-eyebrow {
   font-size: 9px;
   font-weight: var(--ref-font-weight-extra-bold);
   letter-spacing: 0.06em;
@@ -185,7 +181,7 @@
   color: var(--ref-color-grey-60);
 }
 
-.app-topbar__pill-name {
+.app-topbar__context-name {
   font-size: var(--ref-font-size-xs);
   font-weight: var(--ref-font-weight-extra-bold);
   color: var(--ref-color-grey-150);
@@ -195,56 +191,9 @@
   text-overflow: ellipsis;
 }
 
-.app-topbar__pill--context .ap-icon-chevron-down {
+.app-topbar__context-pill .ap-icon-chevron-down {
   font-size: var(--sys-icon-css-xs);
   color: var(--ref-color-grey-60);
-}
-
-.app-topbar__pill i {
-  font-size: var(--sys-icon-css-sm);
-  color: var(--ref-color-grey-80);
-}
-
-.app-topbar__pill:hover,
-.app-topbar__pill:focus-visible {
-  border-color: var(--ref-color-grey-40);
-  outline: none;
-}
-
-.app-topbar__pill.is-on {
-  background: var(--ref-color-orange-10);
-  border-color: var(--ref-color-orange-100);
-  color: var(--ref-color-orange-150);
-}
-
-.app-topbar__pill.is-on i {
-  color: var(--ref-color-orange-100);
-}
-
-.app-topbar__pill-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 6px;
-  border-radius: var(--app-radius-pill);
-  background: var(--ref-color-orange-100);
-  color: var(--ref-color-white);
-  font-size: 10px;
-  font-weight: var(--ref-font-weight-extra-bold);
-}
-
-.app-topbar__pill.is-on .app-topbar__pill-count {
-  background: var(--ref-color-orange-150);
-}
-
-.app-topbar__divider {
-  display: inline-block;
-  width: 1px;
-  height: 24px;
-  margin: 0 var(--ref-spacing-xxs);
-  background: var(--app-border-soft);
 }
 
 .app-topbar__feedback {

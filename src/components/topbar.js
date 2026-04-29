@@ -140,31 +140,39 @@ export function initTopbar() {
 
 // Context + Drafts + Ideas pills — only on /session/:id. Order matches
 // handoff App.jsx: Context first, then Drafts (with badge), then Ideas.
+//
+// Lot 18 DS conformance — Drafts + Ideas pills are plain `.ap-button
+// stroked <color>` ; the active color modifier (orange / blue) flips
+// based on the right-panel mode. The Drafts count uses the DS-native
+// `.ap-counter normal orange`. The Context pill is the only composed
+// exception (2-line inner label) — it starts from `.ap-button stroked
+// grey` and adds a thin `.app-topbar__context-pill` wrapper class for
+// the layout overrides.
 function renderSessionPills(rpMode, draftCount) {
   const ctx = currentContext();
-  const ctxColor = ctx?.color || "orange";
+  const ctxColor = ctx?.color || "grey";
   const ctxLabel = ctx ? ctx.name : "Set context…";
-  const ctxClass = ctx
-    ? "app-topbar__pill app-topbar__pill--context"
-    : "app-topbar__pill app-topbar__pill--context is-empty";
-  const draftBadge = draftCount > 0 ? `<span class="app-topbar__pill-count">${draftCount}</span>` : "";
+  const ctxStateClass = ctx ? "" : "is-empty";
+  const draftBadge = draftCount > 0 ? `<span class="ap-counter normal orange">${draftCount}</span>` : "";
+  const draftsColor = rpMode === "drafts" ? "orange" : "grey";
+  const ideasColor = rpMode === "ideas" ? "blue" : "grey";
   return `
     <button
       type="button"
-      class="${ctxClass}"
+      class="ap-button stroked grey app-topbar__context-pill ${ctxStateClass}"
       data-topbar-context
       title="${ctx ? `Edit context · ${ctx.name}` : "Attach a context"}"
     >
-      <span class="app-topbar__pill-swatch app-topbar__pill-swatch--${ctxColor}" aria-hidden="true"></span>
-      <span class="app-topbar__pill-label">
-        <span class="app-topbar__pill-eyebrow">Context</span>
-        <span class="app-topbar__pill-name">${escapeText(ctxLabel)}</span>
+      <span class="app-topbar__context-swatch app-topbar__context-swatch--${ctxColor}" aria-hidden="true"></span>
+      <span class="app-topbar__context-label">
+        <span class="app-topbar__context-eyebrow">Context</span>
+        <span class="app-topbar__context-name">${escapeText(ctxLabel)}</span>
       </span>
       <i class="ap-icon-chevron-down" aria-hidden="true"></i>
     </button>
     <button
       type="button"
-      class="app-topbar__pill ${rpMode === "drafts" ? "is-on" : ""}"
+      class="ap-button stroked ${draftsColor}"
       data-topbar-drafts
       aria-pressed="${rpMode === "drafts"}"
       title="Toggle Drafts panel"
@@ -175,7 +183,7 @@ function renderSessionPills(rpMode, draftCount) {
     </button>
     <button
       type="button"
-      class="app-topbar__pill ${rpMode === "ideas" ? "is-on" : ""}"
+      class="ap-button stroked ${ideasColor}"
       data-topbar-ideas
       aria-pressed="${rpMode === "ideas"}"
       title="Toggle Ideas panel"
