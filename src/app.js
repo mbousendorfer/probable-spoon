@@ -13,7 +13,7 @@ import { init as initConfirmModal } from "./components/confirm-modal.js?v=20";
 import { renderDashboard } from "./screens/dashboard.js?v=41";
 import { renderSession } from "./screens/session.js?v=56";
 import { renderSources } from "./screens/sources.js?v=23";
-import { renderIdeas } from "./screens/ideas.js?v=21";
+import { renderIdeas } from "./screens/ideas.js?v=23";
 import { renderContexts } from "./screens/contexts.js?v=21";
 // Route table.
 // Every screen is responsible for calling renderTopbar() itself so the crumb
