@@ -341,25 +341,112 @@ export const brandTheme = {
 };
 
 // Named contexts — whole bundles. Sessions attach one of these by id.
+//
+// Q2 hybrid Context model — the editable fields surfaced in the Contexts
+// view + drawer (color / isDefault / brandName / audience / briefSummary /
+// tones / doRules / dontRules / cta / usedIn / updatedAt) sit at the top
+// level. The rich analytical sub-objects (voice / brief / brand) move
+// under `analysis` — read-only, surfaced in the Context tab as
+// "Voice analysis / Strategy brief / Brand theme" once Archie has
+// processed source material.
+//
+// Old call sites that read `context.voice` / `context.brief` /
+// `context.brand` keep working through accessor helpers below. New
+// surfaces (Lot 8 Contexts page, drawer, ContextCard) read the flat
+// fields directly.
 
 export const contexts = [
   {
     id: "ctx-acme",
     name: "Acme · Q2 marketing",
+    color: "orange",
+    isDefault: true,
+    brandName: "Acme",
+    audience: "Operators and marketing leads at 50–200-person B2B startups.",
+    briefSummary:
+      "Drive awareness for Acme's Q2 launch. Lead with concrete time savings + customer outcomes, not feature lists.",
+    tones: ["Direct", "Operator-first"],
+    doRules: [
+      'Use "we" and "you" — never third person',
+      "Open with a hook or specific number",
+      "End every post with a clear next step",
+    ],
+    dontRules: ["No emoji in B2B contexts", 'Avoid jargon: "synergy", "leverage", "10x"'],
+    cta: "Try Acme free for 30 days.",
+    usedIn: 4,
     updatedAt: "3 minutes ago",
-    voice: voiceAnalysis,
-    brief: strategyBrief,
-    brand: brandTheme,
+    analysis: {
+      voice: voiceAnalysis,
+      brief: strategyBrief,
+      brand: brandTheme,
+    },
   },
   {
     id: "ctx-founder-voice",
     name: "Founder voice only",
+    color: "blue",
+    isDefault: false,
+    brandName: "Jamie Torres · Personal",
+    audience: "B2B founders and product leaders thinking about how teams ship.",
+    briefSummary:
+      "Build trust over time with sharp opinions, lived experience, zero promotional content. Posts should make readers re-examine an assumption.",
+    tones: ["Direct", "Conversational"],
+    doRules: [
+      "Start with a contrarian take or a moment, not a stat",
+      "Write like you talk — short sentences, real verbs",
+      "One idea per post",
+    ],
+    dontRules: ["No CTAs, no links, no product mentions", "No hashtags"],
+    cta: "",
+    usedIn: 1,
     updatedAt: "yesterday",
-    voice: voiceAnalysis,
-    brief: null,
-    brand: null,
+    analysis: {
+      voice: voiceAnalysis,
+      brief: null,
+      brand: null,
+    },
+  },
+  {
+    id: "ctx-customer",
+    name: "Customer stories",
+    color: "green",
+    isDefault: false,
+    brandName: "Acme",
+    audience: "Prospects evaluating Acme who care about real outcomes from teams like theirs.",
+    briefSummary:
+      "Turn customer interviews into evidence-led posts. Lead with the team's situation, the change they made, and the measurable result. Quote them directly.",
+    tones: ["Professional", "Conversational"],
+    doRules: [
+      "Always name the customer and their role",
+      "Pull one direct quote per post",
+      "Include a specific metric or before/after",
+    ],
+    dontRules: [
+      'No generic testimonials ("game changer", "love this")',
+      "Don't paraphrase — quote them",
+      'No "stay tuned" cliffhangers',
+    ],
+    cta: "See how teams like yours use Acme →",
+    usedIn: 0,
+    updatedAt: "2 days ago",
+    analysis: {
+      voice: null,
+      brief: null,
+      brand: null,
+    },
   },
 ];
+
+// Legacy accessors — keep `context.voice`, `context.brief`, `context.brand`
+// reading from the new analysis sub-object so callers from before Lot 8
+// don't break. Callers should migrate to ctx.analysis.* over time.
+for (const ctx of contexts) {
+  if (ctx.analysis) {
+    Object.defineProperty(ctx, "voice", { get: () => ctx.analysis.voice, enumerable: true });
+    Object.defineProperty(ctx, "brief", { get: () => ctx.analysis.brief, enumerable: true });
+    Object.defineProperty(ctx, "brand", { get: () => ctx.analysis.brand, enumerable: true });
+  }
+}
 
 // ---- Posts (shown in the session Posts tab when populated) ----------------
 

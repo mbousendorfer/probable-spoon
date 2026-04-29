@@ -14,7 +14,7 @@ import {
   subscribe as subscribeRightPanel,
 } from "./right-panel.js?v=22";
 import { getThread, subscribe as subscribeThread } from "../assistant.js?v=22";
-import { recentSessions } from "../mocks.js?v=23";
+import { recentSessions } from "../mocks.js?v=24";
 
 // Persistent top bar.
 //

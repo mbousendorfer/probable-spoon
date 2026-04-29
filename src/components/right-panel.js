@@ -1,6 +1,6 @@
 import { html, raw } from "../utils.js?v=20";
 import { getThread, subscribe as subscribeThread } from "../assistant.js?v=22";
-import { ideas as IDEAS } from "../mocks.js?v=23";
+import { ideas as IDEAS } from "../mocks.js?v=24";
 
 // Global Right Panel — slides in from the right edge of the viewport, overlays
 // the session workspace, hosts two modes:

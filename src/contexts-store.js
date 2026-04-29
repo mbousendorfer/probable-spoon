@@ -17,7 +17,7 @@
 // chooses "Save as global". updateContext is used by the section-edit flow
 // when scope is "Update everywhere".
 
-import { contexts as seed } from "./mocks.js?v=23";
+import { contexts as seed } from "./mocks.js?v=24";
 
 const contexts = seed.map((c) => ({ ...c }));
 const subscribers = new Set();

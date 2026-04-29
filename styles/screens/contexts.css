@@ -1,0 +1,237 @@
+/* Contexts library — standalone page (Lot 8.1).
+   Header → search → grid of ContextCards. Each card has a colored swatch
+   strip on its top edge (palette derived from the context's `color`
+   field), a brand + brief preview, a tone chip row, and Do/Don't
+   summaries side-by-side. */
+
+.contexts-view {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.contexts-view__page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-md);
+  padding: var(--ref-spacing-md) var(--ref-spacing-xl) var(--ref-spacing-xl);
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.contexts-view__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ref-spacing-md);
+  flex-wrap: wrap;
+}
+
+.contexts-view__head-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxxs);
+  min-width: 0;
+}
+
+.contexts-view__title {
+  margin: 0;
+  font-family: var(--sys-text-style-h1-font-family);
+  font-size: var(--sys-text-style-h1-size);
+  line-height: var(--sys-text-style-h1-line-height);
+  font-weight: var(--sys-text-style-h1-weight);
+  color: var(--ref-color-grey-150);
+}
+
+.contexts-view__sub {
+  margin: 0;
+  font-size: var(--sys-text-style-body-size);
+  color: var(--ref-color-grey-80);
+}
+
+.contexts-view__head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xs);
+}
+
+.contexts-view__search {
+  flex: 0 0 240px;
+}
+
+.contexts-view__body {
+  min-height: 200px;
+}
+
+.contexts-view__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ref-spacing-md);
+}
+
+@media (min-width: 960px) {
+  .contexts-view__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .contexts-view__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.contexts-view__empty {
+  padding: var(--ref-spacing-md);
+  text-align: center;
+  font-size: var(--ref-font-size-sm);
+  color: var(--ref-color-grey-60);
+}
+
+/* ── ContextCard ─────────────────────────────────────────────────── */
+
+.contexts-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-sm);
+  padding-top: var(--ref-spacing-md);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-card);
+  box-shadow: var(--app-shadow-card);
+  overflow: hidden;
+}
+
+/* Swatch strip — top edge, full-width, colored per ctx.color. */
+.contexts-card__swatch {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.contexts-card--orange .contexts-card__swatch {
+  background: var(--ref-color-orange-100);
+}
+.contexts-card--blue .contexts-card__swatch {
+  background: var(--ref-color-electric-blue-100);
+}
+.contexts-card--green .contexts-card__swatch {
+  background: var(--ref-color-green-100);
+}
+.contexts-card--purple .contexts-card__swatch {
+  background: var(--ref-color-purple-100);
+}
+.contexts-card--red .contexts-card__swatch {
+  background: var(--ref-color-red-100);
+}
+.contexts-card--yellow .contexts-card__swatch {
+  background: var(--ref-color-yellow-100);
+}
+
+.contexts-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+}
+
+.contexts-card__head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.contexts-card__name {
+  margin: 0;
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.contexts-card__brand {
+  font-size: var(--ref-font-size-xs);
+  color: var(--ref-color-grey-60);
+}
+
+.contexts-card__used {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-60);
+}
+
+.contexts-card__brief {
+  margin: 0;
+  font-size: var(--ref-font-size-xs);
+  line-height: 1.5;
+  color: var(--ref-color-grey-100);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.contexts-card__brief--empty {
+  color: var(--ref-color-grey-60);
+  font-style: italic;
+}
+
+.contexts-card__tones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.contexts-card__lists {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ref-spacing-xs);
+}
+
+.contexts-card__list-h {
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-extra-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ref-color-grey-60);
+  margin-bottom: 2px;
+}
+
+.contexts-card__list ul {
+  margin: 0;
+  padding-left: var(--ref-spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contexts-card__list li {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ref-color-grey-100);
+}
+
+.contexts-card__list--dont .contexts-card__list-h {
+  color: var(--ref-color-red-100);
+}
+
+.contexts-card__list-empty {
+  list-style: none;
+  margin-left: calc(-1 * var(--ref-spacing-sm));
+  color: var(--ref-color-grey-40);
+}
+
+.contexts-card__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  margin-top: auto;
+  padding-top: var(--ref-spacing-xs);
+  border-top: 1px solid var(--app-border-soft);
+}

@@ -1,21 +1,177 @@
-import { html } from "../utils.js?v=20";
+import { html, raw } from "../utils.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=26";
+import { getContexts, subscribe as subscribeContexts } from "../contexts-store.js?v=22";
 
-// Contexts view — placeholder. The full page (ContextCard grid + multi-context
-// drawer with rail + AI-assisted wizard) ships in Lot 8.
+// Contexts library — standalone page (handoff §2.4).
+// Header → search → grid of ContextCards. Each card surfaces brand /
+// briefSummary / tones / do/don't preview, and an "Edit" button that
+// opens the multi-context drawer (Lot 8.2 — placeholder for now).
+
+let unsubscribe = null;
+let pageState = { query: "" };
 
 export function renderContexts(_params, target) {
   renderTopbar();
-  target.innerHTML = html`
-    <section class="screen screen--placeholder">
-      <div class="screen__placeholder">
-        <div class="screen__placeholder-eyebrow">Library</div>
-        <h1 class="screen__placeholder-title">Contexts</h1>
-        <p class="screen__placeholder-sub">
-          The standalone Contexts view — color-coded ContextCards, multi-context drawer, AI-assisted wizard — lands in
-          Lot 8.
-        </p>
+  if (unsubscribe) {
+    unsubscribe();
+    unsubscribe = null;
+  }
+  pageState = { query: "" };
+  paint(target);
+  unsubscribe = subscribeContexts(() => paint(target));
+}
+
+function paint(target) {
+  target.innerHTML = html`<section class="screen contexts-view">${raw(renderPage())}</section>`;
+  bind(target);
+}
+
+function renderPage() {
+  const all = getContexts();
+  const visible = filter(all, pageState);
+  const totalChats = all.reduce((sum, c) => sum + (c.usedIn || 0), 0);
+
+  return html`
+    <div class="contexts-view__page">
+      <header class="contexts-view__head">
+        <div class="contexts-view__head-text">
+          <div class="screen__placeholder-eyebrow">Library</div>
+          <h1 class="contexts-view__title">Contexts</h1>
+          <p class="contexts-view__sub">${all.length} contexts · applied across ${totalChats} chats</p>
+        </div>
+        <div class="contexts-view__head-actions">
+          <div class="ap-input-group contexts-view__search">
+            <i class="ap-icon-search"></i>
+            <input
+              type="search"
+              class="ap-input"
+              placeholder="Search contexts…"
+              value="${escapeAttr(pageState.query)}"
+              data-contexts-search
+            />
+          </div>
+          <button type="button" class="ap-button primary orange" data-contexts-new>
+            <i class="ap-icon-plus"></i>
+            <span>New context</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="contexts-view__body">
+        ${visible.length === 0
+          ? raw(`<div class="contexts-view__empty">No contexts match.</div>`)
+          : raw(`<div class="contexts-view__grid">${visible.map(renderContextCard).join("")}</div>`)}
       </div>
-    </section>
+    </div>
   `;
+}
+
+function renderContextCard(ctx) {
+  const color = ctx.color || "orange";
+  const tones = (ctx.tones || []).slice(0, 3);
+  const toneRow = tones.length
+    ? `<div class="contexts-card__tones">${tones.map((t) => `<span class="ap-tag">${escapeText(t)}</span>`).join("")}</div>`
+    : "";
+  const doPreview = (ctx.doRules || []).slice(0, 2);
+  const dontPreview = (ctx.dontRules || []).slice(0, 2);
+  return `
+    <article class="contexts-card contexts-card--${color}">
+      <span class="contexts-card__swatch" aria-hidden="true"></span>
+      <header class="contexts-card__head">
+        <div class="contexts-card__head-text">
+          <h3 class="contexts-card__name">${escapeText(ctx.name)}</h3>
+          <div class="contexts-card__brand">${escapeText(ctx.brandName || "No brand set")}</div>
+        </div>
+        <span class="contexts-card__used">${ctx.usedIn || 0} ${(ctx.usedIn || 0) === 1 ? "chat" : "chats"}</span>
+      </header>
+
+      ${
+        ctx.briefSummary
+          ? `<p class="contexts-card__brief">${escapeText(ctx.briefSummary)}</p>`
+          : `<p class="contexts-card__brief contexts-card__brief--empty">No brief yet.</p>`
+      }
+
+      ${toneRow}
+
+      <div class="contexts-card__lists">
+        <div class="contexts-card__list">
+          <div class="contexts-card__list-h">Do</div>
+          <ul>${doPreview.map((d) => `<li>${escapeText(d)}</li>`).join("") || '<li class="contexts-card__list-empty">—</li>'}</ul>
+        </div>
+        <div class="contexts-card__list contexts-card__list--dont">
+          <div class="contexts-card__list-h">Don't</div>
+          <ul>${dontPreview.map((d) => `<li>${escapeText(d)}</li>`).join("") || '<li class="contexts-card__list-empty">—</li>'}</ul>
+        </div>
+      </div>
+
+      <footer class="contexts-card__foot">
+        <button type="button" class="ap-button stroked grey" data-contexts-edit="${ctx.id}">
+          <i class="ap-icon-pen"></i>
+          <span>Edit</span>
+        </button>
+        <button type="button" class="ap-icon-button transparent" data-contexts-duplicate="${ctx.id}" title="Duplicate" aria-label="Duplicate">
+          <i class="ap-icon-copy"></i>
+        </button>
+        <button type="button" class="ap-icon-button transparent" data-contexts-delete="${ctx.id}" title="Delete" aria-label="Delete">
+          <i class="ap-icon-trash"></i>
+        </button>
+      </footer>
+    </article>
+  `;
+}
+
+function filter(list, { query }) {
+  const q = (query || "").trim().toLowerCase();
+  if (!q) return list;
+  return list.filter(
+    (c) =>
+      (c.name || "").toLowerCase().includes(q) ||
+      (c.brandName || "").toLowerCase().includes(q) ||
+      (c.briefSummary || "").toLowerCase().includes(q),
+  );
+}
+
+function bind(root) {
+  root.addEventListener("click", (event) => {
+    if (event.target.closest("[data-contexts-edit]")) {
+      // Drawer ships in Lot 8.2 — surface a placeholder for now so the click
+      // registers visibly.
+      import("../components/toast.js?v=20").then(({ showToast }) =>
+        showToast("Multi-context drawer lands in Lot 8.2 — page surface first."),
+      );
+      return;
+    }
+    if (event.target.closest("[data-contexts-new]")) {
+      import("../components/toast.js?v=20").then(({ showToast }) =>
+        showToast("New context creator lands with the drawer (Lot 8.2)."),
+      );
+      return;
+    }
+    if (event.target.closest("[data-contexts-duplicate]") || event.target.closest("[data-contexts-delete]")) {
+      import("../components/toast.js?v=20").then(({ showToast }) =>
+        showToast("Per-card duplicate / delete wires up with the drawer (Lot 8.2)."),
+      );
+    }
+  });
+
+  root.addEventListener("input", (event) => {
+    if (event.target.matches("[data-contexts-search]")) {
+      pageState.query = event.target.value || "";
+      const grid = root.querySelector(".contexts-view__grid");
+      if (grid) {
+        const visible = filter(getContexts(), pageState);
+        grid.innerHTML =
+          visible.length === 0
+            ? `<div class="contexts-view__empty">No contexts match.</div>`
+            : visible.map(renderContextCard).join("");
+      }
+    }
+  });
+}
+
+function escapeText(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function escapeAttr(str) {
+  return escapeText(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }

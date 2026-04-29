@@ -9,8 +9,8 @@ import {
   strategyBrief,
   brandTheme,
   chatStarters,
-} from "../mocks.js?v=23";
-import { getContextById, getContexts, addContext, updateContext } from "../contexts-store.js?v=21";
+} from "../mocks.js?v=24";
+import { getContextById, getContexts, addContext, updateContext } from "../contexts-store.js?v=22";
 import { isNewUser } from "../user-mode.js?v=20";
 import {
   getThread,

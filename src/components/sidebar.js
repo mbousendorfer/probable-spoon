@@ -1,7 +1,7 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate, getPath } from "../router.js?v=20";
 import { open as openSettingsDrawer } from "./settings-drawer.js?v=22";
-import { recentSessions } from "../mocks.js?v=23";
+import { recentSessions } from "../mocks.js?v=24";
 import { isNewUser } from "../user-mode.js?v=20";
 
 // Global app sidebar — Brand / + New conversation / Recent chats / User footer.

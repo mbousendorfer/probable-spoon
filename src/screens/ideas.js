@@ -1,7 +1,7 @@
 import { html, raw } from "../utils.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=26";
 import { renderIdeaCard } from "../components/idea-card.js?v=24";
-import { ideas as IDEAS, sources as SOURCES } from "../mocks.js?v=23";
+import { ideas as IDEAS, sources as SOURCES } from "../mocks.js?v=24";
 
 // Ideas library — standalone page (handoff §2.3).
 // Header → kind filter rail + search + sort → grid of IdeaCards.
