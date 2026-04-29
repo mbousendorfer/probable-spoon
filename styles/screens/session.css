@@ -23,7 +23,12 @@
 /* Chat thread + composer share a 740px max-width centered column, matching
    the handoff Chat.jsx layout. The wrappers themselves stay full-width (so
    the page background and the dropzone outline cover everything) ; the
-   inner content gets the cap. */
+   inner content gets the cap.
+   The `align-self: center` override is needed because .chat-turn defines
+   its own `align-self: flex-start | flex-end` (AI vs user turn) which
+   would otherwise pin each turn to the panel edge instead of the centered
+   column. AI / user alignment within the 740px column is preserved by the
+   chat-turn's own `align-items` rules on its inner bubble. */
 .session__assistant > .session__assistant-thread {
   align-items: center;
 }
@@ -31,6 +36,7 @@
 .session__assistant > .session__assistant-thread > * {
   width: 100%;
   max-width: 740px;
+  align-self: center;
 }
 
 .session__composer-inner {
