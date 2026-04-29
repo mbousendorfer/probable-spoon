@@ -159,6 +159,7 @@ function transitionToProcessing(upload) {
 
   const sourceId = newId("src");
   upload.sourceId = sourceId;
+  const totalMs = randomProcessingMs();
   sources.unshift({
     id: sourceId,
     filename: upload.name,
@@ -168,11 +169,63 @@ function transitionToProcessing(upload) {
     signalColor: "grey",
     ideaCount: 0,
     addedAt: "just now",
+    // Lot 6.2 — granular ticker fields per Q8. Surface progress + stage +
+    // ETA during the Processing phase so SourceCards / panels can paint
+    // a live progress bar instead of an opaque spinner. Optional —
+    // consumers fall back to the old "Processing" pill if absent.
+    progress: 0,
+    stage: stageForKind(upload.kind, 0),
+    etaSec: Math.round(totalMs / 1000),
+    startedAt: Date.now(),
+    totalProcessingMs: totalMs,
   });
   notifySources();
   notifyUploads();
 
-  setTimeout(() => transitionToDone(upload), randomProcessingMs());
+  startProcessingTicker(sourceId, totalMs);
+  setTimeout(() => transitionToDone(upload), totalMs);
+}
+
+// Stage label depends on source kind (audio/video transcribe, others read).
+// Crossfades through 5 stages over the simulated processing window so the
+// pipeline reads as a real backend rather than a static spinner.
+const PROCESSING_STAGES = [
+  { from: 0, label: "Extracting content" },
+  { from: 0.2, label: "Reading content" },
+  { from: 0.45, label: "Identifying ideas" },
+  { from: 0.75, label: "Mining hooks & quotes" },
+  { from: 0.95, label: "Finalizing" },
+];
+
+function stageForKind(kind, progress) {
+  const stage = [...PROCESSING_STAGES].reverse().find((s) => progress >= s.from);
+  if (!stage) return PROCESSING_STAGES[0].label;
+  // Audio/video sources transcribe rather than read.
+  if (stage.label === "Reading content" && (kind === "Video" || kind === "Audio")) {
+    return "Transcribing audio";
+  }
+  return stage.label;
+}
+
+// Tick the source's progress every 200ms. Mirrors the handoff App.jsx
+// 600ms ticker but a bit faster because we already gated the start
+// behind a 2s upload phase. Stops when the source flips to Processed
+// (transitionToDone) or disappears.
+function startProcessingTicker(sourceId, totalMs) {
+  const startedAt = Date.now();
+  const tickInterval = 200;
+  const tick = () => {
+    const src = sources.find((s) => s.id === sourceId);
+    if (!src || src.status !== "Processing") return;
+    const elapsed = Date.now() - startedAt;
+    const progress = Math.min(0.99, elapsed / totalMs);
+    src.progress = progress;
+    src.stage = stageForKind(src.kind, progress);
+    src.etaSec = Math.max(1, Math.round((totalMs - elapsed) / 1000));
+    notifySources();
+    if (elapsed < totalMs) setTimeout(tick, tickInterval);
+  };
+  setTimeout(tick, tickInterval);
 }
 
 function transitionToDone(upload) {
@@ -187,6 +240,12 @@ function transitionToDone(upload) {
     src.signalColor = sig.signalColor;
     src.ideaCount = randomIdeas();
     ideaCount = src.ideaCount;
+    // Clear the granular ticker fields once the source is done — keeps
+    // the post-processing card from showing a stale 99% / "Finalizing"
+    // hint.
+    src.progress = 1;
+    src.stage = undefined;
+    src.etaSec = undefined;
     notifySources();
   }
   notifyUploads();

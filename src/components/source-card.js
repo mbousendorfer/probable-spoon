@@ -82,11 +82,24 @@ export function renderSourceCard(source, allIdeas = [], { selectable = false, is
       ? source.ideaCount
       : allIdeas.filter((i) => (i.sourceIds || []).includes(source.id)).length;
 
-  // Sub-line varies by state. While processing we don't yet have ideas to
-  // count, so we just show "Processing · Added <when>".
+  // Lot 6.2 — when sources-stream attached granular ticker fields (progress,
+  // stage, etaSec), surface the live stage label + ETA in the sub-line and
+  // render a thin progress bar across the bottom of the card. Falls back to
+  // the static "Processing · Added <when>" when no ticker is wired (e.g.
+  // mock seed entries that never went through the upload pipeline).
+  const hasTicker = isProcessing && typeof source.progress === "number";
   const subLine = isProcessing
-    ? `Processing · Added ${source.addedAt}`
+    ? hasTicker
+      ? `${source.stage || "Processing"} · ${formatEta(source.etaSec)} left`
+      : `Processing · Added ${source.addedAt}`
     : `${totalIdeas} idea${totalIdeas === 1 ? "" : "s"} · ${source.status} · Added ${source.addedAt}`;
+  const progressBar = hasTicker
+    ? `
+      <div class="source-card__progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(source.progress * 100)}">
+        <div class="source-card__progress-fill" style="width: ${Math.round(source.progress * 100)}%"></div>
+      </div>
+    `
+    : "";
 
   // Icon content — file kind icon, or a spinning ring while processing.
   const iconContent = isProcessing
@@ -182,6 +195,14 @@ export function renderSourceCard(source, allIdeas = [], { selectable = false, is
         ${processingPill}
         ${moreMenu}
       </div>
+      ${progressBar}
     </article>
   `;
+}
+
+function formatEta(sec) {
+  if (typeof sec !== "number") return "—";
+  if (sec < 60) return `~${sec}s`;
+  const m = Math.round(sec / 60);
+  return `~${m}m`;
 }

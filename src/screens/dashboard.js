@@ -7,10 +7,10 @@ import { recentSessions } from "../mocks.js?v=23";
 import { getContexts, getContextById } from "../contexts-store.js?v=21";
 import { setHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
-import { getSources, subscribeSources } from "../sources-stream.js?v=22";
+import { getSources, subscribeSources } from "../sources-stream.js?v=23";
 import { getIdeas, subscribe as subscribeLibrary } from "../library.js?v=23";
 import { isNewUser } from "../user-mode.js?v=20";
-import { renderSourceCard } from "../components/source-card.js?v=25";
+import { renderSourceCard } from "../components/source-card.js?v=26";
 import { renderIdeaCard } from "../components/idea-card.js?v=24";
 import {
   contentState,
