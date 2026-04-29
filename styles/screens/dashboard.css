@@ -346,6 +346,78 @@
   display: flex;
   align-items: center;
   gap: var(--ref-spacing-xxs);
+  flex-wrap: wrap;
+}
+
+/* Lot 19 — kind badge in the signals row. Reuses the per-kind palette
+   from the right-panel Ideas mode (Lot 5) so kind reads at a glance
+   wherever it appears. .ap-tag carries border-radius + padding ; we
+   override font-size + letter-spacing for the UPPERCASE 10px treatment. */
+.idea-card__kind {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-extra-bold);
+}
+
+.idea-card__kind--stat {
+  background: var(--comp-tag-blue-background-color);
+  color: var(--comp-tag-blue-text-color);
+  border: 1px solid var(--comp-tag-blue-border-color);
+}
+
+.idea-card__kind--quote {
+  background: var(--comp-tag-menthol-background-color);
+  color: var(--comp-tag-menthol-text-color);
+  border: 1px solid var(--comp-tag-menthol-border-color);
+}
+
+.idea-card__kind--hook {
+  background: var(--comp-tag-tag-orange-background-color);
+  color: var(--comp-tag-tag-orange-text-color);
+  border: 1px solid var(--comp-tag-tag-orange-border-color);
+}
+
+.idea-card__kind--story {
+  background: var(--comp-tag-grey-background-color);
+  color: var(--comp-tag-grey-text-color);
+  border: 1px solid var(--comp-tag-grey-border-color);
+}
+
+.idea-card__kind--insight {
+  background: var(--comp-tag-green-background-color);
+  color: var(--comp-tag-green-text-color);
+  border: 1px solid var(--comp-tag-green-border-color);
+}
+
+/* Hashtag row — sits between body and actions row. Hashtags wrap on
+   narrow cards. Each tag uses a quiet grey-05 chip styling so they read
+   as metadata, not as primary content. */
+.idea-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ref-spacing-xxxs);
+}
+
+.idea-card__tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--app-radius-pill);
+  background: var(--ref-color-grey-05);
+  color: var(--ref-color-grey-80);
+  font-size: 11px;
+  font-weight: var(--ref-font-weight-bold);
+}
+
+/* Extracted-at timestamp in the actions row. Pinned next to the Sources
+   toggle on the left side, before the secondary actions cluster (Draft
+   Post + more menu) on the right. */
+.idea-card__extracted {
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-60);
+  margin-right: auto;
+  padding-left: var(--ref-spacing-xxs);
 }
 
 /* Body — plain text on white, no callout chrome. */

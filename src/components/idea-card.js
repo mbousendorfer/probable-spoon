@@ -181,11 +181,30 @@ export function renderIdeaCard(idea, allSources = [], { selectable = false, isSe
     `
     : '<span class="idea-card__sources-toggle idea-card__sources-toggle--empty"></span>';
 
+  // Lot 19 — kind badge, hashtags, extracted timestamp.
+  // The kind taxonomy (stat / quote / hook / story / insight) maps to a
+  // colored .ap-tag — same per-kind palette the right-panel Ideas mode
+  // uses (Lot 5). The hashtag row sits above the actions ; the extracted
+  // date sits in the actions row footer (after the Sources toggle, before
+  // the secondary actions cluster).
+  const kindBadge = idea.kind
+    ? `<span class="ap-tag idea-card__kind idea-card__kind--${idea.kind}">${idea.kind}</span>`
+    : "";
+  const tagsRow =
+    idea.tags && idea.tags.length
+      ? `<div class="idea-card__tags">${idea.tags
+          .slice(0, 4)
+          .map((t) => `<span class="idea-card__tag">#${t}</span>`)
+          .join("")}</div>`
+      : "";
+  const extractedAt = idea.extractedAt ? `<span class="idea-card__extracted">${idea.extractedAt}</span>` : "";
+
   return `
     <article class="idea-card${selectedClass}" data-idea-id="${idea.id}" data-sources-open="false">
       <div class="idea-card__inner">
         <div class="idea-card__signals">
           ${selectCheckbox}
+          ${kindBadge}
           <span class="ap-status ${potential.color} idea-card__potential">${potential.label}</span>
         </div>
 
@@ -196,8 +215,11 @@ export function renderIdeaCard(idea, allSources = [], { selectable = false, isSe
           </div>
         </button>
 
+        ${tagsRow}
+
         <div class="idea-card__actions">
           ${sourcesToggle}
+          ${extractedAt}
 
           <div class="idea-card__secondary-actions">
             <button

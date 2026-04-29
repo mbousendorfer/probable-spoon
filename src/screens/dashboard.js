@@ -11,7 +11,7 @@ import { getSources, subscribeSources } from "../sources-stream.js?v=25";
 import { getIdeas, subscribe as subscribeLibrary } from "../library.js?v=23";
 import { isNewUser } from "../user-mode.js?v=20";
 import { renderSourceCard } from "../components/source-card.js?v=26";
-import { renderIdeaCard } from "../components/idea-card.js?v=24";
+import { renderIdeaCard } from "../components/idea-card.js?v=25";
 import {
   contentState,
   renderContentWorkspace as renderSharedContentWorkspace,
