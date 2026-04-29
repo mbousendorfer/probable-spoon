@@ -40,15 +40,23 @@ const HTML = `
       </div>
       <div class="shortcut-legend__row">
         <dt><kbd>Esc</kbd></dt>
-        <dd>Close any modal or popover</dd>
+        <dd>Close any modal, drawer, popover, or right panel</dd>
       </div>
       <div class="shortcut-legend__row">
         <dt><kbd>Enter</kbd></dt>
         <dd>Submit the current form or send a message</dd>
       </div>
       <div class="shortcut-legend__row">
+        <dt><kbd>⌘</kbd> + <kbd>Enter</kbd></dt>
+        <dd>Send a message from anywhere in the composer</dd>
+      </div>
+      <div class="shortcut-legend__row">
         <dt><kbd>Shift</kbd> + <kbd>Enter</kbd></dt>
         <dd>New line in the composer</dd>
+      </div>
+      <div class="shortcut-legend__row">
+        <dt><kbd>⌘</kbd> + <kbd>B</kbd></dt>
+        <dd>Toggle the sidebar (collapse to icon rail or expand)</dd>
       </div>
       <div class="shortcut-legend__row">
         <dt><kbd>1</kbd>–<kbd>9</kbd></dt>
