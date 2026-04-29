@@ -154,19 +154,14 @@ export function renderSession(params, target) {
         : null;
   const hasContext = !!attachedContext;
 
+  // Lot 13 — handoff alignment. The session screen is now a chat-only body
+  // (full width assistant panel) with the right-panel overlay handling
+  // Drafts / Ideas. The previous Content + Context workspace tabs were
+  // dropped here: Content is covered by the standalone /sources + /ideas
+  // routes (Lots 6 + 7), Context is reachable through the ContextDrawer
+  // (Lot 8) — both via the sidebar nav, not as inline session workspace.
   target.innerHTML = html`
-    <section class="screen screen--split session">
-      ${raw(renderAssistantPanel(session, attachedContext))}
-      <section class="session__workspace">
-        ${raw(renderWorkspaceTabs(q))}
-        <div
-          class="session__tab-body ${q.tab === "posts" && isRealSession ? "session__tab-body--flush" : ""}"
-          data-tab-body="${q.tab}"
-        >
-          ${raw(renderTab(q, attachedContext, isRealSession, session))}
-        </div>
-      </section>
-    </section>
+    <section class="screen session session--solo">${raw(renderAssistantPanel(session, attachedContext))}</section>
   `;
 
   bindSession(target, session);
@@ -272,14 +267,9 @@ function renderAssistantPanel(session, attachedContext) {
               </button>
             </div>
           </div>
-          <button type="button" class="session__composer-session" aria-label="Choose session">
-            <i class="ap-icon-folder"></i>
-            <span>${session.name}</span>
-            <i class="ap-icon-chevron-down"></i>
-          </button>
           <div class="session__composer-hint">
             <kbd>↵</kbd> to send · <kbd>Shift</kbd>+<kbd>↵</kbd> for new line · <kbd>⌘</kbd>+<kbd>↵</kbd> sends from
-            anywhere
+            anywhere · drop a file anywhere to add it as a source
           </div>
         </div>
       </div>
@@ -739,23 +729,11 @@ function wireAssistantPanel(root, session, attachedContext) {
     thread.innerHTML = renderThread(messages);
   });
 
-  // Subscribe to library/ideas changes — re-render the Content workspace
-  // body (both By source and All ideas share the same data).
-  const offLibrary = subscribeLibrary(session.id, ({ sources, ideas }) => {
-    const body = root.querySelector("[data-tab-body]");
-    if (!body) return;
-    const tab = body.dataset.tabBody;
-    if (tab !== "content") return;
-    // If the workspace wasn't rendered before (empty state → populated now),
-    // re-render the whole tab body. Otherwise patch just the list body.
-    const hasWorkspace = !!body.querySelector("[data-content-body]");
-    if (!hasWorkspace) {
-      body.innerHTML = renderTab(readQuery(), null, false, session);
-    } else {
-      rerenderContentWorkspace(root, session);
-    }
-    applyIdeaFocus(root);
-  });
+  // The library subscription used to re-render the in-session Content tab.
+  // Lot 13 dropped that tab — now /sources, /ideas (standalone routes) own
+  // the rendering. Keep a no-op offLibrary so the unsubscribe slot in
+  // currentUnsubscribe stays the same shape.
+  const offLibrary = () => {};
 
   // Subscribe to sidebar-wizard state — when state changes, re-render the
   // entire assistant panel (wizard chrome <-> normal thread+composer) and
@@ -811,19 +789,11 @@ function wireAssistantPanel(root, session, attachedContext) {
   // Initial bind in case the panel was rendered with wizard / question mode on.
   rebindWizardKeyboardIfActive();
 
-  // Subscribe to posts-store changes — re-render the Posts tab if active.
-  const offPosts = subscribePostsStore(session.id, () => {
-    const body = root.querySelector("[data-tab-body]");
-    if (!body || body.dataset.tabBody !== "posts") return;
-    body.innerHTML = renderPopulatedPosts(readQuery(), session.id);
-    // Focus the newest draft (first post in the store) if it was just added.
-    const firstCard = body.querySelector(".posts__card");
-    if (firstCard) {
-      firstCard.classList.add("is-focused");
-      firstCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      setTimeout(() => firstCard.classList.remove("is-focused"), 1600);
-    }
-  });
+  // Posts tab dropped at Lot 4.4 then the workspace itself at Lot 13. The
+  // posts-store subscription used to repaint the in-session Posts tab body.
+  // No subscriber to wire today; the right-panel Drafts surface listens to
+  // assistant.subscribe directly for batch updates.
+  const offPosts = () => {};
 
   // Apply idea focus on initial render if ?focusIdea= is present.
   applyIdeaFocus(root);

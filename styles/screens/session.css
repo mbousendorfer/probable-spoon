@@ -1,7 +1,10 @@
-/* Session screen — assistant panel (left) + workspace with tabs (right). */
+/* Session screen (Lot 13) — chat-only body. The assistant panel now
+   spans the full main column ; the right-panel overlay handles Drafts
+   and Ideas. The previous Content + Context workspace tabs were dropped
+   (Content is covered by /sources + /ideas, Context by ContextDrawer). */
 
 .session {
-  grid-template-columns: minmax(360px, 420px) minmax(0, 1fr);
+  /* Single-column — was a 2-col split with the workspace before Lot 13. */
 }
 
 /* ---------- Assistant panel ---------- */
@@ -59,6 +62,22 @@
 .session__assistant-wizard-bar .analyse__hints {
   margin-top: var(--ref-spacing-xs);
   font-size: var(--ref-font-size-xs);
+}
+
+/* Lot 13 — session screen lost the workspace tabs (Content + Context) so
+   the assistant panel now spans the full main column. The right-panel
+   overlay handles Drafts / Ideas. */
+.session.session--solo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.session.session--solo > .session__assistant {
+  width: 100%;
+  max-width: none;
+  border-right: 0;
 }
 
 .session__assistant-thread {
