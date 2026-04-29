@@ -63,9 +63,13 @@ const sourceSelection = new Set();
 const ideaSelection = new Set();
 
 export function renderDashboard(_params, target) {
-  renderTopbar();
-  const q = readQuery();
-
+  // Lot 13 — handoff alignment. The dashboard route `/` no longer renders
+  // its own page (new chat hero card + content workspace). Instead it
+  // redirects to the most-recent session, or to `/session/new` if there
+  // isn't one. This matches the handoff App.jsx pattern where `/` IS the
+  // active chat — the standalone /sources, /ideas, /contexts views own
+  // the library surfaces. The Sidebar's "Chats" nav item still points at
+  // `/`, so clicking it lands the user back on a chat surface either way.
   if (unsubscribeSources) {
     unsubscribeSources();
     unsubscribeSources = null;
@@ -79,49 +83,11 @@ export function renderDashboard(_params, target) {
   sourceSelection.clear();
   ideaSelection.clear();
 
-  target.innerHTML = html`
-    <section class="screen dashboard">
-      <section class="dashboard__main">${raw(renderNewProjectCard(q))} ${raw(renderProjectsPanel(q))}</section>
-    </section>
-  `;
-
-  bindDashboard(target);
-
-  // Library-action wiring (selection toggles, bulk Extract / Delete, per-row
-  // "…" menu actions). Same module the in-session Content tab uses, so the
-  // two surfaces share behavior. The dashboard implicitly operates on the
-  // default session's library (ideas are session-scoped under the hood).
-  wireLibraryActions(target, {
-    sessionId: defaultLibrarySessionId(),
-    sourceSelection,
-    ideaSelection,
-    onRerender: () => {
-      // Body-only repaint when possible (preserves search input focus);
-      // fall back to a full panel rebuild when the body doesn't exist
-      // (e.g. transition between empty and populated states).
-      if (target.querySelector("[data-content-body]")) {
-        rerenderContentBody(target);
-      } else {
-        const main = target.querySelector(".dashboard__main");
-        if (main) main.innerHTML = renderProjectsPanel(readQuery());
-      }
-    },
-    signal: dashboardListenerController.signal,
-  });
-
-  // Re-render only the Content panel when the sources stream changes — keeps
-  // the sidebar and the workspace tabs steady while uploads progress.
-  unsubscribeSources = subscribeSources(() => {
-    if (isNewUser()) return;
-    const main = target.querySelector(".dashboard__main");
-    if (main) main.innerHTML = renderProjectsPanel(readQuery());
-  });
-  // Same for library changes (extract more / delete ideas / etc).
-  unsubscribeLibrary = subscribeLibrary(defaultLibrarySessionId(), () => {
-    if (isNewUser()) return;
-    const main = target.querySelector(".dashboard__main");
-    if (main) main.innerHTML = renderProjectsPanel(readQuery());
-  });
+  const recent = recentSessions[0];
+  const targetPath = isNewUser() || !recent ? "/session/new" : `/session/${recent.id}`;
+  // Use replace() rather than navigate() so the browser history doesn't end
+  // up with a `/` entry that immediately bounces — feels broken on Back.
+  window.location.replace(window.location.href.split("#")[0] + "#" + targetPath);
 }
 
 function renderNewProjectCard(q) {
