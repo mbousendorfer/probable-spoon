@@ -10,7 +10,7 @@ import {
   getActiveBatchRef as getActiveDraftsBatchRef,
   subscribe as subscribeRightPanel,
 } from "./right-panel.js?v=26";
-import { getThread, subscribe as subscribeThread } from "../assistant.js?v=22";
+import { getThread, subscribe as subscribeThread } from "../assistant.js?v=23";
 import { recentSessions } from "../mocks.js?v=24";
 
 // Persistent top bar.

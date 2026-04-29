@@ -1,5 +1,5 @@
 import { html, raw } from "../utils.js?v=20";
-import { getThread, subscribe as subscribeThread } from "../assistant.js?v=22";
+import { getThread, subscribe as subscribeThread } from "../assistant.js?v=23";
 import { ideas as MOCK_IDEAS } from "../mocks.js?v=24";
 import { isNewUser } from "../user-mode.js?v=20";
 

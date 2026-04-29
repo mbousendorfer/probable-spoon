@@ -19,7 +19,7 @@ import {
   postAssistantMessage,
   subscribe,
   submitAssistantChoice,
-} from "../assistant.js?v=22";
+} from "../assistant.js?v=23";
 import { getSources, getIdeas, subscribe as subscribeLibrary, addSource } from "../library.js?v=23";
 import { wireLibraryActions, renderSourcesBulkBar, renderIdeasBulkBar } from "../library-actions.js?v=20";
 import { getPosts, attachImageToDraft, subscribe as subscribePostsStore } from "../posts-store.js?v=21";

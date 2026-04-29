@@ -110,6 +110,17 @@ export function sendMessage(sessionId, text, options = {}) {
       replyMsg.hidden = false;
     }
     notify(sessionId);
+    // Lot 16 — when the prompt is "batch-y" (matches the keywords below)
+    // we follow the AI text bubble with a Drafts summary turn. session.js's
+    // wireAssistantPanel detects new draft messages and auto-opens the
+    // right-panel Drafts surface (Lot 4.4 wiring), so the user lands on
+    // the editable BatchCards without any extra click.
+    if (reply.batch?.length) {
+      postDraftResult(sessionId, {
+        ideaTitle: leadIdeaTitle(),
+        drafts: reply.batch,
+      });
+    }
   }, delay);
 }
 
@@ -323,6 +334,72 @@ function seedThread(sessionId, { hasContext, skipGreeting }) {
   ]);
 }
 
+// Lot 16 — scripted batch generators (mirror handoff's defaultBatch /
+// launchBatch). Stand-in until a real LLM is wired ; produces a small array
+// of {id, network, text} drafts that postDraftResult can attach to a draft
+// turn. `lead` is the top idea picked in mockAiReply ; we bias the copy to
+// reference its title so the panel feels grounded in the source material.
+
+function defaultBatch(lead) {
+  const seed = lead?.title || "your story";
+  const stamp = Date.now().toString(36);
+  return [
+    {
+      id: `gen-${stamp}-1`,
+      network: "linkedin",
+      text: [
+        `${seed} — the operator angle.`,
+        "Open with the concrete change, add one proof signal from the source, close with a takeaway readers can try this week.",
+      ],
+    },
+    {
+      id: `gen-${stamp}-2`,
+      network: "twitter",
+      text: [`${seed}.`, "One sharp line. No filler."],
+    },
+    {
+      id: `gen-${stamp}-3`,
+      network: "instagram",
+      text: [
+        `${seed} — visual story.`,
+        "Carousel-ready: hook → context → 3 beats → CTA. Aim for 1–2 minutes of read time.",
+      ],
+    },
+    {
+      id: `gen-${stamp}-4`,
+      network: "linkedin",
+      text: [
+        `Why ${seed.toLowerCase()} matters now.`,
+        "Frame as a contrarian read of the room. End with the question we're betting on.",
+      ],
+    },
+    {
+      id: `gen-${stamp}-5`,
+      network: "twitter",
+      text: [`Quick thread on ${seed}. 1/`, "Save the receipt at the end."],
+    },
+  ];
+}
+
+function launchBatch(lead) {
+  const seed = lead?.title || "the launch";
+  const stamp = Date.now().toString(36);
+  const days = ["Day 1 · Tease", "Day 2 · Problem", "Day 3 · Reveal", "Day 4 · Demo", "Day 5 · CTA"];
+  const networks = ["linkedin", "twitter", "linkedin", "instagram", "twitter"];
+  return days.map((label, i) => ({
+    id: `gen-${stamp}-${i + 1}`,
+    network: networks[i],
+    text: [`${label} — ${seed}.`, label.includes("CTA") ? "30 days free. No card." : "More soon."],
+  }));
+}
+
+// Returns the title of the lead idea used by mockAiReply, for the
+// `ideaTitle` field of the draft turn ("From idea: …" tagline).
+let _lastLeadIdeaTitle = "";
+function leadIdeaTitle() {
+  return _lastLeadIdeaTitle;
+}
+
 // Scripted mock replies. Ported from the old prototype (src/mock-generators.js),
 // extended to return a { text, reasoning } pair — `reasoning` is shown in the
 // mermaid-accented "Drafting" collapsible above the answer.
@@ -331,6 +408,10 @@ function mockAiReply({ prompt }) {
   const otherIdea = ideas.find((i) => i.id !== leadIdea?.id) || null;
   const ideaCount = ideas.length;
 
+  // Cache the lead idea title so postDraftResult's `ideaTitle` field is
+  // populated correctly when sendMessage triggers a batch.
+  _lastLeadIdeaTitle = leadIdea?.title || "";
+
   if (!leadIdea) {
     return {
       reasoning: "No sources attached in this session yet, so there's nothing to rank or draft from.",
@@ -338,10 +419,26 @@ function mockAiReply({ prompt }) {
     };
   }
 
-  if (/draft|generate|post|linkedin|twitter|\bx\b/i.test(prompt)) {
+  // Batch-y prompt keywords — handoff App.jsx generateReply uses the same
+  // intent matcher to switch from a text-only reply to a 5-post batch +
+  // drafts summary card. We add the same path here so starter prompts
+  // ("Pull the strongest moments…", "Plan a 5-day launch…", "Repurpose
+  // {{source}} into 8 posts…", "Use {{source}} to draft a customer-story
+  // post…") actually produce drafts instead of a generic text reply.
+  const isLaunch = /\b(launch|5-?day|week|drumbeat|tease|reveal)\b/i.test(prompt);
+  const isBatch =
+    isLaunch ||
+    /\b(batch|draft|repurpose|moments|pull|schedule|posts?)\b/i.test(prompt) ||
+    /linkedin|twitter|\bx\b|instagram|facebook|tiktok/i.test(prompt);
+
+  if (isBatch) {
+    const batch = isLaunch ? launchBatch(leadIdea) : defaultBatch(leadIdea);
     return {
-      reasoning: `Scanned ${ideaCount} extracted ideas, ranked by confidence and relevance. "${leadIdea.title}" came out on top (${leadIdea.confidence}% confidence) — composing a post draft grounded in its source.`,
-      text: `The best post candidate is "${leadIdea.title}". I'd open with the concrete change, add one proof signal from the source, then close with a specific takeaway readers can try this week.`,
+      reasoning: `Scanned ${ideaCount} extracted ideas, ranked by confidence and relevance. "${leadIdea.title}" came out on top (${leadIdea.confidence}% confidence) — composing a ${batch.length}-post batch grounded in its source.`,
+      text: isLaunch
+        ? `Here's a ${batch.length}-day sequence built from "${leadIdea.title}" — one post per day, mixed networks. Open the Drafts panel to review and schedule.`
+        : `I drafted ${batch.length} posts grounded in "${leadIdea.title}". Each is sized for its network and follows the active context's tone rules.`,
+      batch,
     };
   }
 
