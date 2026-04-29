@@ -679,6 +679,28 @@ Le handoff définit des alias (`--fg-*`, `--bg-*`, `--border-*`, `--space-*`, `-
 - **Dépendances** : Lots 4 + 5 (pills installés). Peut être traité en parallèle de Lot 8 (Contexts) — c'est de la chrome.
 - **Origine** : feedback utilisateur 2026-04-28 — "c'est le bordel dans la topbar".
 
+### Lot 12 — Vérification de flows handoff ↔ archie (à faire après Lots 1–11)
+
+- **Périmètre** : avec tous les écrans + composants en place (Lots 1–11), passer chaque user flow handoff dans archie en mode end-to-end et flagger les divergences (UX qui ne fait plus sens, navigation cassée, état perdu entre routes, doublons d'entrées, etc.).
+- **Méthodologie** :
+  - Tester **les deux modes admin** via le user-mode chip (Q10) :
+    - **`first-time` user** — empty states, parcours d'onboarding, pas de mock seed (sources/ideas/drafts vides) → l'app doit être utilisable depuis zéro.
+    - **`returning` user** — mock seed complet (3 sources, 7 ideas, 3 contexts, 1 conversation `s-acme-launch`) → tous les écrans peuplés, drafts générables, schedule, etc.
+    - Toggle entre les deux via le chip ADMIN en bas-droite ; chaque toggle déclenche un reload qui re-seed les stores.
+  - Pour chaque flow handoff de la liste ci-dessous, exécuter le parcours dans archie :
+    1. **First chat** — landing `/`, click "+ New conversation" sidebar, hero starters s'affichent, click un starter → composer pré-rempli, Enter ou ⌘+Enter envoie, l'AI répond avec un batch, le right panel Drafts s'auto-ouvre, le user clic Schedule N posts → modal schedule → confirm → toast + `is-scheduled` pill.
+    2. **Source → batch** — ouvrir Sources view, drag/drop un fichier, voir la progress bar + stages, attendre Processed, click "Use in chat" → nav `/session/...`, AI génère un batch.
+    3. **Idea → batch** — ouvrir Ideas library, filter par kind, click "Use" sur une carte → nav `/session/...`, composer pré-rempli avec "Build a batch around this {kind}…", envoyer.
+    4. **Context manage** — ouvrir Contexts view, click "+ New context" ou Edit sur une card → drawer slide-in, modifier les champs, dirty state, save, fermer. Vérifier que les sessions affichant ce context reflètent le changement.
+    5. **Sidebar collapse** — `⌘B` ou click toggle, vérifier que la transition est smooth, que tous les écrans tiennent en mode collapsed.
+    6. **Right panel toggle** — Drafts pill / Ideas pill dans la topbar (mode session), le panel s'ouvre/ferme correctement, le drafts summary card reflète l'état.
+    7. **Empty hero state** — first-time user sur `/session/new`, hero "What are we creating today?" + 4 starter cards, click un starter pré-remplit le composer.
+- **Output attendu** : un mini-rapport `STUDIO_FLOW_VERIFICATION.md` listant chaque flow + statut (✅ OK / ⚠ écart mineur / ❌ cassé) + recommandation si écart. Ce rapport ferme le portage handoff → archie.
+- **Fichiers touchés** : aucune modification de code attendue (audit pur). Si des bugs sont découverts, ouvrir des sub-tasks par bug.
+- **Complexité** : **M** (1–2 jours)
+- **Dépendances** : tous les Lots 1–11 livrés.
+- **Origine** : demande utilisateur 2026-04-29 — "vérifier que tout fait sens et est fonctionnel" + "ne pas oublier l'admin toggle new/returning user".
+
 ### Vue d'ensemble — séquencement
 
 ```
