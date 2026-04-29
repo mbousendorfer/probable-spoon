@@ -1,7 +1,10 @@
 /* Session screen (Lot 13) — chat-only body. The assistant panel now
    spans the full main column ; the right-panel overlay handles Drafts
    and Ideas. The previous Content + Context workspace tabs were dropped
-   (Content is covered by /sources + /ideas, Context by ContextDrawer). */
+   (Content is covered by /sources + /ideas, Context by ContextDrawer).
+   Lot 17.c — chat content is constrained to a 740px max-width centered
+   column (handoff §2.1) so it doesn't sprawl on wide viewports, and the
+   right panel pushes the column rather than overlaying it. */
 
 .session {
   /* Single-column — was a 2-col split with the workspace before Lot 13. */
@@ -15,6 +18,25 @@
   background: var(--app-surface);
   border-right: 1px solid var(--app-border-soft);
   overflow: hidden;
+}
+
+/* Chat thread + composer share a 740px max-width centered column, matching
+   the handoff Chat.jsx layout. The wrappers themselves stay full-width (so
+   the page background and the dropzone outline cover everything) ; the
+   inner content gets the cap. */
+.session__assistant > .session__assistant-thread {
+  align-items: center;
+}
+
+.session__assistant > .session__assistant-thread > * {
+  width: 100%;
+  max-width: 740px;
+}
+
+.session__composer-inner {
+  width: 100%;
+  max-width: 740px;
+  margin: 0 auto;
 }
 
 /* Wizard mode — same panel, two rows: scrollable chat + sticky picker bar.

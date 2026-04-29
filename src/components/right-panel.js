@@ -290,6 +290,12 @@ function lookupActiveDraftCount() {
 function renderPanel() {
   const el = document.getElementById(PANEL_ID);
   if (!el) return;
+  // Lot 17.c — toggle the .is-right-panel-open class on the app shell so
+  // the main content column reserves space for the panel instead of
+  // sitting underneath it. CSS in components/right-panel.css handles the
+  // padding-right transition.
+  const shell = document.getElementById("appShell");
+  if (shell) shell.classList.toggle("is-right-panel-open", !!state.mode);
   if (!state.mode) {
     el.hidden = true;
     el.innerHTML = "";

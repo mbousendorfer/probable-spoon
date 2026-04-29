@@ -47,7 +47,7 @@ import {
   getActiveBatchRef as getActiveDraftsBatchRef,
   getMode as getRightPanelMode,
   subscribe as subscribeRightPanel,
-} from "../components/right-panel.js?v=28";
+} from "../components/right-panel.js?v=29";
 import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 
@@ -220,56 +220,58 @@ function renderAssistantPanel(session, attachedContext) {
             </div>
           `}
       <div class="session__composer">
-        <div class="session__composer-card">
-          <div class="session__composer-thinking" data-assistant-thinking hidden>
-            <span class="session__composer-thinking-spinner" aria-hidden="true"></span>
-            <span class="session__composer-thinking-text" data-thinking-text>0s · 1 credit</span>
-          </div>
-          <div class="session__composer-input">
-            <textarea
-              class="session__composer-input-field"
-              id="assistantInput"
-              placeholder="Ask Archie to compare ideas, find a signal, or draft the next move…"
-              rows="3"
-            ></textarea>
-            <div class="session__composer-actions">
-              <div class="assistant-attach">
+        <div class="session__composer-inner">
+          <div class="session__composer-card">
+            <div class="session__composer-thinking" data-assistant-thinking hidden>
+              <span class="session__composer-thinking-spinner" aria-hidden="true"></span>
+              <span class="session__composer-thinking-text" data-thinking-text>0s · 1 credit</span>
+            </div>
+            <div class="session__composer-input">
+              <textarea
+                class="session__composer-input-field"
+                id="assistantInput"
+                placeholder="Ask Archie to compare ideas, find a signal, or draft the next move…"
+                rows="3"
+              ></textarea>
+              <div class="session__composer-actions">
+                <div class="assistant-attach">
+                  <button
+                    type="button"
+                    class="ap-icon-button transparent"
+                    aria-label="Attach a source"
+                    data-assistant-attach-toggle
+                  >
+                    <i class="ap-icon-plus"></i>
+                  </button>
+                  <div class="assistant-attach__menu" data-assistant-attach-menu hidden>
+                    <button type="button" class="assistant-attach__item" data-add-source="pdf">
+                      <i class="ap-icon-file--pdf"></i>
+                      <span>Add PDF</span>
+                    </button>
+                    <button type="button" class="assistant-attach__item" data-add-source="video">
+                      <i class="ap-icon-file--video"></i>
+                      <span>Add video</span>
+                    </button>
+                    <button type="button" class="assistant-attach__item" data-add-source="url">
+                      <i class="ap-icon-link"></i>
+                      <span>Add URL</span>
+                    </button>
+                  </div>
+                </div>
                 <button
                   type="button"
-                  class="ap-icon-button transparent"
-                  aria-label="Attach a source"
-                  data-assistant-attach-toggle
+                  class="ap-button primary orange session__composer-send"
+                  aria-label="Send"
+                  data-assistant-send
                 >
-                  <i class="ap-icon-plus"></i>
+                  <i class="ap-icon-arrow-up"></i>
                 </button>
-                <div class="assistant-attach__menu" data-assistant-attach-menu hidden>
-                  <button type="button" class="assistant-attach__item" data-add-source="pdf">
-                    <i class="ap-icon-file--pdf"></i>
-                    <span>Add PDF</span>
-                  </button>
-                  <button type="button" class="assistant-attach__item" data-add-source="video">
-                    <i class="ap-icon-file--video"></i>
-                    <span>Add video</span>
-                  </button>
-                  <button type="button" class="assistant-attach__item" data-add-source="url">
-                    <i class="ap-icon-link"></i>
-                    <span>Add URL</span>
-                  </button>
-                </div>
               </div>
-              <button
-                type="button"
-                class="ap-button primary orange session__composer-send"
-                aria-label="Send"
-                data-assistant-send
-              >
-                <i class="ap-icon-arrow-up"></i>
-              </button>
             </div>
-          </div>
-          <div class="session__composer-hint">
-            <kbd>↵</kbd> to send · <kbd>Shift</kbd>+<kbd>↵</kbd> for new line · <kbd>⌘</kbd>+<kbd>↵</kbd> sends from
-            anywhere · drop a file anywhere to add it as a source
+            <div class="session__composer-hint">
+              <kbd>↵</kbd> to send · <kbd>Shift</kbd>+<kbd>↵</kbd> for new line · <kbd>⌘</kbd>+<kbd>↵</kbd> sends from
+              anywhere · drop a file anywhere to add it as a source
+            </div>
           </div>
         </div>
       </div>
