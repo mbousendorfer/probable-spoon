@@ -1,5 +1,5 @@
 import { html, raw } from "../utils.js?v=20";
-import { renderTopbar } from "../components/topbar.js?v=28";
+import { renderTopbar } from "../components/topbar.js?v=29";
 import { renderSourceCard } from "../components/source-card.js?v=26";
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=21";
 import { getSources, subscribeSources, classifyFile, startFileUpload } from "../sources-stream.js?v=23";

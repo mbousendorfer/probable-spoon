@@ -1,6 +1,9 @@
 import { html, raw } from "../utils.js?v=20";
 import { navigate, getPath } from "../router.js?v=20";
 import { open as openSettingsDrawer } from "./settings-drawer.js?v=22";
+import { open as openBugReportModal } from "./bug-report-modal.js?v=21";
+import { open as openFeedbackModal } from "./feedback-modal.js?v=24";
+import { toggle as toggleShortcutLegend } from "./shortcut-legend.js?v=22";
 import { recentSessions } from "../mocks.js?v=24";
 import { isNewUser } from "../user-mode.js?v=20";
 
@@ -11,8 +14,15 @@ import { isNewUser } from "../user-mode.js?v=20";
 // Collapsed state — driven by the .is-sidebar-collapsed class on #appShell.
 // Toggle is exposed via the head button or Cmd/Ctrl+B (cf. initSidebar).
 // State persists across reloads via localStorage so the chrome stays predictable.
+//
+// Footer popmenu (Lot 11) — the user-row's trailing button is now a popmenu
+// trigger that exposes Send feedback / Report a bug / Keyboard shortcuts /
+// Settings. The topbar dropped these chrome buttons in Lot 11 ; the sidebar
+// foot is the single canonical place to reach them.
 
 const COLLAPSED_KEY = "archie-sidebar-collapsed";
+
+let menuOpen = false;
 
 export function isSidebarCollapsed() {
   return localStorage.getItem(COLLAPSED_KEY) === "1";
@@ -31,6 +41,14 @@ export function setSidebarCollapsed(collapsed) {
 
 export function toggleSidebar() {
   setSidebarCollapsed(!isSidebarCollapsed());
+}
+
+function setMenuOpen(open) {
+  menuOpen = open;
+  const popmenu = document.querySelector("[data-sidebar-foot-menu]");
+  const trigger = document.querySelector("[data-sidebar-foot-toggle]");
+  if (popmenu) popmenu.hidden = !open;
+  if (trigger) trigger.setAttribute("aria-expanded", String(open));
 }
 
 export function initSidebar() {
@@ -65,15 +83,47 @@ export function initSidebar() {
       navigate(`/session/${sessionRow.dataset.sidebarSession}`);
       return;
     }
+    // Footer popmenu — toggle on the trigger, dispatch on item click.
+    if (event.target.closest("[data-sidebar-foot-toggle]")) {
+      setMenuOpen(!menuOpen);
+      return;
+    }
+    if (event.target.closest("[data-sidebar-feedback]")) {
+      setMenuOpen(false);
+      openFeedbackModal();
+      return;
+    }
+    if (event.target.closest("[data-sidebar-bug]")) {
+      setMenuOpen(false);
+      openBugReportModal();
+      return;
+    }
+    if (event.target.closest("[data-sidebar-shortcuts]")) {
+      setMenuOpen(false);
+      toggleShortcutLegend();
+      return;
+    }
     if (event.target.closest("[data-sidebar-settings]")) {
+      setMenuOpen(false);
       openSettingsDrawer();
     }
+  });
+
+  // Click outside the popmenu → close.
+  document.addEventListener("click", (event) => {
+    if (!menuOpen) return;
+    if (event.target.closest("[data-sidebar-foot-menu], [data-sidebar-foot-toggle]")) return;
+    setMenuOpen(false);
   });
 
   // Cmd/Ctrl+B toggles the sidebar — matches Claude.ai. Skip the binding when
   // the user is typing into an input/textarea/contenteditable so it never
   // hijacks composer input.
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && menuOpen) {
+      setMenuOpen(false);
+      return;
+    }
     if (event.key !== "b" && event.key !== "B") return;
     if (!(event.metaKey || event.ctrlKey)) return;
     const t = event.target;
@@ -92,6 +142,9 @@ export function initSidebar() {
 export function renderSidebar() {
   const el = document.getElementById("sidebar");
   if (!el) return;
+  // Re-rendering tears down the popmenu DOM, so reset the local state to
+  // match. Any open menu has to be re-opened with a fresh click.
+  menuOpen = false;
   const path = getPath();
   const activeSessionId = matchSessionId(path);
   const collapsed = isSidebarCollapsed();
@@ -124,15 +177,7 @@ export function renderSidebar() {
 
       <div class="app-sidebar__foot app-sidebar__foot--collapsed">
         <div class="ap-avatar size-32">MB</div>
-        <button
-          type="button"
-          class="ap-icon-button transparent"
-          data-sidebar-settings
-          aria-label="Settings"
-          title="Settings"
-        >
-          <i class="ap-icon-cog"></i>
-        </button>
+        ${raw(renderFootMenu({ collapsed: true }))}
       </div>
     `;
     return;
@@ -171,8 +216,54 @@ export function renderSidebar() {
           <span class="app-sidebar__user-name">Matt Bousendorfer</span>
           <span class="app-sidebar__user-plan">Studio · Team</span>
         </div>
-        <button type="button" class="ap-icon-button transparent" data-sidebar-settings aria-label="Settings">
+        ${raw(renderFootMenu({ collapsed: false }))}
+      </div>
+    </div>
+  `;
+}
+
+// Footer popmenu — trigger button + popmenu list. The popmenu lives in the
+// DOM but is hidden until the user clicks the trigger. Items dispatch to
+// the existing modal/drawer/legend handlers at the top of initSidebar.
+function renderFootMenu({ collapsed }) {
+  // Pop the menu UPWARDS from the trigger so it doesn't get cut off by the
+  // viewport's bottom edge.
+  return `
+    <div class="app-sidebar__foot-popmenu-wrap">
+      <button
+        type="button"
+        class="ap-icon-button transparent"
+        data-sidebar-foot-toggle
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-label="More options"
+        title="More options"
+      >
+        <i class="ap-icon-cog"></i>
+      </button>
+      <div
+        class="app-sidebar__foot-popmenu ${collapsed ? "app-sidebar__foot-popmenu--collapsed" : ""}"
+        role="menu"
+        data-sidebar-foot-menu
+        hidden
+      >
+        <button type="button" role="menuitem" class="app-sidebar__foot-item" data-sidebar-feedback>
+          <i class="ap-icon-single-chat-bubble"></i>
+          <span>Send feedback</span>
+        </button>
+        <button type="button" role="menuitem" class="app-sidebar__foot-item" data-sidebar-bug>
+          <i class="ap-icon-bug"></i>
+          <span>Report a bug</span>
+        </button>
+        <button type="button" role="menuitem" class="app-sidebar__foot-item" data-sidebar-shortcuts>
+          <i class="ap-icon-question"></i>
+          <span>Keyboard shortcuts</span>
+          <kbd class="app-sidebar__foot-kbd">?</kbd>
+        </button>
+        <hr class="app-sidebar__foot-divider" />
+        <button type="button" role="menuitem" class="app-sidebar__foot-item" data-sidebar-settings>
           <i class="ap-icon-cog"></i>
+          <span>Settings</span>
         </button>
       </div>
     </div>

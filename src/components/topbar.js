@@ -1,10 +1,7 @@
 import { html, raw } from "../utils.js?v=20";
 import { getPath } from "../router.js?v=20";
-import { open as openBugReportModal } from "./bug-report-modal.js?v=21";
-import { open as openFeedbackModal } from "./feedback-modal.js?v=24";
-import { open as openSettingsDrawer } from "./settings-drawer.js?v=22";
 import { toggle as toggleShortcutLegend } from "./shortcut-legend.js?v=22";
-import { toggleSidebar } from "./sidebar.js?v=22";
+import { toggleSidebar } from "./sidebar.js?v=23";
 import {
   openDrafts as openDraftsPanel,
   openIdeas as openIdeasPanel,
@@ -18,14 +15,18 @@ import { recentSessions } from "../mocks.js?v=24";
 
 // Persistent top bar.
 //
-// Layout:
+// Layout (Lot 11 refactor — feedback from user 2026-04-28):
 //   • Far left  — sidebar-toggle button (mirrors the sidebar's own collapse
 //     control so the chrome stays reachable in any state) + route-derived
 //     title
 //   • Right     — Drafts pill + Ideas pill (only on /session/:id, drives the
-//     right-panel modes), divider, then Feedback / Bug / Help / Settings
+//     right-panel modes). Nothing else.
 //
-// The Archie wordmark moved to the global sidebar at Lot 2.1.
+// The Archie wordmark moved to the global sidebar at Lot 2.1. Feedback /
+// Report a bug / Keyboard shortcuts / Settings moved out of the topbar at
+// Lot 11 — they now live in the sidebar footer popmenu (cf. sidebar.js).
+// The "?" key shortcut for the keyboard legend stays globally bound so
+// power users keep their muscle memory.
 
 export function renderTopbar(_options = {}) {
   const el = document.getElementById("topbar");
@@ -46,28 +47,7 @@ export function renderTopbar(_options = {}) {
       </button>
       <h1 class="app-topbar__title">${raw(currentTitle())}</h1>
     </div>
-    <div class="app-topbar__right">
-      ${raw(onSession ? renderSessionPills(rpMode, draftCount) : "")}
-      <button type="button" class="app-topbar__feedback" data-topbar-feedback>
-        <i class="ap-icon-single-chat-bubble"></i>
-        Give feedback
-      </button>
-      <button type="button" class="ap-button stroked grey" data-topbar-bug>
-        <i class="ap-icon-bug"></i>
-        <span>Report a bug</span>
-      </button>
-      <button
-        type="button"
-        class="ap-icon-button stroked"
-        aria-label="Keyboard shortcuts (press ?)"
-        data-topbar-shortcuts
-      >
-        <i class="ap-icon-question"></i>
-      </button>
-      <button type="button" class="ap-icon-button stroked" aria-label="Settings" data-topbar-settings>
-        <i class="ap-icon-cog"></i>
-      </button>
-    </div>
+    <div class="app-topbar__right">${raw(onSession ? renderSessionPills(rpMode, draftCount) : "")}</div>
   `;
 }
 
@@ -102,22 +82,6 @@ export function initTopbar() {
       const mode = getRightPanelMode();
       if (mode === "ideas") closeRightPanel();
       else openIdeasPanel();
-      return;
-    }
-    if (event.target.closest("[data-topbar-feedback]")) {
-      openFeedbackModal();
-      return;
-    }
-    if (event.target.closest("[data-topbar-bug]")) {
-      openBugReportModal();
-      return;
-    }
-    if (event.target.closest("[data-topbar-shortcuts]")) {
-      toggleShortcutLegend();
-      return;
-    }
-    if (event.target.closest("[data-topbar-settings]")) {
-      openSettingsDrawer();
     }
   });
 
@@ -187,7 +151,6 @@ function renderSessionPills(rpMode, draftCount) {
       <i class="ap-icon-sparkles"></i>
       <span>Ideas</span>
     </button>
-    <span class="app-topbar__divider" aria-hidden="true"></span>
   `;
 }
 

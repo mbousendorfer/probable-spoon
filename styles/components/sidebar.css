@@ -265,6 +265,96 @@
   text-overflow: ellipsis;
 }
 
+/* ── Footer popmenu (Lot 11) ─────────────────────────────────────────
+   The cog in the footer now opens a popmenu instead of going straight
+   to Settings. Lives in a relative wrapper so the absolutely-positioned
+   popmenu pins above the trigger. */
+
+.app-sidebar__foot-popmenu-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.app-sidebar__foot-popmenu {
+  position: absolute;
+  bottom: calc(100% + var(--ref-spacing-xxs));
+  right: 0;
+  min-width: 220px;
+  padding: var(--ref-spacing-xxs);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-button-sm);
+  box-shadow: var(--app-shadow-popover-md);
+  z-index: var(--app-z-overlay);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* When the sidebar is collapsed the popmenu sits next to the icon rail
+   (right of it) rather than on top of the avatar tile. */
+.app-sidebar__foot-popmenu--collapsed {
+  bottom: 0;
+  right: auto;
+  left: calc(100% + var(--ref-spacing-xxs));
+}
+
+.app-sidebar__foot-popmenu[hidden] {
+  display: none;
+}
+
+.app-sidebar__foot-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+  padding: var(--ref-spacing-xxs) var(--ref-spacing-xs);
+  background: transparent;
+  border: 0;
+  border-radius: var(--app-radius-button-sm);
+  font-family: inherit;
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color var(--ref-animation-short) var(--app-ease-out);
+}
+
+.app-sidebar__foot-item i {
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-grey-80);
+}
+
+.app-sidebar__foot-item:hover,
+.app-sidebar__foot-item:focus-visible {
+  background: var(--ref-color-grey-10);
+  outline: none;
+}
+
+.app-sidebar__foot-kbd {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--app-radius-sm);
+  background: var(--ref-color-grey-05);
+  border: 1px solid var(--app-border-soft);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-80);
+}
+
+.app-sidebar__foot-divider {
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid var(--app-border-soft);
+}
+
 /* ── Collapsed mode (56px) ────────────────────────────────────────────
    Icon-only stack centred horizontally. Markup is rendered server-side
    so we don't have to fight CSS-only hiding rules. */
