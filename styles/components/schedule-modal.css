@@ -1,0 +1,168 @@
+/* Schedule modal — handoff §3.5. Centered 720px dialog with a soft scrim
+   behind. Header → 3-mode picker → per-post slot rows → footer. */
+
+.schedule-modal__scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(33, 46, 68, 0.32);
+  z-index: var(--app-z-modal-backdrop);
+}
+
+.schedule-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(720px, calc(100vw - var(--ref-spacing-xl)));
+  max-height: calc(100vh - var(--ref-spacing-xl));
+  display: flex;
+  flex-direction: column;
+  background: var(--app-surface);
+  border-radius: var(--app-radius-modal);
+  box-shadow: var(--app-shadow-modal);
+  z-index: var(--app-z-modal);
+  overflow: hidden;
+}
+
+.schedule-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-md) var(--ref-spacing-md) var(--ref-spacing-sm);
+  border-bottom: 1px solid var(--app-border-soft);
+}
+
+.schedule-modal__title {
+  font-size: var(--sys-text-style-h2-size);
+  line-height: var(--sys-text-style-h2-line-height);
+  font-weight: 800;
+  color: var(--ref-color-grey-150);
+}
+
+.schedule-modal__sub {
+  margin-top: var(--ref-spacing-xxxs);
+  font-size: var(--ref-font-size-xs);
+  color: var(--ref-color-grey-80);
+}
+
+.schedule-modal__modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-md);
+  border-bottom: 1px solid var(--app-border-soft);
+}
+
+.schedule-modal__mode {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--ref-spacing-xs) var(--ref-spacing-sm);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-card);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--ref-animation-short) var(--app-ease-standard);
+}
+
+.schedule-modal__mode:hover,
+.schedule-modal__mode:focus-visible {
+  border-color: var(--ref-color-grey-40);
+  outline: none;
+}
+
+.schedule-modal__mode.is-on {
+  border-color: var(--ref-color-orange-100);
+  background: var(--ref-color-orange-10);
+}
+
+.schedule-modal__mode-title {
+  font-size: var(--ref-font-size-sm);
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-150);
+}
+
+.schedule-modal__mode-sub {
+  font-size: 11px;
+  color: var(--ref-color-grey-60);
+}
+
+.schedule-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--ref-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xs);
+}
+
+.schedule-modal__slot {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: var(--ref-spacing-sm);
+  padding: var(--ref-spacing-xs);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-card);
+}
+
+.schedule-modal__slot-when input {
+  width: 100%;
+}
+
+.schedule-modal__slot-post {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ref-spacing-xxxs);
+  min-width: 0;
+}
+
+.schedule-modal__slot-head {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
+}
+
+.schedule-modal__slot-head i {
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-grey-100);
+}
+
+.schedule-modal__slot-net {
+  font-size: 11px;
+  font-weight: var(--ref-font-weight-bold);
+  color: var(--ref-color-grey-100);
+}
+
+.schedule-modal__slot-text {
+  font-size: var(--ref-font-size-xs);
+  line-height: 1.4;
+  color: var(--ref-color-grey-80);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.schedule-modal__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ref-spacing-xs);
+  padding: var(--ref-spacing-sm) var(--ref-spacing-md);
+  border-top: 1px solid var(--app-border-soft);
+}
+
+.schedule-modal__foot-disclosure {
+  font-size: var(--ref-font-size-xs);
+  color: var(--ref-color-grey-60);
+}
+
+.schedule-modal__foot-actions {
+  display: flex;
+  gap: var(--ref-spacing-xs);
+}

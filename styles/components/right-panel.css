@@ -189,6 +189,26 @@
   justify-content: center;
 }
 
+/* All-scheduled confirmation pill — replaces the Schedule CTA when every
+   draft in the batch has been scheduled. */
+.rpanel-drafts__all-scheduled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ref-spacing-xxs);
+  width: 100%;
+  padding: 8px;
+  border-radius: var(--app-radius-pill);
+  background: var(--ref-color-green-10);
+  color: var(--ref-color-green-150);
+  font-weight: var(--ref-font-weight-bold);
+  font-size: var(--ref-font-size-sm);
+}
+
+.rpanel-drafts__all-scheduled i {
+  color: var(--ref-color-green-100);
+}
+
 /* Body: scrolling group stack. */
 .rpanel-drafts__body {
   flex: 1 1 auto;
@@ -327,6 +347,30 @@
   line-height: 17px;
   color: var(--ref-color-grey-150);
   white-space: pre-wrap;
+}
+
+/* Scheduled state — fades the card to 60% opacity and replaces the
+   network name area with a green "Scheduled" pill. Checkbox is disabled. */
+.rpanel-batch-card.is-scheduled {
+  opacity: 0.7;
+}
+
+.rpanel-batch-card__sched-pill {
+  margin-left: var(--ref-spacing-xxxs);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  border-radius: var(--app-radius-pill);
+  background: var(--ref-color-green-10);
+  color: var(--ref-color-green-150);
+  font-size: 10px;
+  font-weight: var(--ref-font-weight-bold);
+}
+
+.rpanel-batch-card__sched-pill i {
+  font-size: 10px;
+  color: var(--ref-color-green-100);
 }
 
 /* ── Ideas mode ──────────────────────────────────────────────────────

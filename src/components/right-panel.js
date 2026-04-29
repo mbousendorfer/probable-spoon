@@ -1,6 +1,7 @@
 import { html, raw } from "../utils.js?v=20";
 import { getThread, subscribe as subscribeThread } from "../assistant.js?v=22";
 import { ideas as IDEAS } from "../mocks.js?v=24";
+import { open as openScheduleModal } from "./schedule-modal.js?v=20";
 
 // Global Right Panel — slides in from the right edge of the viewport, overlays
 // the session workspace, hosts two modes:
@@ -226,10 +227,42 @@ function togglePostSelection(postId) {
   renderPanel();
 }
 
-// Lot 9 wires the Schedule modal here. Until then, just nudge the user.
+// Per-batch scheduling state — Map<batchKey, Set<postId>>. Drafts in this
+// set render with .is-scheduled (faded + green check pill). Lot 9 keeps the
+// flow purely client-side per Q9; a real Publishing API call is the
+// replacement point inside onSchedulePlaceholder.
+const scheduledByBatch = new Map();
+
+function getScheduled(ref) {
+  const key = batchKey(ref);
+  if (!scheduledByBatch.has(key)) scheduledByBatch.set(key, new Set());
+  return scheduledByBatch.get(key);
+}
+
+// Open the Schedule modal pinned to the active batch's selected drafts.
+// Mock end-to-end (Q9): on confirm, the modal flags those posts as
+// scheduled and we re-render. Replacement point #5: post the slots to the
+// real Publishing API instead of mutating local state.
 function onSchedulePlaceholder() {
-  import("./toast.js?v=20").then(({ showToast }) => {
-    showToast("Scheduling lands in Lot 9 — the modal isn't wired yet.");
+  if (!state.activeBatchRef) return;
+  const message = lookupActiveMessage();
+  if (!message?.drafts) return;
+  const selected = getSelected(state.activeBatchRef, message.drafts);
+  const scheduled = getScheduled(state.activeBatchRef);
+  const candidates = message.drafts.filter((d) => selected.has(d.id) && !scheduled.has(d.id));
+  if (candidates.length === 0) {
+    import("./toast.js?v=20").then(({ showToast }) =>
+      showToast("Nothing to schedule — every selected draft is already scheduled."),
+    );
+    return;
+  }
+  openScheduleModal({
+    posts: candidates,
+    onConfirm: (_slots) => {
+      const set = getScheduled(state.activeBatchRef);
+      for (const c of candidates) set.add(c.id);
+      renderPanel();
+    },
   });
 }
 
@@ -296,8 +329,11 @@ function renderDraftsView() {
 
   const ref = state.activeBatchRef;
   const selected = getSelected(ref, message.drafts);
+  const scheduled = getScheduled(ref);
   const total = message.drafts.length;
-  const selectedCount = message.drafts.filter((d) => selected.has(d.id)).length;
+  const selectedCount = message.drafts.filter((d) => selected.has(d.id) && !scheduled.has(d.id)).length;
+  const scheduledCount = message.drafts.filter((d) => scheduled.has(d.id)).length;
+  const allScheduled = scheduledCount === total;
 
   // Group by network. Preserves first-occurrence order so LinkedIn-first
   // sequences read top-to-bottom as the user expects.
@@ -308,12 +344,17 @@ function renderDraftsView() {
     groups.get(net).push(d);
   }
 
-  const headerSub =
-    total === 1 ? "1 post" : `${total} posts${selectedCount !== total ? ` · ${selectedCount} selected` : ""}`;
+  const headerSub = [
+    `${total} ${total === 1 ? "post" : "posts"}`,
+    scheduledCount > 0 ? `${scheduledCount} scheduled` : null,
+    selectedCount > 0 && !allScheduled ? `${selectedCount} selected` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const groupBlocks = [...groups.entries()]
     .map(([network, drafts]) => {
-      const cards = drafts.map((d) => renderBatchCard(d, selected.has(d.id))).join("");
+      const cards = drafts.map((d) => renderBatchCard(d, selected.has(d.id), scheduled.has(d.id))).join("");
       return `
         <div class="rpanel-drafts__group">
           <div class="rpanel-drafts__group-head">
@@ -340,29 +381,36 @@ function renderDraftsView() {
             <span>Regenerate</span>
           </button>
         </div>
-        <button
-          type="button"
-          class="ap-button primary orange rpanel-drafts__schedule"
-          data-rpanel-schedule
-          ${selectedCount === 0 ? "disabled" : ""}
-        >
-          <i class="ap-icon-calendar"></i>
-          <span>Schedule ${selectedCount > 0 ? selectedCount + " " : ""}${selectedCount === 1 ? "post" : "posts"}</span>
-        </button>
+        ${raw(
+          allScheduled
+            ? `<div class="rpanel-drafts__all-scheduled"><i class="ap-icon-check"></i><span>All posts scheduled</span></div>`
+            : `<button
+                type="button"
+                class="ap-button primary orange rpanel-drafts__schedule"
+                data-rpanel-schedule
+                ${selectedCount === 0 ? "disabled" : ""}
+              >
+                <i class="ap-icon-calendar"></i>
+                <span>Schedule ${selectedCount > 0 ? selectedCount + " " : ""}${selectedCount === 1 ? "post" : "posts"}</span>
+              </button>`,
+        )}
       </div>
       <div class="rpanel-drafts__body">${raw(groupBlocks)}</div>
     </div>
   `;
 }
 
-function renderBatchCard(draft, isSelected) {
+function renderBatchCard(draft, isSelected, isScheduled = false) {
   const network = draft.network || "linkedin";
   const limit = NETWORK_LIMIT[network] || 3000;
   const text = draft.preview || (Array.isArray(draft.text) ? draft.text.join("\n\n") : draft.text || "");
   const len = text.length;
   const overLimit = len > limit;
+  const scheduledPill = isScheduled
+    ? `<span class="rpanel-batch-card__sched-pill"><i class="ap-icon-check"></i>Scheduled</span>`
+    : "";
   return `
-    <div class="rpanel-batch-card ${isSelected ? "is-selected" : ""} ${overLimit ? "is-over" : ""}">
+    <div class="rpanel-batch-card ${isSelected ? "is-selected" : ""} ${overLimit ? "is-over" : ""} ${isScheduled ? "is-scheduled" : ""}">
       <div class="rpanel-batch-card__head">
         <button
           type="button"
@@ -370,11 +418,13 @@ function renderBatchCard(draft, isSelected) {
           data-rpanel-toggle="${draft.id}"
           aria-label="${isSelected ? "Deselect" : "Select"} draft"
           aria-pressed="${isSelected}"
+          ${isScheduled ? "disabled" : ""}
         >
           ${isSelected ? '<i class="ap-icon-check"></i>' : ""}
         </button>
         <i class="${NETWORK_ICON[network] || "ap-icon-megaphone"} rpanel-batch-card__network" aria-hidden="true"></i>
         <span class="rpanel-batch-card__network-name">${NETWORK_NAME[network] || network}</span>
+        ${scheduledPill}
         <span class="rpanel-batch-card__count ${overLimit ? "is-over" : ""}">${len}/${limit}</span>
       </div>
       <div class="rpanel-batch-card__body">${escapeHtml(text)}</div>

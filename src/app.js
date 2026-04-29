@@ -1,8 +1,9 @@
 import { route, setAfterRender, start } from "./router.js?v=21";
 import { initTopbar, renderTopbar } from "./components/topbar.js?v=26";
 import { initSidebar, renderSidebar } from "./components/sidebar.js?v=22";
-import { init as initRightPanel } from "./components/right-panel.js?v=22";
+import { init as initRightPanel } from "./components/right-panel.js?v=24";
 import { init as initContextDrawer } from "./components/context-drawer.js?v=20";
+import { init as initScheduleModal } from "./components/schedule-modal.js?v=20";
 import { initUserModeChip } from "./components/user-mode-chip.js?v=20";
 import { init as initBugReportModal } from "./components/bug-report-modal.js?v=21";
 import { init as initFeedbackModal } from "./components/feedback-modal.js?v=24";
@@ -32,6 +33,7 @@ initSidebar();
 renderSidebar();
 initRightPanel();
 initContextDrawer();
+initScheduleModal();
 initUserModeChip();
 // Inject modal DOM once so the topbar buttons can just toggle open/close
 // without worrying about init ordering.
