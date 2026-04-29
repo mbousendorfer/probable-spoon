@@ -69,10 +69,10 @@
   min-width: 0;
 }
 
-/* Drafts / Ideas topbar pills — only visible on /session/:id. The .is-on
-   variant uses the orange accent so the user has a visual confirmation
-   that the panel is mirroring their click. Badge sits inline with the
-   label so the count never moves. */
+/* Context / Drafts / Ideas topbar pills — only visible on /session/:id.
+   The .is-on variant uses the orange accent so the user has a visual
+   confirmation that the panel is mirroring their click. Badge sits inline
+   with the label so the count never moves. */
 .app-topbar__pill {
   display: inline-flex;
   align-items: center;
@@ -87,6 +87,80 @@
   color: var(--ref-color-grey-100);
   cursor: pointer;
   transition: all var(--ref-animation-short) var(--app-ease-out);
+}
+
+/* Context pill — shaped a bit larger to fit the swatch + 2-line label. */
+.app-topbar__pill--context {
+  padding: 4px var(--ref-spacing-xs) 4px 8px;
+  gap: var(--ref-spacing-xxs);
+}
+
+.app-topbar__pill--context.is-empty {
+  font-style: italic;
+  color: var(--ref-color-grey-60);
+}
+
+.app-topbar__pill-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--app-radius-circle);
+  flex-shrink: 0;
+  background: var(--ref-color-grey-40);
+}
+
+.app-topbar__pill-swatch--orange {
+  background: var(--ref-color-orange-100);
+}
+.app-topbar__pill-swatch--blue {
+  background: var(--ref-color-electric-blue-100);
+}
+.app-topbar__pill-swatch--green {
+  background: var(--ref-color-green-100);
+}
+.app-topbar__pill-swatch--purple {
+  background: var(--ref-color-purple-100);
+}
+.app-topbar__pill-swatch--red {
+  background: var(--ref-color-red-100);
+}
+.app-topbar__pill-swatch--yellow {
+  background: var(--ref-color-yellow-100);
+}
+.app-topbar__pill-swatch--slate,
+.app-topbar__pill-swatch--grey {
+  background: var(--ref-color-grey-60);
+}
+
+.app-topbar__pill-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+  min-width: 0;
+}
+
+.app-topbar__pill-eyebrow {
+  font-size: 9px;
+  font-weight: var(--ref-font-weight-extra-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ref-color-grey-60);
+}
+
+.app-topbar__pill-name {
+  font-size: var(--ref-font-size-xs);
+  font-weight: var(--ref-font-weight-extra-bold);
+  color: var(--ref-color-grey-150);
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-topbar__pill--context .ap-icon-chevron-down {
+  font-size: var(--sys-icon-css-xs);
+  color: var(--ref-color-grey-60);
 }
 
 .app-topbar__pill i {

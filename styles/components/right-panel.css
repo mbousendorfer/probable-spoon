@@ -48,46 +48,20 @@
   border-bottom: 1px solid var(--app-border-soft);
 }
 
-.app-right-panel__tabs {
-  display: flex;
-  align-items: center;
-  gap: var(--ref-spacing-xxs);
-}
-
-.app-right-panel__tab {
+/* Lot 17 — head is now mode label + close X. Tab toggle moved to topbar
+   pills (no duplication). */
+.app-right-panel__head-label {
   display: inline-flex;
   align-items: center;
   gap: var(--ref-spacing-xxs);
-  padding: var(--ref-spacing-xxs) var(--ref-spacing-xs);
-  background: transparent;
-  border: 0;
-  border-radius: var(--app-radius-button-sm);
   font-family: inherit;
-  font-size: var(--ref-font-size-sm);
-  font-weight: var(--ref-font-weight-bold);
-  color: var(--ref-color-grey-80);
-  cursor: pointer;
-  transition: background-color var(--ref-animation-short) var(--app-ease-out);
-}
-
-.app-right-panel__tab i {
-  font-size: var(--sys-icon-css-sm);
-  color: var(--ref-color-grey-80);
-}
-
-.app-right-panel__tab:hover,
-.app-right-panel__tab:focus-visible {
-  background: var(--ref-color-grey-10);
+  font-size: var(--ref-font-size-md);
+  font-weight: var(--ref-font-weight-extra-bold);
   color: var(--ref-color-grey-150);
-  outline: none;
 }
 
-.app-right-panel__tab.is-on {
-  background: var(--ref-color-orange-10);
-  color: var(--ref-color-orange-150);
-}
-
-.app-right-panel__tab.is-on i {
+.app-right-panel__head-label i {
+  font-size: var(--sys-icon-css-sm);
   color: var(--ref-color-orange-100);
 }
 

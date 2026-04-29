@@ -287,29 +287,17 @@ function renderPanel() {
     return;
   }
   el.hidden = false;
+  // Lot 17 — handoff parity. The panel head used to mirror the topbar
+  // pills (Drafts / Ideas tabs) which read as duplication once the
+  // topbar pills became the canonical toggle. Now the head is just the
+  // mode label + close X — switching modes happens via the topbar pills.
+  const headLabel = state.mode === "drafts" ? "Drafts" : "Ideas";
+  const headIcon = state.mode === "drafts" ? "ap-icon-pen" : "ap-icon-sparkles";
   el.innerHTML = html`
     <div class="app-right-panel__head">
-      <div class="app-right-panel__tabs" role="tablist">
-        <button
-          type="button"
-          class="app-right-panel__tab ${state.mode === "drafts" ? "is-on" : ""}"
-          role="tab"
-          aria-selected="${state.mode === "drafts"}"
-          data-rpanel-tab="drafts"
-        >
-          <i class="ap-icon-pen"></i>
-          <span>Drafts</span>
-        </button>
-        <button
-          type="button"
-          class="app-right-panel__tab ${state.mode === "ideas" ? "is-on" : ""}"
-          role="tab"
-          aria-selected="${state.mode === "ideas"}"
-          data-rpanel-tab="ideas"
-        >
-          <i class="ap-icon-sparkles"></i>
-          <span>Ideas</span>
-        </button>
+      <div class="app-right-panel__head-label">
+        <i class="${headIcon}" aria-hidden="true"></i>
+        <span>${headLabel}</span>
       </div>
       <button
         type="button"

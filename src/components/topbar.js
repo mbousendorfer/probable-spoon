@@ -9,9 +9,12 @@ import {
   getMode as getRightPanelMode,
   getActiveBatchRef as getActiveDraftsBatchRef,
   subscribe as subscribeRightPanel,
-} from "./right-panel.js?v=26";
+} from "./right-panel.js?v=27";
+import { open as openContextDrawer } from "./context-drawer.js?v=20";
 import { getThread, subscribe as subscribeThread } from "../assistant.js?v=23";
 import { recentSessions } from "../mocks.js?v=24";
+import { getContextById, subscribe as subscribeContexts } from "../contexts-store.js?v=24";
+import { parseHashParams } from "../url-state.js?v=20";
 
 // Persistent top bar.
 //
@@ -82,12 +85,23 @@ export function initTopbar() {
       const mode = getRightPanelMode();
       if (mode === "ideas") closeRightPanel();
       else openIdeasPanel();
+      return;
+    }
+    if (event.target.closest("[data-topbar-context]")) {
+      const ctx = currentContext();
+      openContextDrawer(ctx?.id || null);
     }
   });
 
   // Re-render the topbar whenever the right panel state changes so the
   // pills reflect the live mode (.is-on accent flips).
   subscribeRightPanel(() => renderTopbar());
+
+  // Re-render when contexts are mutated (rename, color change, delete) so
+  // the Context pill stays in sync with the drawer's edits, and on hash
+  // change so the pill picks up a new ?contextId= param.
+  subscribeContexts(() => renderTopbar());
+  window.addEventListener("hashchange", () => renderTopbar());
 
   // When the active session's thread updates (new drafts land), re-render
   // so the Drafts pill badge reflects the latest count. Re-attach when the
@@ -124,12 +138,30 @@ export function initTopbar() {
   });
 }
 
-// Drafts + Ideas pills — only on /session/:id. Returned as a plain HTML
-// string and wrapped with raw() at the call site so the outer template
-// tag doesn't escape the markup.
+// Context + Drafts + Ideas pills — only on /session/:id. Order matches
+// handoff App.jsx: Context first, then Drafts (with badge), then Ideas.
 function renderSessionPills(rpMode, draftCount) {
+  const ctx = currentContext();
+  const ctxColor = ctx?.color || "orange";
+  const ctxLabel = ctx ? ctx.name : "Set context…";
+  const ctxClass = ctx
+    ? "app-topbar__pill app-topbar__pill--context"
+    : "app-topbar__pill app-topbar__pill--context is-empty";
   const draftBadge = draftCount > 0 ? `<span class="app-topbar__pill-count">${draftCount}</span>` : "";
   return `
+    <button
+      type="button"
+      class="${ctxClass}"
+      data-topbar-context
+      title="${ctx ? `Edit context · ${ctx.name}` : "Attach a context"}"
+    >
+      <span class="app-topbar__pill-swatch app-topbar__pill-swatch--${ctxColor}" aria-hidden="true"></span>
+      <span class="app-topbar__pill-label">
+        <span class="app-topbar__pill-eyebrow">Context</span>
+        <span class="app-topbar__pill-name">${escapeText(ctxLabel)}</span>
+      </span>
+      <i class="ap-icon-chevron-down" aria-hidden="true"></i>
+    </button>
     <button
       type="button"
       class="app-topbar__pill ${rpMode === "drafts" ? "is-on" : ""}"
@@ -152,6 +184,23 @@ function renderSessionPills(rpMode, draftCount) {
       <span>Ideas</span>
     </button>
   `;
+}
+
+function escapeText(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Resolve the active session's bound context — URL ?contextId= wins,
+// otherwise fall back to the recentSessions seed for known mock sessions.
+function currentContext() {
+  const sid = currentSessionId();
+  if (!sid) return null;
+  const params = parseHashParams();
+  const fromUrl = params.get("contextId");
+  if (fromUrl) return getContextById(fromUrl);
+  const seed = recentSessions.find((s) => s.id === sid);
+  if (seed?.contextId) return getContextById(seed.contextId);
+  return null;
 }
 
 // Resolve the latest draft message in the active session (if any) and return
