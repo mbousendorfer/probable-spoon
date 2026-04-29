@@ -141,21 +141,26 @@ export function initTopbar() {
 // Context + Drafts + Ideas pills — only on /session/:id. Order matches
 // handoff App.jsx: Context first, then Drafts (with badge), then Ideas.
 //
-// Lot 18 DS conformance — Drafts + Ideas pills are plain `.ap-button
-// stroked <color>` ; the active color modifier (orange / blue) flips
-// based on the right-panel mode. The Drafts count uses the DS-native
-// `.ap-counter normal orange`. The Context pill is the only composed
-// exception (2-line inner label) — it starts from `.ap-button stroked
-// grey` and adds a thin `.app-topbar__context-pill` wrapper class for
-// the layout overrides.
+// Lot 18 DS conformance (revised 2026-04-29) — the DS only ships
+// `.stroked` paired with grey/blue/red (no orange). For ON/OFF toggle
+// pills, the DS-native pattern is:
+//   • OFF → `.ap-button stroked grey` (outlined, neutral)
+//   • ON  → `.ap-button secondary <orange|blue>` (tinted-fill in the
+//           accent color — color-XX-10 bg + color-XX-100 text/icon)
+// This contrast (outlined vs tinted-fill) reads as a clear pressed
+// state, and inherits proper hover/active/focus feedback from the DS.
+// The Drafts count badge stays `.ap-counter normal orange`. The
+// Context pill is the only composed exception (2-line inner label) —
+// it starts from `.ap-button stroked grey` and adds a thin
+// `.app-topbar__context-pill` wrapper for the layout overrides.
 function renderSessionPills(rpMode, draftCount) {
   const ctx = currentContext();
   const ctxColor = ctx?.color || "grey";
   const ctxLabel = ctx ? ctx.name : "Set context…";
   const ctxStateClass = ctx ? "" : "is-empty";
   const draftBadge = draftCount > 0 ? `<span class="ap-counter normal orange">${draftCount}</span>` : "";
-  const draftsColor = rpMode === "drafts" ? "orange" : "grey";
-  const ideasColor = rpMode === "ideas" ? "blue" : "grey";
+  const draftsClass = rpMode === "drafts" ? "secondary orange" : "stroked grey";
+  const ideasClass = rpMode === "ideas" ? "secondary blue" : "stroked grey";
   return `
     <button
       type="button"
@@ -172,7 +177,7 @@ function renderSessionPills(rpMode, draftCount) {
     </button>
     <button
       type="button"
-      class="ap-button stroked ${draftsColor}"
+      class="ap-button ${draftsClass}"
       data-topbar-drafts
       aria-pressed="${rpMode === "drafts"}"
       title="Toggle Drafts panel"
@@ -183,7 +188,7 @@ function renderSessionPills(rpMode, draftCount) {
     </button>
     <button
       type="button"
-      class="ap-button stroked ${ideasColor}"
+      class="ap-button ${ideasClass}"
       data-topbar-ideas
       aria-pressed="${rpMode === "ideas"}"
       title="Toggle Ideas panel"
