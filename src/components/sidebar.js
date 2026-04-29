@@ -88,6 +88,9 @@ export function initSidebar() {
       setMenuOpen(!menuOpen);
       return;
     }
+    // Sidebar head "Give feedback" link OR the popmenu item — same
+    // handler. Lot 18.c — the head link is the new visible entry point
+    // ; popmenu version stays for keyboard / discoverability.
     if (event.target.closest("[data-sidebar-feedback]")) {
       setMenuOpen(false);
       openFeedbackModal();
@@ -188,6 +191,7 @@ export function renderSidebar() {
       <button type="button" class="app-sidebar__brand" data-sidebar-home aria-label="Go to Archie home">
         <span class="app-sidebar__brand-mark"><i class="ap-icon-sparkles-mermaid"></i></span>
         <span class="app-sidebar__brand-name">Archie</span>
+        <span class="ap-badge blue">BETA</span>
       </button>
       <button
         type="button"
@@ -199,6 +203,11 @@ export function renderSidebar() {
         <i class="ap-icon-chevron-left"></i>
       </button>
     </div>
+
+    <button type="button" class="ap-link standalone small app-sidebar__feedback" data-sidebar-feedback>
+      <i class="ap-icon-single-chat-bubble"></i>
+      <span>Give feedback</span>
+    </button>
 
     <button type="button" class="app-sidebar__new" data-sidebar-new>
       <i class="ap-icon-plus"></i>
