@@ -168,7 +168,7 @@ export function renderSidebar() {
 
       <button
         type="button"
-        class="app-sidebar__new app-sidebar__new--collapsed"
+        class="ap-button secondary blue app-sidebar__new app-sidebar__new--collapsed"
         data-sidebar-new
         aria-label="New conversation"
         title="New conversation"
@@ -209,7 +209,7 @@ export function renderSidebar() {
       <span>Give feedback</span>
     </button>
 
-    <button type="button" class="app-sidebar__new" data-sidebar-new>
+    <button type="button" class="ap-button secondary blue app-sidebar__new" data-sidebar-new>
       <i class="ap-icon-plus"></i>
       <span>New conversation</span>
     </button>
