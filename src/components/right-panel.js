@@ -278,6 +278,15 @@ function lookupActiveMessage() {
   return thread.find((m) => m.id === state.activeBatchRef.messageId) || null;
 }
 
+// Resolve the count for the Drafts tab badge — looks up the active batch
+// in whichever session is currently mounted. Returns 0 when no batch is
+// pinned (badge hides). Used by the panel head and indirectly drives the
+// topbar pill badge too.
+function lookupActiveDraftCount() {
+  const message = lookupActiveMessage();
+  return message?.count ?? message?.drafts?.length ?? 0;
+}
+
 function renderPanel() {
   const el = document.getElementById(PANEL_ID);
   if (!el) return;
@@ -287,17 +296,39 @@ function renderPanel() {
     return;
   }
   el.hidden = false;
-  // Lot 17 — handoff parity. The panel head used to mirror the topbar
-  // pills (Drafts / Ideas tabs) which read as duplication once the
-  // topbar pills became the canonical toggle. Now the head is just the
-  // mode label + close X — switching modes happens via the topbar pills.
-  const headLabel = state.mode === "drafts" ? "Drafts" : "Ideas";
-  const headIcon = state.mode === "drafts" ? "ap-icon-pen" : "ap-icon-sparkles";
+  // Lot 17.b — match handoff RightPanel.jsx exactly. The panel head carries
+  // its own Drafts / Ideas tabs (a secondary toggle) AND the topbar pills
+  // are kept in sync — both surfaces reflect the live mode. Clicking
+  // either flips the mode.
+  // The active tab here uses a subtle grey-10 chip treatment ; the topbar
+  // pill uses its colored accent on .is-on. Both stay coherent because the
+  // panel state notifies subscribers and the topbar re-renders.
+  const draftCount = lookupActiveDraftCount();
+  const draftBadge = draftCount > 0 ? `<span class="app-right-panel__tab-badge">${draftCount}</span>` : "";
   el.innerHTML = html`
     <div class="app-right-panel__head">
-      <div class="app-right-panel__head-label">
-        <i class="${headIcon}" aria-hidden="true"></i>
-        <span>${headLabel}</span>
+      <div class="app-right-panel__tabs" role="tablist">
+        <button
+          type="button"
+          class="app-right-panel__tab ${state.mode === "drafts" ? "is-on" : ""}"
+          role="tab"
+          aria-selected="${state.mode === "drafts"}"
+          data-rpanel-tab="drafts"
+        >
+          <i class="ap-icon-pen" aria-hidden="true"></i>
+          <span>Drafts</span>
+          ${raw(draftBadge)}
+        </button>
+        <button
+          type="button"
+          class="app-right-panel__tab ${state.mode === "ideas" ? "is-on" : ""}"
+          role="tab"
+          aria-selected="${state.mode === "ideas"}"
+          data-rpanel-tab="ideas"
+        >
+          <i class="ap-icon-sparkles" aria-hidden="true"></i>
+          <span>Ideas</span>
+        </button>
       </div>
       <button
         type="button"
