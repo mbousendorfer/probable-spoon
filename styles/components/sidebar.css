@@ -166,6 +166,19 @@
   color: var(--ref-color-orange-100);
 }
 
+/* Live counter badge — pushed to the trailing edge of the nav row. */
+.app-sidebar__nav-item .ap-counter {
+  margin-left: auto;
+}
+
+/* ── Search input ─────────────────────────────────────────────────────
+   Shares chrome with the workspace search input via .ap-input-group.
+   The wrapper class only contributes the sidebar-specific margins. */
+
+.app-sidebar__search {
+  margin: 0 var(--ref-spacing-xs) var(--ref-spacing-xs);
+}
+
 /* ── List ───────────────────────────────────────────────────────────── */
 
 .app-sidebar__list {
@@ -190,9 +203,9 @@
 
 .app-sidebar__row {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ref-spacing-xxs);
   width: 100%;
   padding: var(--ref-spacing-xxs) var(--ref-spacing-xs);
   background: transparent;
@@ -216,6 +229,7 @@
 }
 
 .app-sidebar__row-title {
+  flex: 1 1 auto;
   font-size: var(--ref-font-size-sm);
   line-height: var(--ref-font-line-height-sm);
   font-weight: var(--ref-font-weight-bold);
@@ -223,13 +237,85 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
+  min-width: 0;
 }
 
 .app-sidebar__row-meta {
   font-size: var(--ref-font-size-xs);
   line-height: var(--ref-font-line-height-xs);
   color: var(--ref-color-grey-60);
+}
+
+/* Leading pin icon — only rendered for pinned rows. Visual marker that
+   matches the screenshot (small grey-80 pin in front of the title). */
+.app-sidebar__row-leading {
+  flex: 0 0 auto;
+  font-size: var(--sys-icon-css-sm);
+  color: var(--ref-color-grey-80);
+}
+
+/* Trailing color dot — resolves the row's bound-context color. Mirrors
+   the topbar Context-pill swatch palette so a session and its context
+   are recognizable at a glance. */
+.app-sidebar__row-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ref-color-grey-40);
+}
+
+.app-sidebar__row-dot--orange {
+  background: var(--ref-color-orange-100);
+}
+.app-sidebar__row-dot--blue {
+  background: var(--ref-color-electric-blue-100);
+}
+.app-sidebar__row-dot--green {
+  background: var(--ref-color-green-100);
+}
+.app-sidebar__row-dot--purple {
+  background: var(--ref-color-purple-100);
+}
+.app-sidebar__row-dot--red {
+  background: var(--ref-color-red-100);
+}
+.app-sidebar__row-dot--grey {
+  background: var(--ref-color-grey-40);
+}
+
+/* Pin/unpin trigger — hidden by default, revealed on row hover (or when
+   the row already holds keyboard focus). On hover the dot makes way for
+   the pin button so the row chrome stays compact. */
+.app-sidebar__row-pin {
+  display: none;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--app-radius-button-sm);
+  color: var(--ref-color-grey-80);
+  cursor: pointer;
+}
+
+.app-sidebar__row-pin i {
+  font-size: var(--sys-icon-css-sm);
+}
+
+.app-sidebar__row-pin:hover {
+  background: var(--ref-color-grey-20);
+  color: var(--ref-color-grey-150);
+}
+
+.app-sidebar__row:hover .app-sidebar__row-pin,
+.app-sidebar__row:focus-visible .app-sidebar__row-pin {
+  display: inline-flex;
+}
+
+.app-sidebar__row:hover .app-sidebar__row-dot,
+.app-sidebar__row:focus-visible .app-sidebar__row-dot {
+  display: none;
 }
 
 .app-sidebar__empty {

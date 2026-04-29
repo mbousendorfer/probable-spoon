@@ -1,7 +1,7 @@
 import { html, raw } from "../utils.js?v=20";
 import { getPath } from "../router.js?v=20";
 import { toggle as toggleShortcutLegend } from "./shortcut-legend.js?v=22";
-import { toggleSidebar } from "./sidebar.js?v=25";
+import { toggleSidebar } from "./sidebar.js?v=26";
 import {
   openDrafts as openDraftsPanel,
   openIdeas as openIdeasPanel,
@@ -12,7 +12,7 @@ import {
 } from "./right-panel.js?v=31";
 import { open as openContextDrawer } from "./context-drawer.js?v=20";
 import { getThread, subscribe as subscribeThread } from "../assistant.js?v=23";
-import { recentSessions } from "../mocks.js?v=24";
+import { recentSessions } from "../mocks.js?v=25";
 import { getContextById, subscribe as subscribeContexts } from "../contexts-store.js?v=24";
 import { parseHashParams } from "../url-state.js?v=20";
 

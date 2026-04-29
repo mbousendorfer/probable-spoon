@@ -1,6 +1,6 @@
 import { html, raw } from "../utils.js?v=20";
 import { getThread, subscribe as subscribeThread } from "../assistant.js?v=23";
-import { ideas as MOCK_IDEAS } from "../mocks.js?v=24";
+import { ideas as MOCK_IDEAS } from "../mocks.js?v=25";
 import { isNewUser } from "../user-mode.js?v=20";
 
 // Lot 15 — empty in first-time mode so the right-panel Ideas surface lines

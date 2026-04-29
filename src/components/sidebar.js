@@ -4,8 +4,11 @@ import { open as openSettingsDrawer } from "./settings-drawer.js?v=22";
 import { open as openBugReportModal } from "./bug-report-modal.js?v=21";
 import { open as openFeedbackModal } from "./feedback-modal.js?v=24";
 import { toggle as toggleShortcutLegend } from "./shortcut-legend.js?v=22";
-import { recentSessions } from "../mocks.js?v=24";
+import { recentSessions } from "../mocks.js?v=25";
 import { isNewUser } from "../user-mode.js?v=20";
+import { getSources, subscribeSources } from "../sources-stream.js?v=20";
+import { getIdeas } from "../library.js?v=20";
+import { getContexts, getContextById, subscribe as subscribeContexts } from "../contexts-store.js?v=24";
 
 // Global app sidebar — Brand / + New conversation / Recent chats / User footer.
 // Rendered once at boot into #sidebar; re-rendered on every route change so the
@@ -23,6 +26,11 @@ import { isNewUser } from "../user-mode.js?v=20";
 const COLLAPSED_KEY = "archie-sidebar-collapsed";
 
 let menuOpen = false;
+// Live filter query for the recent-conversations list. Updated as the user
+// types into the search input, drives the visible Pinned / Recent groups.
+// Kept module-local so it survives the re-renders triggered by route
+// changes / store subscriptions.
+let sidebarSearchQuery = "";
 
 export function isSidebarCollapsed() {
   return localStorage.getItem(COLLAPSED_KEY) === "1";
@@ -78,6 +86,15 @@ export function initSidebar() {
       navigate(navItem.dataset.sidebarNav);
       return;
     }
+    // Pin/unpin a conversation. Captured before the row-navigation handler
+    // so clicking the pin button doesn't bubble into a route change.
+    const pinBtn = event.target.closest("[data-sidebar-pin]");
+    if (pinBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      togglePinSidebar(pinBtn.dataset.sidebarPin);
+      return;
+    }
     const sessionRow = event.target.closest("[data-sidebar-session]");
     if (sessionRow) {
       navigate(`/session/${sessionRow.dataset.sidebarSession}`);
@@ -111,6 +128,23 @@ export function initSidebar() {
       openSettingsDrawer();
     }
   });
+
+  // Search input — filter the recent / pinned lists as the user types.
+  // Re-renders only the list block (not the input), so the input keeps
+  // its focus and selection state across keystrokes.
+  el.addEventListener("input", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.matches("[data-sidebar-search]")) {
+      sidebarSearchQuery = target.value;
+      renderRecentListsOnly();
+    }
+  });
+
+  // Live-rerender on store mutations so the nav counters and any context
+  // colors used by session rows stay in sync without waiting for the next
+  // route change.
+  subscribeSources(() => renderSidebar());
+  subscribeContexts(() => renderSidebar());
 
   // Click outside the popmenu → close.
   document.addEventListener("click", (event) => {
@@ -216,7 +250,11 @@ export function renderSidebar() {
 
     <nav class="app-sidebar__nav" aria-label="Library">${raw(renderNav(path))}</nav>
 
-    <div class="app-sidebar__list" aria-label="Recent conversations">${raw(renderRecentList(activeSessionId))}</div>
+    ${raw(renderSearchInput())}
+
+    <div class="app-sidebar__list" aria-label="Recent conversations">
+      ${raw(renderRecentLists(activeSessionId, sidebarSearchQuery))}
+    </div>
 
     <div class="app-sidebar__foot">
       <div class="app-sidebar__user">
@@ -281,8 +319,10 @@ function renderFootMenu({ collapsed }) {
 
 // Library nav — 4 items pointing at the dashboard + the standalone Sources /
 // Ideas / Contexts views. The active item is derived from the path prefix so
-// /session/* still highlights "Chats". The full views land in Lots 6/7/8;
-// today the targets are placeholders.
+// /session/* still highlights "Chats". `count` resolves to a live count from
+// the relevant store so the trailing `.ap-counter` badge stays in sync as
+// the user adds sources / ideas / contexts. Chats has no counter — the
+// recent-conversations list right below already shows the conversations.
 const NAV = [
   {
     path: "/",
@@ -290,14 +330,34 @@ const NAV = [
     label: "Chats",
     match: (p) => p === "/" || p.startsWith("/session/"),
   },
-  { path: "/sources", icon: "ap-icon-folder", label: "Sources", match: (p) => p === "/sources" },
-  { path: "/ideas", icon: "ap-icon-sparkles", label: "Ideas", match: (p) => p === "/ideas" },
-  { path: "/contexts", icon: "ap-icon-target", label: "Contexts", match: (p) => p === "/contexts" },
+  {
+    path: "/sources",
+    icon: "ap-icon-folder",
+    label: "Sources",
+    match: (p) => p === "/sources",
+    count: () => getSources().length,
+  },
+  {
+    path: "/ideas",
+    icon: "ap-icon-sparkles",
+    label: "Ideas",
+    match: (p) => p === "/ideas",
+    count: () => recentSessions.reduce((n, s) => n + getIdeas(s.id).length, 0),
+  },
+  {
+    path: "/contexts",
+    icon: "ap-icon-target",
+    label: "Contexts",
+    match: (p) => p === "/contexts",
+    count: () => getContexts().length,
+  },
 ];
 
 function renderNav(path) {
-  return NAV.map(
-    (item) => `
+  return NAV.map((item) => {
+    const count = item.count ? item.count() : 0;
+    const counter = count > 0 ? `<span class="ap-counter normal grey">${count}</span>` : "";
+    return `
       <button
         type="button"
         class="app-sidebar__nav-item ${item.match(path) ? "is-active" : ""}"
@@ -305,35 +365,137 @@ function renderNav(path) {
       >
         <i class="${item.icon}"></i>
         <span>${item.label}</span>
+        ${counter}
       </button>
-    `,
-  ).join("");
+    `;
+  }).join("");
 }
 
-function renderRecentList(activeSessionId) {
+// Search input — visible only when the recent-conversations list has at
+// least one entry (otherwise it'd just be a dead control). Hidden in
+// isNewUser mode for the same reason. Markup mirrors the workspace
+// content toolbar pattern (cf. content-workspace.js): `.ap-input-group`
+// + leading icon + `<input>`.
+function renderSearchInput() {
+  if (isNewUser() || recentSessions.length === 0) return "";
+  const value = sidebarSearchQuery ? sidebarSearchQuery.replace(/"/g, "&quot;") : "";
+  return `
+    <div class="app-sidebar__search ap-input-group">
+      <i class="ap-icon-search" aria-hidden="true"></i>
+      <input
+        type="text"
+        class="ap-input"
+        placeholder="Search…"
+        value="${value}"
+        data-sidebar-search
+        aria-label="Search conversations"
+      />
+    </div>
+  `;
+}
+
+// Render only the lists (Pinned + Recent) inside `.app-sidebar__list`.
+// Used by the search-input keystroke handler so the input's focus and
+// caret position survive the re-render.
+function renderRecentListsOnly() {
+  const list = document.querySelector(".app-sidebar__list");
+  if (!list) return;
+  const activeSessionId = matchSessionId(getPath());
+  list.innerHTML = renderRecentLists(activeSessionId, sidebarSearchQuery);
+}
+
+// Pinned + Recent groups, filtered by the live search query. Empty groups
+// are dropped (no orphan heading). When the filter matches nothing, an
+// empty-state message takes over the list.
+function renderRecentLists(activeSessionId, query) {
   if (isNewUser() || recentSessions.length === 0) {
-    return html`
+    return `
       <div class="app-sidebar__empty">
         <span class="app-sidebar__empty-text">No conversations yet</span>
       </div>
     `;
   }
-  const heading = html`<div class="app-sidebar__section-heading">Recent</div>`;
-  const rows = recentSessions
-    .map(
-      (s) => `
-        <button
-          type="button"
-          class="app-sidebar__row ${s.id === activeSessionId ? "is-active" : ""}"
-          data-sidebar-session="${s.id}"
-        >
-          <span class="app-sidebar__row-title">${s.name}</span>
-          <span class="app-sidebar__row-meta">${s.lastActivity}</span>
-        </button>
-      `,
-    )
-    .join("");
-  return heading + rows;
+  const q = (query || "").trim().toLowerCase();
+  const filtered = q ? recentSessions.filter((s) => s.name.toLowerCase().includes(q)) : recentSessions;
+
+  const pinned = filtered.filter((s) => s.pinned);
+  const unpinned = filtered.filter((s) => !s.pinned);
+
+  if (pinned.length === 0 && unpinned.length === 0) {
+    return `
+      <div class="app-sidebar__empty">
+        <span class="app-sidebar__empty-text">No conversations match</span>
+      </div>
+    `;
+  }
+
+  let out = "";
+  if (pinned.length > 0) {
+    out += `<div class="app-sidebar__section-heading">Pinned</div>`;
+    out += pinned.map((s) => renderSessionRow(s, activeSessionId)).join("");
+  }
+  if (unpinned.length > 0) {
+    out += `<div class="app-sidebar__section-heading">Recent</div>`;
+    out += unpinned.map((s) => renderSessionRow(s, activeSessionId)).join("");
+  }
+  return out;
+}
+
+// One conversation row. Layout:
+//   [pin icon if pinned] [title] [color dot] [pin button on hover]
+// The color dot resolves the row's bound context color (orange / blue /
+// green / etc.) — same lookup the topbar Context pill uses. Falls back to
+// grey when the session has no contextId or the context was deleted.
+function renderSessionRow(session, activeSessionId) {
+  const isActive = session.id === activeSessionId;
+  const ctx = session.contextId ? getContextById(session.contextId) : null;
+  const dotColor = ctx?.color || "grey";
+  const isPinned = !!session.pinned;
+  const leading = isPinned ? `<i class="ap-icon-pin app-sidebar__row-leading" aria-hidden="true"></i>` : "";
+  const pinLabel = isPinned ? "Unpin conversation" : "Pin conversation";
+  return `
+    <button
+      type="button"
+      class="app-sidebar__row ${isActive ? "is-active" : ""}"
+      data-sidebar-session="${session.id}"
+      data-sidebar-pinned="${isPinned ? "true" : "false"}"
+    >
+      ${leading}
+      <span class="app-sidebar__row-title">${session.name}</span>
+      <span
+        class="app-sidebar__row-dot app-sidebar__row-dot--${dotColor}"
+        aria-hidden="true"
+      ></span>
+      <span
+        class="ap-icon-button transparent app-sidebar__row-pin"
+        role="button"
+        tabindex="0"
+        data-sidebar-pin="${session.id}"
+        aria-label="${pinLabel}"
+        title="${pinLabel}"
+      >
+        <i class="ap-icon-pin"></i>
+      </span>
+    </button>
+  `;
+}
+
+// Toggle the pinned flag on a session (in-memory mock mutation), re-render
+// the sidebar, and surface a toast with an Undo action — same pattern as
+// the idea-card pin/unpin (cf. idea-card.js togglePinMenuItem).
+function togglePinSidebar(sessionId) {
+  const s = recentSessions.find((r) => r.id === sessionId);
+  if (!s) return;
+  s.pinned = !s.pinned;
+  renderSidebar();
+  import("./toast.js?v=20").then(({ showToast }) => {
+    showToast(s.pinned ? "Conversation pinned" : "Conversation unpinned", {
+      action: {
+        label: "Undo",
+        onClick: () => togglePinSidebar(sessionId),
+      },
+    });
+  });
 }
 
 function matchSessionId(path) {

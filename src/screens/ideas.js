@@ -1,7 +1,7 @@
 import { html, raw } from "../utils.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=33";
 import { renderIdeaCard } from "../components/idea-card.js?v=25";
-import { ideas as MOCK_IDEAS, sources as SOURCES } from "../mocks.js?v=24";
+import { ideas as MOCK_IDEAS, sources as SOURCES } from "../mocks.js?v=25";
 import { isNewUser } from "../user-mode.js?v=20";
 
 // Lot 15 — empty out in first-time mode so /ideas mirrors the dashboard's
