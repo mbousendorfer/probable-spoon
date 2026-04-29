@@ -5,7 +5,7 @@ import {
   subscribe as subscribeContexts,
   duplicateContext,
   deleteContext,
-} from "../contexts-store.js?v=22";
+} from "../contexts-store.js?v=24";
 import { open as openContextDrawer } from "../components/context-drawer.js?v=20";
 
 // Contexts library — standalone page (handoff §2.4).

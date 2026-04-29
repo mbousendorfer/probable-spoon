@@ -9,7 +9,7 @@ import {
   getMode as getRightPanelMode,
   getActiveBatchRef as getActiveDraftsBatchRef,
   subscribe as subscribeRightPanel,
-} from "./right-panel.js?v=24";
+} from "./right-panel.js?v=26";
 import { getThread, subscribe as subscribeThread } from "../assistant.js?v=22";
 import { recentSessions } from "../mocks.js?v=24";
 

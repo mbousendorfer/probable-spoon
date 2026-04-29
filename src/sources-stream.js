@@ -7,12 +7,15 @@
 // continue in background after the user closes the modal.
 
 import { sources as seedSources } from "./mocks.js?v=24";
+import { isNewUser } from "./user-mode.js?v=20";
 
 // ─── State ───────────────────────────────────────────────────────────────
 
-// The live source list — seeded from mocks.sources, then mutated as
-// uploads come in. Newest at the head.
-const sources = seedSources.map((s) => ({ ...s }));
+// The live source list — seeded from mocks.sources in returning-user mode,
+// empty in first-time mode (Lot 15 — sources-stream is global, the standalone
+// /sources page reads through getSources(); without this guard the empty
+// state never showed even when the dashboard correctly hid mocks).
+const sources = isNewUser() ? [] : seedSources.map((s) => ({ ...s }));
 
 // Uploads currently being processed. Visible in the modal's upload list.
 // { id, name, size, kind, status: 'uploading'|'processing'|'done'|'cancelled', progress, sourceId? }

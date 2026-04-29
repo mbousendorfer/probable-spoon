@@ -10,7 +10,7 @@ import {
   brandTheme,
   chatStarters,
 } from "../mocks.js?v=24";
-import { getContextById, getContexts, addContext, updateContext } from "../contexts-store.js?v=22";
+import { getContextById, getContexts, addContext, updateContext } from "../contexts-store.js?v=24";
 import { isNewUser } from "../user-mode.js?v=20";
 import {
   getThread,
@@ -40,14 +40,14 @@ import { open as openGenerateImageModal } from "../components/generate-image-mod
 import { open as openSettingsDrawer } from "../components/settings-drawer.js?v=22";
 import { open as openChatPickerModal } from "../components/chat-picker-modal.js?v=21";
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=21";
-import { classifyFile, startFileUpload } from "../sources-stream.js?v=23";
+import { classifyFile, startFileUpload } from "../sources-stream.js?v=25";
 import { showToast } from "../components/toast.js?v=20";
 import {
   openDrafts as openDraftsPanel,
   getActiveBatchRef as getActiveDraftsBatchRef,
   getMode as getRightPanelMode,
   subscribe as subscribeRightPanel,
-} from "../components/right-panel.js?v=24";
+} from "../components/right-panel.js?v=26";
 import { setHandoff, consumeHandoff, hasHandoff } from "../handoff.js?v=20";
 import { parseHashParams, setHashQuery } from "../url-state.js?v=20";
 

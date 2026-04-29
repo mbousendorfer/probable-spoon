@@ -2,9 +2,14 @@ import { html, raw } from "../utils.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=29";
 import { renderSourceCard } from "../components/source-card.js?v=26";
 import { open as openAddSourceModal } from "../components/add-source-modal.js?v=21";
-import { getSources, subscribeSources, classifyFile, startFileUpload } from "../sources-stream.js?v=23";
-import { ideas as IDEAS } from "../mocks.js?v=24";
+import { getSources, subscribeSources, classifyFile, startFileUpload } from "../sources-stream.js?v=25";
+import { ideas as MOCK_IDEAS } from "../mocks.js?v=24";
+import { isNewUser } from "../user-mode.js?v=20";
 import { showToast } from "../components/toast.js?v=20";
+
+// Lot 15 — empty in first-time mode so the sub-line "{N} ideas extracted"
+// and the cards both reflect a clean slate. Returning user gets the seed.
+const IDEAS = isNewUser() ? [] : MOCK_IDEAS;
 
 // Sources view — standalone library page.
 // Header (eyebrow + h1 + sub + actions) → filter rail (kinds) + search →

@@ -1,6 +1,12 @@
 import { html, raw } from "../utils.js?v=20";
 import { getThread, subscribe as subscribeThread } from "../assistant.js?v=22";
-import { ideas as IDEAS } from "../mocks.js?v=24";
+import { ideas as MOCK_IDEAS } from "../mocks.js?v=24";
+import { isNewUser } from "../user-mode.js?v=20";
+
+// Lot 15 — empty in first-time mode so the right-panel Ideas surface lines
+// up with the rest of the chrome (sidebar Recent list = empty, dashboard
+// = first-run welcome). Returning user gets the full seed.
+const IDEAS = isNewUser() ? [] : MOCK_IDEAS;
 import { open as openScheduleModal } from "./schedule-modal.js?v=20";
 
 // Global Right Panel — slides in from the right edge of the viewport, overlays

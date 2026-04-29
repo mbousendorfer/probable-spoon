@@ -18,8 +18,11 @@
 // when scope is "Update everywhere".
 
 import { contexts as seed } from "./mocks.js?v=24";
+import { isNewUser } from "./user-mode.js?v=20";
 
-const contexts = seed.map((c) => ({ ...c }));
+// Lot 15 — first-time user mode starts empty so the standalone /contexts
+// page renders its empty state. Returning user keeps the mock seed.
+const contexts = isNewUser() ? [] : seed.map((c) => ({ ...c }));
 const subscribers = new Set();
 
 function freshId() {

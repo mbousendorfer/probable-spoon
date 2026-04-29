@@ -7,7 +7,7 @@ import {
   duplicateContext,
   deleteContext,
   subscribe as subscribeContexts,
-} from "../contexts-store.js?v=22";
+} from "../contexts-store.js?v=24";
 import { showToast } from "./toast.js?v=20";
 
 // Multi-context drawer (handoff §2.7).
