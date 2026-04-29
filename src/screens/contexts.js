@@ -1,6 +1,12 @@
 import { html, raw } from "../utils.js?v=20";
 import { renderTopbar } from "../components/topbar.js?v=26";
-import { getContexts, subscribe as subscribeContexts } from "../contexts-store.js?v=22";
+import {
+  getContexts,
+  subscribe as subscribeContexts,
+  duplicateContext,
+  deleteContext,
+} from "../contexts-store.js?v=22";
+import { open as openContextDrawer } from "../components/context-drawer.js?v=20";
 
 // Contexts library — standalone page (handoff §2.4).
 // Header → search → grid of ContextCards. Each card surfaces brand /
@@ -133,24 +139,37 @@ function filter(list, { query }) {
 
 function bind(root) {
   root.addEventListener("click", (event) => {
-    if (event.target.closest("[data-contexts-edit]")) {
-      // Drawer ships in Lot 8.2 — surface a placeholder for now so the click
-      // registers visibly.
-      import("../components/toast.js?v=20").then(({ showToast }) =>
-        showToast("Multi-context drawer lands in Lot 8.2 — page surface first."),
-      );
+    const editBtn = event.target.closest("[data-contexts-edit]");
+    if (editBtn) {
+      openContextDrawer(editBtn.dataset.contextsEdit);
       return;
     }
     if (event.target.closest("[data-contexts-new]")) {
-      import("../components/toast.js?v=20").then(({ showToast }) =>
-        showToast("New context creator lands with the drawer (Lot 8.2)."),
-      );
+      openContextDrawer(null); // drawer auto-creates a fresh "Untitled context"
       return;
     }
-    if (event.target.closest("[data-contexts-duplicate]") || event.target.closest("[data-contexts-delete]")) {
-      import("../components/toast.js?v=20").then(({ showToast }) =>
-        showToast("Per-card duplicate / delete wires up with the drawer (Lot 8.2)."),
-      );
+    const dupBtn = event.target.closest("[data-contexts-duplicate]");
+    if (dupBtn) {
+      const copy = duplicateContext(dupBtn.dataset.contextsDuplicate);
+      if (copy) {
+        import("../components/toast.js?v=20").then(({ showToast }) => showToast("Context duplicated"));
+        openContextDrawer(copy.id);
+      }
+      return;
+    }
+    const delBtn = event.target.closest("[data-contexts-delete]");
+    if (delBtn) {
+      const ctx = getContexts().find((c) => c.id === delBtn.dataset.contextsDelete);
+      if (!ctx) return;
+      if (getContexts().length <= 1) {
+        import("../components/toast.js?v=20").then(({ showToast }) =>
+          showToast("Can't delete the last context — every chat needs one."),
+        );
+        return;
+      }
+      if (!window.confirm(`Delete "${ctx.name}"?`)) return;
+      deleteContext(ctx.id);
+      import("../components/toast.js?v=20").then(({ showToast }) => showToast("Context deleted"));
     }
   });
 

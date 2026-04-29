@@ -36,41 +36,113 @@ export function getContextById(id) {
 }
 
 /**
- * Add a new global context to the store. If `id` is missing, one is generated.
- * @param {object} ctx — { id?, name, voice?, brief?, brand?, updatedAt? }
+ * Add a new global context to the store. Q2 hybrid shape — flat editable
+ * fields (color, brandName, audience, briefSummary, tones, doRules,
+ * dontRules, cta, usedIn) sit at the top level. The analytical sub-object
+ * (analysis: {voice, brief, brand}) is preserved for the legacy accessors
+ * the rest of the app reads.
+ *
+ * @param {object} ctx — partial Context, fields not provided default to
+ *   sensible empties so the editor can render without nulls.
  * @returns {Context}
  */
-export function addContext(ctx) {
+export function addContext(ctx = {}) {
   const next = {
     id: ctx.id || freshId(),
     name: ctx.name || "Untitled context",
+    color: ctx.color || "orange",
+    isDefault: ctx.isDefault === true,
+    brandName: ctx.brandName || "",
+    audience: ctx.audience || "",
+    briefSummary: ctx.briefSummary || "",
+    tones: Array.isArray(ctx.tones) ? ctx.tones.slice() : [],
+    doRules: Array.isArray(ctx.doRules) ? ctx.doRules.slice() : [],
+    dontRules: Array.isArray(ctx.dontRules) ? ctx.dontRules.slice() : [],
+    cta: ctx.cta || "",
+    usedIn: typeof ctx.usedIn === "number" ? ctx.usedIn : 0,
     updatedAt: ctx.updatedAt || "just now",
-    voice: ctx.voice || null,
-    brief: ctx.brief || null,
-    brand: ctx.brand || null,
+    analysis: ctx.analysis || { voice: null, brief: null, brand: null },
   };
+  // Re-attach the legacy voice/brief/brand getters so old call sites stay
+  // working on freshly-added contexts too.
+  Object.defineProperty(next, "voice", { get: () => next.analysis?.voice, enumerable: true });
+  Object.defineProperty(next, "brief", { get: () => next.analysis?.brief, enumerable: true });
+  Object.defineProperty(next, "brand", { get: () => next.analysis?.brand, enumerable: true });
   contexts.push(next);
   notify();
   return next;
 }
 
 /**
- * Patch a context. Top-level fields are replaced; voice/brief/brand subobjects
- * are replaced wholesale (not deep-merged) to keep the model simple.
+ * Patch a context. Top-level fields are replaced; analysis is replaced
+ * wholesale (not deep-merged) to keep the model simple. Both old keys
+ * (voice/brief/brand) and new keys (color, brandName, audience,
+ * briefSummary, tones, doRules, dontRules, cta, isDefault, usedIn) are
+ * accepted so the migration path stays open for legacy consumers.
+ *
  * @param {string} id
- * @param {object} patch — partial { name, voice, brief, brand, updatedAt }
+ * @param {object} patch
  * @returns {Context | null}
  */
 export function updateContext(id, patch) {
   const c = contexts.find((x) => x.id === id);
   if (!c) return null;
+  // New flat editable fields
   if (patch.name !== undefined) c.name = patch.name;
+  if (patch.color !== undefined) c.color = patch.color;
+  if (patch.isDefault !== undefined) c.isDefault = patch.isDefault;
+  if (patch.brandName !== undefined) c.brandName = patch.brandName;
+  if (patch.audience !== undefined) c.audience = patch.audience;
+  if (patch.briefSummary !== undefined) c.briefSummary = patch.briefSummary;
+  if (patch.tones !== undefined) c.tones = patch.tones;
+  if (patch.doRules !== undefined) c.doRules = patch.doRules;
+  if (patch.dontRules !== undefined) c.dontRules = patch.dontRules;
+  if (patch.cta !== undefined) c.cta = patch.cta;
+  if (patch.usedIn !== undefined) c.usedIn = patch.usedIn;
   if (patch.updatedAt !== undefined) c.updatedAt = patch.updatedAt;
-  if (patch.voice !== undefined) c.voice = patch.voice;
-  if (patch.brief !== undefined) c.brief = patch.brief;
-  if (patch.brand !== undefined) c.brand = patch.brand;
+  // Legacy + analysis sub-object
+  if (patch.analysis !== undefined) c.analysis = patch.analysis;
+  if (patch.voice !== undefined) c.analysis = { ...(c.analysis || {}), voice: patch.voice };
+  if (patch.brief !== undefined) c.analysis = { ...(c.analysis || {}), brief: patch.brief };
+  if (patch.brand !== undefined) c.analysis = { ...(c.analysis || {}), brand: patch.brand };
   notify();
   return c;
+}
+
+/**
+ * Duplicate a context — clones every editable field, resets usedIn /
+ * isDefault, marks the name as "(copy)". Returns the new context.
+ */
+export function duplicateContext(id) {
+  const src = contexts.find((c) => c.id === id);
+  if (!src) return null;
+  return addContext({
+    name: `${src.name} (copy)`,
+    color: src.color,
+    brandName: src.brandName,
+    audience: src.audience,
+    briefSummary: src.briefSummary,
+    tones: (src.tones || []).slice(),
+    doRules: (src.doRules || []).slice(),
+    dontRules: (src.dontRules || []).slice(),
+    cta: src.cta,
+    isDefault: false,
+    usedIn: 0,
+    analysis: src.analysis ? { ...src.analysis } : { voice: null, brief: null, brand: null },
+  });
+}
+
+/**
+ * Delete a context. Refuses to delete the last remaining one — every chat
+ * needs a context to point at. Returns true on success.
+ */
+export function deleteContext(id) {
+  if (contexts.length <= 1) return false;
+  const idx = contexts.findIndex((c) => c.id === id);
+  if (idx < 0) return false;
+  contexts.splice(idx, 1);
+  notify();
+  return true;
 }
 
 export function subscribe(fn) {
